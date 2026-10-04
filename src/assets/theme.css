@@ -1,0 +1,266 @@
+/* mdrender light theme — Inter for text, JetBrains Mono for code. */
+
+:root {
+  --font-text: "Inter", system-ui, sans-serif;
+  /* Inter after the mono font covers symbols (arrows, math) missing from the code font. */
+  --font-code: "JetBrains Mono", "Inter", ui-monospace, monospace;
+  --color-text: #1f2328;
+  --color-muted: #59636e;
+  --color-heading: #0d1117;
+  --color-link: #0969da;
+  --color-border: #d1d9e0;
+  --color-subtle-bg: #f6f8fa;
+  --color-accent: #0969da;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 10.5pt;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  margin: 0;
+  background: #fff;
+  color: var(--color-text);
+  font-family: var(--font-text);
+  font-feature-settings: "calt", "kern";
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+.markdown-body {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+
+@media print {
+  .markdown-body {
+    max-width: none;
+    padding: 0;
+  }
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-heading);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  margin: 1.6em 0 0.6em;
+  break-after: avoid;
+}
+
+h1 {
+  font-size: 2.1em;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+h2 {
+  font-size: 1.55em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+h3 {
+  font-size: 1.25em;
+}
+
+h4 {
+  font-size: 1.05em;
+}
+
+h5,
+h6 {
+  font-size: 0.95em;
+}
+
+h6 {
+  color: var(--color-muted);
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+/* Text blocks */
+p,
+ul,
+ol,
+blockquote,
+pre,
+table,
+dl {
+  margin: 0 0 1em;
+}
+
+p,
+li {
+  orphans: 3;
+  widows: 3;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+strong {
+  font-weight: 600;
+}
+
+del {
+  color: var(--color-muted);
+}
+
+hr {
+  height: 1px;
+  margin: 2em 0;
+  border: 0;
+  background: var(--color-border);
+}
+
+blockquote {
+  margin-left: 0;
+  padding: 0.1em 1em;
+  color: var(--color-muted);
+  border-left: 0.25em solid var(--color-border);
+}
+
+blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+ul,
+ol {
+  padding-left: 1.8em;
+}
+
+li + li {
+  margin-top: 0.25em;
+}
+
+li > ul,
+li > ol {
+  margin: 0.25em 0 0;
+}
+
+ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.4em;
+}
+
+ul.contains-task-list ul.contains-task-list {
+  padding-left: 1.6em;
+}
+
+.task-list-item-checkbox {
+  appearance: none;
+  width: 0.95em;
+  height: 0.95em;
+  margin: 0 0.45em 0 0;
+  vertical-align: -0.1em;
+  border: 1.5px solid var(--color-muted);
+  border-radius: 3px;
+  background: #fff;
+}
+
+.task-list-item-checkbox:checked {
+  border-color: var(--color-accent);
+  background: var(--color-accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E")
+    center / 100% no-repeat;
+}
+
+/* Code */
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-code);
+  font-feature-settings: "calt" 0;
+}
+
+code {
+  font-size: 0.88em;
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  background: var(--color-subtle-bg);
+}
+
+pre {
+  padding: 0.9em 1.1em;
+  overflow-x: auto;
+  font-size: 0.85em;
+  line-height: 1.5;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-subtle-bg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  break-inside: avoid;
+}
+
+pre code {
+  font-size: inherit;
+  padding: 0;
+  background: none;
+}
+
+/* Tables */
+table {
+  display: table;
+  width: auto;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  break-inside: auto;
+}
+
+thead {
+  display: table-header-group;
+}
+
+tr {
+  break-inside: avoid;
+}
+
+th,
+td {
+  padding: 0.45em 0.85em;
+  border: 1px solid var(--color-border);
+}
+
+th {
+  font-weight: 600;
+  background: var(--color-subtle-bg);
+}
+
+tbody tr:nth-child(2n) {
+  background: #fbfcfd;
+}
+
+/* Media */
+img {
+  max-width: 100%;
+  height: auto;
+  break-inside: avoid;
+}

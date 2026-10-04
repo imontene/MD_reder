@@ -3,9 +3,10 @@
 **Renderiza archivos Markdown (`.md`) a PDF desde la línea de comandos — en Windows y Linux.**
 Con soporte para ecuaciones LaTeX, diagramas Mermaid y tipografía [Inter](https://fonts.google.com/specimen/Inter).
 
-> ⚠️ **Estado: en planificación (pre-alfa).** Las funciones descritas abajo representan el
-> objetivo de la versión 1.0. Consulta el [Plan maestro](docs/PLAN_MAESTRO.md) para ver el
-> avance por fases.
+> ⚠️ **Estado: pre-alfa (Fase 1 completa).** Ya convierte Markdown (GFM, tablas, listas de
+> tareas, código, imágenes locales) a PDF y HTML con Inter. Ecuaciones y Mermaid llegan en la
+> Fase 2; las opciones marcadas con † en la tabla de abajo aún no están implementadas. Consulta
+> el [Plan maestro](docs/PLAN_MAESTRO.md) para ver el avance por fases.
 
 ---
 
@@ -39,7 +40,9 @@ los diagramas. Finalmente la página se imprime a PDF.
 
 - **Node.js 22.12+** (solo para instalar vía npm; los ejecutables independientes no lo necesitan).
 - Un navegador basado en Chromium: **Microsoft Edge** (incluido en Windows 10/11),
-  **Google Chrome** o **Chromium**. Si no tienes ninguno, ejecuta `mdrender setup`.
+  **Google Chrome**, **Chromium** o **Brave**. Se detecta automáticamente; también puedes
+  indicarlo con `--browser <ruta>` o la variable de entorno `MDRENDER_BROWSER`.
+  (`mdrender setup` para descargar uno llegará en la Fase 5.)
 
 ## Instalación (planificada)
 
@@ -91,20 +94,20 @@ mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\nota
 
 ### Opciones principales
 
-| Opción                               | Descripción                            | Por defecto    |
-| ------------------------------------ | -------------------------------------- | -------------- |
-| `-o, --output <ruta>`                | Archivo o carpeta de salida            | junto al `.md` |
-| `-f, --format <pdf\|html>`           | Formato de salida                      | `pdf`          |
-| `--page-size <A4\|Letter\|Legal>`    | Tamaño de página                       | `A4`           |
-| `--margin <valor>`                   | Márgenes, ej. `20mm` o `15mm 20mm`     | `20mm`         |
-| `--landscape`                        | Orientación horizontal                 | —              |
-| `--toc`                              | Insertar tabla de contenidos           | —              |
-| `--theme <light\|dark\|archivo.css>` | Tema visual                            | `light`        |
-| `--css <archivo.css>`                | CSS adicional                          | —              |
-| `--mermaid-theme <tema>`             | `default`, `neutral`, `dark`, `forest` | `neutral`      |
-| `--no-page-numbers`                  | Ocultar números de página              | —              |
-| `--browser <ruta>`                   | Ruta a Chrome/Edge/Chromium            | autodetección  |
-| `-w, --watch`                        | Regenerar al guardar                   | —              |
+| Opción                                 | Descripción                            | Por defecto    |
+| -------------------------------------- | -------------------------------------- | -------------- |
+| `-o, --output <ruta>`                  | Archivo o carpeta de salida            | junto al `.md` |
+| `-f, --format <pdf\|html>`             | Formato de salida                      | `pdf`          |
+| `--page-size <A4\|Letter\|Legal>` †    | Tamaño de página                       | `A4`           |
+| `--margin <valor>` †                   | Márgenes, ej. `20mm` o `15mm 20mm`     | `20mm`         |
+| `--landscape` †                        | Orientación horizontal                 | —              |
+| `--toc` †                              | Insertar tabla de contenidos           | —              |
+| `--theme <light\|dark\|archivo.css>` † | Tema visual                            | `light`        |
+| `--css <archivo.css>` †                | CSS adicional                          | —              |
+| `--mermaid-theme <tema>` †             | `default`, `neutral`, `dark`, `forest` | `neutral`      |
+| `--no-page-numbers` †                  | Ocultar números de página              | —              |
+| `--browser <ruta>`                     | Ruta a Chrome/Edge/Chromium            | autodetección  |
+| `-w, --watch` †                        | Regenerar al guardar                   | —              |
 
 ## Ejemplo de documento
 
@@ -164,8 +167,8 @@ con Node 22 y 24 en cada pull request.
 | Fase | Contenido                                                | Estado       |
 | ---- | -------------------------------------------------------- | ------------ |
 | 0    | Fundaciones: plan, README, proyecto TS, CI Windows/Linux | ✅           |
-| 1    | MVP Markdown → PDF con Inter                             | 🟡 siguiente |
-| 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | ⬜           |
+| 1    | MVP Markdown → PDF con Inter                             | ✅           |
+| 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | 🟡 siguiente |
 | 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | ⬜           |
 | 4    | Lotes, `--watch`, vista previa, temas                    | ⬜           |
 | 5    | Distribución: npm, ejecutables, GitHub Releases          | ⬜           |

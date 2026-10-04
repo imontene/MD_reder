@@ -2,6 +2,8 @@
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { Command, CommanderError, Option } from "commander";
+import { convertFile } from "./convert.js";
+import { MdRenderError } from "./errors.js";
 import { ExitCode } from "./exit-codes.js";
 import { isMarkdownFile, resolveOutputPath, type OutputFormat } from "./paths.js";
 import { version } from "./version.js";
@@ -9,6 +11,7 @@ import { version } from "./version.js";
 interface CliOptions {
   output?: string;
   format: OutputFormat;
+  browser?: string;
 }
 
 interface Io {
@@ -24,13 +27,14 @@ const defaultIo: Io = {
 function buildProgram(io: Io): Command {
   return new Command()
     .name("mdrender")
-    .description("Render Markdown files (with math and Mermaid) to PDF using the Inter typeface.")
+    .description("Render Markdown files to PDF (or self-contained HTML) using the Inter typeface.")
     .version(version, "-V, --version")
     .argument("<input>", "Markdown file to render")
     .option("-o, --output <path>", "output file or directory")
     .addOption(
       new Option("-f, --format <format>", "output format").choices(["pdf", "html"]).default("pdf"),
     )
+    .option("--browser <path>", "Chrome, Edge or Chromium executable (default: auto-detect)")
     .exitOverride()
     .configureOutput({ writeOut: io.out, writeErr: io.err });
 }
@@ -67,9 +71,23 @@ export async function main(argv: string[], io: Io = defaultIo): Promise<number> 
     statSync(options.output).isDirectory();
   const target = resolveOutputPath(input, options.format, options.output, outputIsDir);
 
-  // Rendering arrives in Phase 1 (see docs/PLAN_MAESTRO.md).
-  io.err(`mdrender: rendering is not implemented yet (would write ${target})\n`);
-  return ExitCode.Render;
+  try {
+    const result = await convertFile({
+      input,
+      output: target,
+      format: options.format,
+      browser: options.browser,
+    });
+    for (const warning of result.warnings) io.err(`warning: ${warning}\n`);
+    io.out(`${result.output}\n`);
+    return ExitCode.Ok;
+  } catch (error) {
+    if (error instanceof MdRenderError) {
+      io.err(`error: ${error.message}\n`);
+      return error.exitCode;
+    }
+    throw error;
+  }
 }
 
 function isEntryPoint(): boolean {

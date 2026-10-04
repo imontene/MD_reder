@@ -75,7 +75,7 @@ flowchart LR
 | `math`     | `$...$` / `$$...$$` → HTML KaTeX (renderizado en servidor, sin JS)                | `katex`, `@vscode/markdown-it-katex`                                                                  |
 | `mermaid`  | Bloques ` ```mermaid ` → `<pre class="mermaid">`; renderizado en Chromium         | `mermaid`                                                                                             |
 | `template` | Ensamblar HTML final, inyectar CSS (Inter, KaTeX, tema), assets inline            | —                                                                                                     |
-| `fonts`    | Inter (variable, woff2) + JetBrains Mono para código, empaquetadas                | `@fontsource-variable/inter`, `@fontsource/jetbrains-mono`                                            |
+| `fonts`    | Inter 4 estática (woff2) + JetBrains Mono para código, incrustadas como data URI  | `inter-ui`, `@fontsource/jetbrains-mono`                                                              |
 | `browser`  | Localizar/lanzar Chrome, Edge o Chromium; descarga opcional                       | `puppeteer-core`, `@puppeteer/browsers`                                                               |
 | `pdf`      | Esperar a Mermaid y fuentes, `page.pdf()` con encabezado/pie                      | `puppeteer-core`                                                                                      |
 | `watch`    | Regenerar al cambiar archivos                                                     | `chokidar`                                                                                            |
@@ -93,9 +93,14 @@ Así el ejecutable se mantiene liviano y no obliga a descargar ~150 MB si ya exi
 
 ### 2.4 Tipografía
 
-- Texto: **Inter** (Google Fonts, SIL OFL 1.1), versión variable para todos los pesos;
-  `font-feature-settings: "cv11", "ss01"` opcionales para mejorar legibilidad.
-- Código: **JetBrains Mono** (OFL) — Inter no es monoespaciada.
+- Texto: **Inter 4** (la misma familia que sirve Google Fonts, SIL OFL 1.1), tomada del
+  paquete oficial del autor (`inter-ui`) en pesos **estáticos** 400, 600 y 700 (+ itálicas).
+  - _Por qué estáticos_: Chromium incrusta las fuentes variables en el PDF como fuentes
+    Type 3 (peor calidad en algunos visores); las estáticas se incrustan como TrueType.
+  - _Por qué `inter-ui` y no Fontsource_: los subconjuntos de Google Fonts omiten símbolos
+    como flechas (`→`), que caían a fuentes del sistema (DejaVu) y variaban entre SO.
+- Código: **JetBrains Mono** (OFL, `@fontsource/jetbrains-mono`) — Inter no es monoespaciada;
+  Inter queda como respaldo para símbolos que la fuente de código no tenga.
 - Ecuaciones: fuentes KaTeX (necesarias para notación matemática correcta).
 - Mermaid: configurado con `themeVariables.fontFamily = "Inter"` para coherencia visual.
 - Las fuentes se incrustan como `@font-face` locales; Chromium las embebe en el PDF.
@@ -170,11 +175,17 @@ MD_reder/
 
 ### Fase 1 — MVP: Markdown → PDF (1 semana)
 
-- [ ] CLI básica `mdrender archivo.md -o archivo.pdf`
-- [ ] markdown-it con GFM (tablas, listas de tareas, tachado)
-- [ ] Plantilla HTML con **Inter** incrustada y tema claro
-- [ ] Detección de Chrome/Edge/Chromium y generación de PDF
-- [ ] Imágenes locales con rutas relativas al `.md`
+- [x] CLI básica `mdrender archivo.md -o archivo.pdf`
+- [x] markdown-it con GFM (tablas, listas de tareas, tachado, autolinks, anclas en títulos)
+- [x] Plantilla HTML con **Inter** incrustada y tema claro
+- [x] Detección de Chrome/Edge/Chromium/Brave (`--browser`, `MDRENDER_BROWSER`) y generación de PDF
+- [x] Imágenes locales con rutas relativas al `.md` (incrustadas como data URI; avisos si faltan)
+- [x] Adelantado de Fase 3: salida HTML autocontenida (`--format html`)
+- [x] Pruebas de integración: el PDF contiene el texto e Inter/JetBrains Mono incrustadas como TrueType
+
+Notas: en esta fase el JavaScript de la página está deshabilitado (contenido estático); la
+Fase 2 lo habilitará de forma controlada para Mermaid. Las imágenes remotas (`https://`) se
+dejan tal cual; el bloqueo de red por defecto queda para la Fase 6.
 
 **Criterio de salida**: un `.md` con títulos, tablas, código e imágenes produce un PDF correcto en Windows y Linux.
 
@@ -194,7 +205,7 @@ MD_reder/
 - [ ] Encabezado/pie con número de página, tamaño/márgenes/orientación
 - [ ] Tabla de contenidos `--toc` y marcadores (outline) del PDF
 - [ ] Front-matter YAML y archivo de configuración `mdrender.config.json`
-- [ ] Salida HTML autocontenida (`--format html`)
+- [x] Salida HTML autocontenida (`--format html`) — adelantada en Fase 1
 - [ ] Notas al pie, admoniciones (`> [!NOTE]`)
 
 ### Fase 4 — Productividad (½ semana)

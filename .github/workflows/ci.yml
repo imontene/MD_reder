@@ -42,3 +42,13 @@ jobs:
         run: |
           node dist/cli.js --version
           node dist/cli.js --help
+          node dist/cli.js tests/fixtures/sample.md -o out/
+          node dist/cli.js tests/fixtures/sample.md -f html -o out/
+          test -s out/sample.pdf && test -s out/sample.html
+
+      - name: Upload sample output
+        if: matrix.node == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-${{ matrix.os }}
+          path: out/

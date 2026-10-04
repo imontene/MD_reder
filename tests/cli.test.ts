@@ -1,4 +1,6 @@
 import { execFile } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -6,8 +8,7 @@ import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
 import { ExitCode } from "../src/exit-codes.js";
 import { version } from "../src/version.js";
-
-const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
+import { fixture, tempDir } from "./helpers.js";
 
 async function run(args: string[]) {
   let out = "";
@@ -47,10 +48,38 @@ describe("main", () => {
     expect(code).toBe(ExitCode.Usage);
   });
 
-  it("accepts a valid Markdown input (rendering pending Phase 1)", async () => {
-    const { code, err } = await run([fixture("basic.md")]);
-    expect(code).toBe(ExitCode.Render);
-    expect(err).toContain("basic.pdf");
+  it("writes a self-contained HTML file into an output directory", async () => {
+    const dir = tempDir();
+    const { code, out, err } = await run([fixture("sample.md"), "-f", "html", "-o", dir]);
+    expect(err).toBe("");
+    expect(code).toBe(ExitCode.Ok);
+
+    const file = path.join(dir, "sample.html");
+    expect(out.trim()).toBe(file);
+    const html = readFileSync(file, "utf8");
+    expect(html).toContain("<title>Documento de prueba</title>");
+    expect(html).toContain("data:image/png;base64,");
+  });
+
+  it("creates missing output directories", async () => {
+    const file = path.join(tempDir(), "a", "b", "doc.html");
+    const { code } = await run([fixture("basic.md"), "-f", "html", "-o", file]);
+    expect(code).toBe(ExitCode.Ok);
+    expect(existsSync(file)).toBe(true);
+  });
+
+  it("reports missing images as warnings", async () => {
+    const dir = tempDir();
+    const { code, err } = await run([fixture("missing-image.md"), "-f", "html", "-o", dir]);
+    expect(code).toBe(ExitCode.Ok);
+    expect(err).toContain("warning: image not found: no-existe.png");
+  });
+
+  it("exits with code 3 when the browser cannot be found", async () => {
+    const missing = path.join(tempDir(), "no-browser");
+    const { code, err } = await run([fixture("basic.md"), "-o", tempDir(), "--browser", missing]);
+    expect(code).toBe(ExitCode.BrowserNotFound);
+    expect(err).toContain("browser not found");
   });
 });
 
