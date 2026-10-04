@@ -48,8 +48,8 @@ const time = () => new Date().toTimeString().slice(0, 8);
  */
 export async function watchAndConvert(options: WatchOptions): Promise<ExitCode> {
   const { format, settings, io, signal, cwd = process.cwd() } = options;
-  const browsers = new BrowserPool(settings.browser, (file) => {
-    if (io.verbose) io.err(`browser: ${file}\n`);
+  const browsers = new BrowserPool(settings.browser, (message) => {
+    if (io.verbose) io.err(`${message}\n`);
   });
   const dependencies = new Set<string>();
   let jobs: Job[] = [];

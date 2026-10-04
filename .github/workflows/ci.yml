@@ -107,5 +107,5 @@ jobs:
           browser="$(node dist/bin.js setup --force)"
           echo "Downloaded: $browser"
           test -f "$browser"
-          node dist/bin.js tests/fixtures/mermaid.md --browser "$browser" -o out/
+          node dist/bin.js tests/fixtures/mermaid.md --browser "$browser" -o out/ --verbose
           test -s out/mermaid.pdf

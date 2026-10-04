@@ -13,6 +13,25 @@ function launchArgs(): string[] {
   return args;
 }
 
+/**
+ * Whether a failed launch should be retried without Chrome's sandbox. Ubuntu 23.10+ blocks the
+ * sandbox (AppArmor user-namespace restrictions) for browsers not installed from a package,
+ * such as the one `mdrender setup` downloads. The pages mdrender opens run no document
+ * JavaScript and have no network access, so running unsandboxed there is an acceptable
+ * fallback.
+ */
+export function shouldRetryWithoutSandbox(
+  error: unknown,
+  args: string[],
+  platform: NodeJS.Platform = process.platform,
+): boolean {
+  return (
+    platform === "linux" &&
+    !args.includes("--no-sandbox") &&
+    /no usable sandbox/i.test(String((error as Error)?.message ?? error))
+  );
+}
+
 export interface PrintOptions {
   output: string;
   format?: PDFOptions["format"];
@@ -56,9 +75,24 @@ export class BrowserSession {
     readonly timeout: number,
   ) {}
 
-  static async open(executablePath: string, timeout = DEFAULT_TIMEOUT): Promise<BrowserSession> {
+  static async open(
+    executablePath: string,
+    timeout = DEFAULT_TIMEOUT,
+    /** Told when the browser had to start without its sandbox. */
+    onUnsandboxed?: () => void,
+  ): Promise<BrowserSession> {
+    const args = launchArgs();
+    const start = (launchWith: string[]) =>
+      launch({ executablePath, headless: true, args: launchWith, timeout });
     try {
-      const browser = await launch({ executablePath, headless: true, args: launchArgs(), timeout });
+      let browser: Browser;
+      try {
+        browser = await start(args);
+      } catch (error) {
+        if (!shouldRetryWithoutSandbox(error, args)) throw error;
+        browser = await start([...args, "--no-sandbox"]);
+        onUnsandboxed?.();
+      }
       return new BrowserSession(browser, timeout);
     } catch (error) {
       throw new RenderError(

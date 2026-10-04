@@ -72,15 +72,17 @@ export class BrowserPool {
 
   constructor(
     private readonly executable?: string,
-    /** Called with the browser's path when it is started. */
-    private readonly onStart?: (executablePath: string) => void,
+    /** Receives notes about the browser (which one started, sandbox fallback) for --verbose. */
+    private readonly log?: (message: string) => void,
   ) {}
 
   get(): Promise<BrowserSession> {
     if (!this.session) {
       const executablePath = findBrowser(this.executable);
-      this.onStart?.(executablePath);
-      this.session = BrowserSession.open(executablePath);
+      this.log?.(`browser: ${executablePath}`);
+      this.session = BrowserSession.open(executablePath, undefined, () =>
+        this.log?.("browser: sandbox unavailable on this system, running without it"),
+      );
     }
     // A failed start is not cached: the next conversion tries again.
     this.session.catch(() => (this.session = undefined));

@@ -199,6 +199,10 @@ fecha). Las rutas de `css` y `theme` son relativas al archivo donde aparecen.
   como imágenes referenciadas desde el `.md`.
 - Mermaid corre en una página aparte, sin contenido del usuario, con `securityLevel: "strict"`.
 - La vista previa solo escucha en `127.0.0.1`.
+- En Ubuntu 23.10+ el navegador descargado con `mdrender setup` no puede usar el sandbox de
+  Chrome (restricción de AppArmor); mdrender lo inicia entonces sin sandbox, lo que es seguro
+  aquí porque las páginas no ejecutan JavaScript del documento ni acceden a la red
+  (`--verbose` lo indica). Con Chrome o Chromium instalados desde paquete no ocurre.
 
 ## Códigos de salida
 

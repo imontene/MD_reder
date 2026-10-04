@@ -6,6 +6,7 @@ import { BrowserNotFoundError } from "../src/errors.js";
 import { cacheDir, installedBrowser, RECORD_FILE } from "../src/browser/cache.js";
 import { tempDir } from "./helpers.js";
 import { setup } from "../src/browser/setup.js";
+import { shouldRetryWithoutSandbox } from "../src/render/browser.js";
 import { ExitCode } from "../src/exit-codes.js";
 
 describe("browserCandidates", () => {
@@ -123,5 +124,21 @@ describe("mdrender setup", () => {
       if (previous === undefined) delete process.env.MDRENDER_BROWSER;
       else process.env.MDRENDER_BROWSER = previous;
     }
+  });
+});
+
+describe("shouldRetryWithoutSandbox", () => {
+  const sandboxError = new Error(
+    "Failed to launch: FATAL ... No usable sandbox! If you are on Ubuntu",
+  );
+
+  it("retries on Linux when the sandbox is blocked", () => {
+    expect(shouldRetryWithoutSandbox(sandboxError, ["--disable-gpu"], "linux")).toBe(true);
+  });
+
+  it("does not retry other errors, other platforms, or when already unsandboxed", () => {
+    expect(shouldRetryWithoutSandbox(new Error("ENOENT"), [], "linux")).toBe(false);
+    expect(shouldRetryWithoutSandbox(sandboxError, [], "win32")).toBe(false);
+    expect(shouldRetryWithoutSandbox(sandboxError, ["--no-sandbox"], "linux")).toBe(false);
   });
 });

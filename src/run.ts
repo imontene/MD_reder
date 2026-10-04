@@ -64,8 +64,8 @@ export async function runJobs(
   format: OutputFormat,
   settings: RenderSettings,
   io: Io,
-  browsers = new BrowserPool(settings.browser, (file) => {
-    if (io.verbose) io.err(`browser: ${file}\n`);
+  browsers = new BrowserPool(settings.browser, (message) => {
+    if (io.verbose) io.err(`${message}\n`);
   }),
 ): Promise<ExitCode> {
   let worst: ExitCode = ExitCode.Ok;
