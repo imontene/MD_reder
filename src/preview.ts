@@ -7,7 +7,7 @@ import { BrowserPool, renderDocument, type RenderSettings } from "./convert.js";
 import { formatDiagnostic } from "./diagnostics.js";
 import { ExitCode } from "./exit-codes.js";
 import { escapeHtml } from "./html.js";
-import { displayPath, type Io } from "./run.js";
+import { displayPath, info, type Io } from "./run.js";
 
 export interface PreviewOptions {
   input: string;
@@ -109,7 +109,7 @@ export async function preview(options: PreviewOptions): Promise<ExitCode> {
   const { port } = server.address() as AddressInfo;
   const url = `http://127.0.0.1:${port}/`;
   io.out(`${url}\n`);
-  io.err(`Preview of ${displayPath(input)} at ${url} (Ctrl+C to stop)\n`);
+  info(io, `Preview of ${displayPath(input)} at ${url} (Ctrl+C to stop)\n`);
   if (options.open) openInBrowser(url);
 
   const watcher = watch([input, ...dependencies], {

@@ -1,0 +1,103 @@
+name: Release
+
+# Push a tag like v1.0.0 to build the executables, publish a GitHub Release and, when the
+# NPM_TOKEN secret is configured, publish the package to npm.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  executables:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: linux-x64, optional: false }
+          - { os: windows-latest, target: win-x64, optional: false }
+          # Hosted ARM runners may not be available for every repository.
+          - { os: ubuntu-24.04-arm, target: linux-arm64, optional: true }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:exe
+
+      - name: Package
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          [ "$GITHUB_REF_TYPE" = tag ] || version="dev"
+          name="mdrender-${version}-${{ matrix.target }}"
+          mkdir -p "dist-release/$name"
+          exe=build/sea/mdrender; [ -f "$exe.exe" ] && exe="$exe.exe"
+          cp "$exe" build/sea/THIRD-PARTY-NOTICES.txt README.md LICENSE "dist-release/$name/"
+          cd dist-release
+          if [ "${{ runner.os }}" = Windows ]; then
+            7z a -tzip "$name.zip" "$name" > /dev/null
+          else
+            tar -czf "$name.tar.gz" "$name"
+          fi
+          rm -rf "$name"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist-release/*
+
+  release:
+    name: GitHub Release
+    needs: executables
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Checksums
+        run: cd assets && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --repo "$GITHUB_REPOSITORY" --title "mdrender $GITHUB_REF_NAME" --generate-notes
+
+  npm:
+    name: Publish to npm
+    needs: executables
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NPM_TOKEN is not configured: skipping npm publish."
+            exit 0
+          fi
+          npm publish --provenance --access public

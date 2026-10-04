@@ -1,36 +1,23 @@
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import path from "node:path";
-
-const require = createRequire(import.meta.url);
+import {
+  INTER_DIR,
+  INTER_FACES,
+  MONO_STYLESHEETS,
+  readAsset,
+  readTextAsset,
+  woff2References,
+} from "../assets.js";
 
 /**
  * Static (non-variable) font files are used on purpose: Chromium embeds variable fonts in PDFs
  * as Type 3 fonts, while static fonts are embedded as proper TrueType fonts.
+ *
+ * Text: Inter 4 (the typeface served by Google Fonts) from the upstream release, full glyph set.
+ * Code: JetBrains Mono from Fontsource (split into unicode-range subsets).
  */
 
-/** Inter 4 (the typeface served by Google Fonts) from the upstream release, full glyph set. */
-const INTER_FACES = [
-  { weight: 400, style: "normal", file: "Inter-Regular.woff2" },
-  { weight: 400, style: "italic", file: "Inter-Italic.woff2" },
-  { weight: 600, style: "normal", file: "Inter-SemiBold.woff2" },
-  { weight: 600, style: "italic", file: "Inter-SemiBoldItalic.woff2" },
-  { weight: 700, style: "normal", file: "Inter-Bold.woff2" },
-  { weight: 700, style: "italic", file: "Inter-BoldItalic.woff2" },
-];
-
-/** JetBrains Mono for code, from Fontsource (split into unicode-range subsets). */
-const MONO_STYLESHEETS = [
-  "@fontsource/jetbrains-mono/400.css",
-  "@fontsource/jetbrains-mono/400-italic.css",
-  "@fontsource/jetbrains-mono/700.css",
-];
-
-function woff2DataUri(file: string): string {
-  return `data:font/woff2;base64,${readFileSync(file).toString("base64")}`;
+function woff2DataUri(key: string): string {
+  return `data:font/woff2;base64,${readAsset(key).toString("base64")}`;
 }
-
-const interDir = () => path.join(path.dirname(require.resolve("inter-ui/package.json")), "web");
 
 function interFace({ weight, style, file }: (typeof INTER_FACES)[number]): string {
   return `@font-face {
@@ -38,19 +25,15 @@ function interFace({ weight, style, file }: (typeof INTER_FACES)[number]): strin
   font-style: ${style};
   font-weight: ${weight};
   font-display: block;
-  src: url(${woff2DataUri(path.join(interDir(), file))}) format("woff2");
+  src: url(${woff2DataUri(`${INTER_DIR}/${file}`)}) format("woff2");
 }`;
-}
-
-function interCss(): string {
-  return INTER_FACES.map(interFace).join("\n");
 }
 
 let regularFace: string | undefined;
 
 /** Inter Regular alone, for page headers/footers (Chrome renders them apart from the page). */
 export function interRegularFontFace(): string {
-  regularFace ??= interFace(INTER_FACES[0]!);
+  regularFace ??= interFace(INTER_FACES[0]);
   return regularFace;
 }
 
@@ -59,24 +42,22 @@ export function interRegularFontFace(): string {
  * dropped) so the document needs no network or file access. `font-display: block` makes the
  * browser wait for the real font instead of printing with a fallback.
  */
-export function inlineFontStylesheet(cssFile: string): string {
-  const dir = path.dirname(cssFile);
-  return readFileSync(cssFile, "utf8")
+export function inlineFontStylesheet(cssKey: string): string {
+  const css = readTextAsset(cssKey);
+  const fonts = woff2References(cssKey, css);
+  let index = 0;
+  return css
     .replace(/font-display:\s*swap/g, "font-display: block")
     .replace(/,\s*url\([^)]+\.woff\)\s*format\(['"]woff['"]\)/g, "")
-    .replace(
-      /url\((['"]?)(\.\/files\/[^)'"]+\.woff2)\1\)/g,
-      (_match, _quote, rel: string) => `url(${woff2DataUri(path.join(dir, rel))})`,
-    );
+    .replace(/url\((['"]?)([^)'"]+\.woff2)\1\)/g, () => `url(${woff2DataUri(fonts[index++]!)})`);
 }
 
 let cached: string | undefined;
 
 /** @font-face rules for every bundled font, with the font files embedded. */
 export function fontFaceCss(): string {
-  cached ??= [
-    interCss(),
-    ...MONO_STYLESHEETS.map((id) => inlineFontStylesheet(require.resolve(id))),
-  ].join("\n");
+  cached ??= [...INTER_FACES.map(interFace), ...MONO_STYLESHEETS.map(inlineFontStylesheet)].join(
+    "\n",
+  );
   return cached;
 }

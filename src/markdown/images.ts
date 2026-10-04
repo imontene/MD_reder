@@ -44,8 +44,27 @@ function warn(env: RenderEnv, message: string, line?: number): void {
 }
 
 /**
+ * Replace a local image reference by a data URI. Returns the new src, or undefined to keep the
+ * original (remote URL, data URI, or a problem that was reported as a warning).
+ */
+function embed(src: string, env: RenderEnv, line: number | undefined): string | undefined {
+  const file = localImagePath(src, env.baseDir);
+  if (!file) return undefined;
+  if (!existsSync(file) || !statSync(file).isFile()) {
+    warn(env, `image not found: ${src}`, line);
+    return undefined;
+  }
+  const dataUri = toDataUri(file);
+  if (!dataUri) warn(env, `unsupported image type: ${src}`, line);
+  return dataUri;
+}
+
+const HTML_IMG_SRC = /(<img\b[^>]*?\bsrc\s*=\s*)(["'])(.*?)\2/gi;
+
+/**
  * Embed local images as data URIs so the output is self-contained and the browser never needs
- * file system access. Remote images are left untouched.
+ * file system access: Markdown images (`![alt](img.png)`) and `<img src="img.png">` in raw HTML.
+ * Remote images are left untouched.
  */
 export function inlineLocalImages(md: MarkdownIt): void {
   const fallback = md.renderer.rules.image!;
@@ -54,17 +73,26 @@ export function inlineLocalImages(md: MarkdownIt): void {
     const env = rawEnv as RenderEnv | undefined;
     const token = tokens[idx]!;
     const src = String(token.attrGet("src") ?? "");
-    const file = src && env?.baseDir ? localImagePath(src, env.baseDir) : undefined;
-
-    if (env && file) {
-      if (!existsSync(file) || !statSync(file).isFile()) {
-        warn(env, `image not found: ${src}`, tokenLine(token));
-      } else {
-        const dataUri = toDataUri(file);
-        if (dataUri) token.attrSet("src", dataUri);
-        else warn(env, `unsupported image type: ${src}`, tokenLine(token));
-      }
-    }
+    const dataUri = src && env?.baseDir ? embed(src, env, tokenLine(token)) : undefined;
+    if (dataUri) token.attrSet("src", dataUri);
     return fallback(tokens, idx, options, env, self);
   };
+
+  for (const rule of ["html_block", "html_inline"] as const) {
+    const original = md.renderer.rules[rule]!;
+    md.renderer.rules[rule] = (tokens, idx, options, rawEnv, self) => {
+      const env = rawEnv as RenderEnv | undefined;
+      const token = tokens[idx]!;
+      if (env?.baseDir && /<img\b/i.test(token.content)) {
+        token.content = token.content.replace(
+          HTML_IMG_SRC,
+          (match, prefix: string, quote: string, src: string) => {
+            const dataUri = embed(md.utils.unescapeAll(src), env, tokenLine(token));
+            return dataUri ? `${prefix}${quote}${dataUri}${quote}` : match;
+          },
+        );
+      }
+      return original(tokens, idx, options, env, self);
+    };
+  }
 }

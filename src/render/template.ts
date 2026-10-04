@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readTextAsset } from "../assets.js";
 import { escapeHtml } from "../html.js";
 import { fontFaceCss } from "./fonts.js";
 import { katexCss } from "./katex.js";
@@ -11,7 +11,7 @@ const builtinCss = new Map<string, string>();
 function asset(name: string): string {
   let css = builtinCss.get(name);
   if (css === undefined) {
-    css = readFileSync(new URL(`../assets/${name}`, import.meta.url), "utf8");
+    css = readTextAsset(`mdrender/assets/${name}`);
     builtinCss.set(name, css);
   }
   return css;

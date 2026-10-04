@@ -34,6 +34,11 @@ export interface RenderSettings {
   config?: string | false;
   /** Options from the command line; they win over front matter and the config file. */
   overrides?: Partial<DocumentOptions>;
+  /**
+   * Let the browser download http(s) resources (remote images, stylesheets) while printing.
+   * Command line only: a document cannot grant itself network access.
+   */
+  allowRemote?: boolean;
 }
 
 export interface ConvertOptions extends RenderSettings {
@@ -65,10 +70,18 @@ export interface RenderedDocument extends Omit<ConvertResult, "output"> {
 export class BrowserPool {
   private session?: Promise<BrowserSession>;
 
-  constructor(private readonly executable?: string) {}
+  constructor(
+    private readonly executable?: string,
+    /** Called with the browser's path when it is started. */
+    private readonly onStart?: (executablePath: string) => void,
+  ) {}
 
   get(): Promise<BrowserSession> {
-    this.session ??= BrowserSession.open(findBrowser(this.executable));
+    if (!this.session) {
+      const executablePath = findBrowser(this.executable);
+      this.onStart?.(executablePath);
+      this.session = BrowserSession.open(executablePath);
+    }
     // A failed start is not cached: the next conversion tries again.
     this.session.catch(() => (this.session = undefined));
     return this.session;
@@ -190,7 +203,7 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
       const footer = options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined);
       const hasHeaderFooter = options.header !== undefined || footer !== undefined;
       const session = await browsers.get();
-      await session.printPdf(doc.html, {
+      const { blocked } = await session.printPdf(doc.html, {
         output,
         format: options.pageSize,
         landscape: options.landscape,
@@ -199,7 +212,15 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
           ? headerFooterTemplate(options.header, values, margin)
           : undefined,
         footerTemplate: hasHeaderFooter ? headerFooterTemplate(footer, values, margin) : undefined,
+        allowRemote: convert.allowRemote,
       });
+      for (const url of blocked) {
+        const hint = /^https?:/i.test(url) ? " (use --allow-remote to download it)" : "";
+        doc.diagnostics.push({
+          severity: "warning",
+          message: `resource not loaded: ${url}${hint}`,
+        });
+      }
     } else {
       await writeFile(output, doc.html, "utf8");
     }

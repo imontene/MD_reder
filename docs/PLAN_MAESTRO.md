@@ -253,19 +253,38 @@ escribe el autor en los metadatos del PDF (solo el título).
 
 ### Fase 5 — Distribución (1 semana)
 
-- [ ] Publicación en npm: `npm i -g mdrender` / `npx mdrender`
-- [ ] Ejecutables independientes (Node SEA) para `win-x64`, `linux-x64` (y `linux-arm64`)
-- [ ] `mdrender setup` para descargar Chromium cuando no hay navegador
-- [ ] GitHub Releases automáticos por tag (`v*`) con checksums
-- [ ] Opcional: paquetes `winget`/`scoop` (Windows) y `.deb`/AppImage (Linux)
+- [x] Paquete npm `@imontene/mdrender` (el nombre `mdrender` ya está tomado en npm; el
+      comando sigue siendo `mdrender`): `files`, `exports`, `prepublishOnly`, provenance
+- [x] Ejecutables independientes (Node SEA) para `win-x64`, `linux-x64` y `linux-arm64`
+      (este último opcional, según disponibilidad de runners ARM): bundle CommonJS con esbuild
+      y todos los recursos (fuentes, CSS, Mermaid) como assets SEA; incluyen
+      `THIRD-PARTY-NOTICES.txt`
+- [x] `mdrender setup`: descarga Chrome Headless Shell (estable) a la caché del usuario
+      (`%LOCALAPPDATA%\mdrender`, `~/.cache/mdrender`, `MDRENDER_CACHE_DIR`); no descarga si
+      ya hay navegador; la detección lo usa como último recurso
+- [x] GitHub Releases automáticos por tag (`v*`) con `SHA256SUMS.txt`; publicación en npm
+      si existe el secreto `NPM_TOKEN`
+- [x] CI: construye y prueba el ejecutable fuera del proyecto y valida `mdrender setup`
+      en Windows y Linux
+- [ ] Opcional (pendiente): paquetes `winget`/`scoop` y `.deb`/AppImage
 
 ### Fase 6 — Endurecimiento y v1.0 (½ semana)
 
-- [ ] Rutas con espacios, Unicode y acentos (`ñ`, `á`) en nombres de archivo y contenido
-- [ ] Rutas de Windows (`C:\...`) y UNC
-- [ ] Documentos grandes (100+ páginas, 50+ diagramas)
-- [ ] Seguridad: deshabilitar JS del usuario y red externa salvo opt-in (`--allow-remote`)
-- [ ] Documentación completa y ejemplos
+- [x] Rutas con espacios, Unicode y acentos en carpetas, archivos e imágenes (también
+      `<img>` en HTML crudo, que ahora se incrusta)
+- [x] Rutas de Windows (`C:\...`) en CI; UNC (`\\servidor\recurso`) probado cuando el
+      recurso administrativo está disponible
+- [x] Documento grande: 100+ páginas y 50 diagramas en ~10 s
+- [x] Seguridad: sin JS del usuario; red bloqueada salvo `--allow-remote` (avisos por cada
+      recurso omitido); `file:` siempre bloqueado
+- [x] `--quiet` / `--verbose`
+- [x] Cobertura ≥ 80 % exigida en CI (88 % de líneas)
+- [x] Documentación completa (README, CHANGELOG) y ejemplo en `examples/`
+- [x] Versión 1.0.0
+
+Pendiente explícito: regresión visual con imágenes de referencia por sistema. Se mantiene la
+verificación estructural del PDF (texto, fuentes, páginas, marcadores), que es estable entre
+Windows y Linux.
 
 **Duración estimada total**: ~5–6 semanas de trabajo de una persona.
 

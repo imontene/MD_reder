@@ -1,8 +1,6 @@
-#!/usr/bin/env node
-import { realpathSync } from "node:fs";
-import { pathToFileURL } from "node:url";
 import { Command, CommanderError, Option } from "commander";
 import type { RenderSettings } from "./convert.js";
+import { setup } from "./browser/setup.js";
 import { MdRenderError } from "./errors.js";
 import { ExitCode } from "./exit-codes.js";
 import { expandInputs, planOutputs } from "./inputs.js";
@@ -17,6 +15,8 @@ interface RenderCliOptions {
   output?: string;
   format: OutputFormat;
   watch?: boolean;
+  quiet?: boolean;
+  verbose?: boolean;
   browser?: string;
   config?: string | false;
 }
@@ -47,7 +47,7 @@ const DOCUMENT_FLAGS = [
 
 const toFlag = (key: string) => "--" + key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
 
-const defaultIo: Io = {
+export const defaultIo: Io = {
   out: (text) => process.stdout.write(text),
   err: (text) => process.stderr.write(text),
 };
@@ -75,7 +75,8 @@ function addDocumentOptions(command: Command): Command {
     .option("--title <text>", "document title (shown as a title block)")
     .option("--config <file>", "config file (default: nearest mdrender.config.json)")
     .option("--no-config", "ignore mdrender.config.json files")
-    .option("--browser <path>", "Chrome, Edge or Chromium executable (default: auto-detect)");
+    .option("--browser <path>", "Chrome, Edge or Chromium executable (default: auto-detect)")
+    .option("--allow-remote", "let the PDF load remote (http/https) images and stylesheets");
 }
 
 function configure(command: Command, io: Io): Command {
@@ -92,12 +93,15 @@ function buildRenderProgram(io: Io): Command {
     .addOption(
       new Option("-f, --format <format>", "output format").choices(["pdf", "html"]).default("pdf"),
     )
-    .option("-w, --watch", "convert again whenever the inputs change");
+    .option("-w, --watch", "convert again whenever the inputs change")
+    .option("-q, --quiet", "only print warnings and errors")
+    .option("-v, --verbose", "also print config file, browser and timings");
   addDocumentOptions(program).addHelpText(
     "after",
     `
 Commands:
   mdrender preview <file>  live HTML preview in the browser (see: mdrender preview --help)
+  mdrender setup           download a headless Chrome if no browser is installed
 
 Header/footer placeholders: {page} {pages} {title} {author} {date}; "|" separates
 left | center | right columns.
@@ -132,9 +136,14 @@ function cliOverrides(program: Command): Partial<DocumentOptions> {
 
 function settings(
   program: Command,
-  options: { browser?: string; config?: string | false },
+  options: { browser?: string; config?: string | false; allowRemote?: boolean },
 ): RenderSettings {
-  return { browser: options.browser, config: options.config, overrides: cliOverrides(program) };
+  return {
+    browser: options.browser,
+    config: options.config,
+    overrides: cliOverrides(program),
+    allowRemote: options.allowRemote ?? false,
+  };
 }
 
 async function parse(program: Command, argv: string[]): Promise<number | undefined> {
@@ -153,6 +162,24 @@ async function parse(program: Command, argv: string[]): Promise<number | undefin
 export interface MainOptions {
   /** Stops --watch and preview (the CLI aborts it on Ctrl+C). */
   signal?: AbortSignal;
+}
+
+function buildSetupProgram(io: Io): Command {
+  const program = new Command()
+    .name("mdrender setup")
+    .description(
+      "Download Chrome Headless Shell (~100 MB) into the user cache folder, for machines\n" +
+        "without Chrome, Edge or Chromium. Does nothing when a browser is already installed.",
+    )
+    .option("--force", "download even if a browser is already installed");
+  return configure(program, io);
+}
+
+async function runSetup(argv: string[], io: Io): Promise<number> {
+  const program = buildSetupProgram(io);
+  const parsed = await parse(program, argv);
+  if (parsed !== undefined) return parsed;
+  return setup({ io, force: Boolean(program.opts<{ force?: boolean }>().force) });
 }
 
 async function runPreview(argv: string[], io: Io, signal: AbortSignal): Promise<number> {
@@ -182,6 +209,7 @@ async function runRender(argv: string[], io: Io, signal: AbortSignal): Promise<n
   if (parsed !== undefined) return parsed;
   const options = program.opts<RenderCliOptions>();
   const run = settings(program, options);
+  io = { ...io, quiet: options.quiet, verbose: options.verbose && !options.quiet };
 
   if (options.watch) {
     return watchAndConvert({
@@ -204,9 +232,9 @@ export async function main(
   { signal = new AbortController().signal }: MainOptions = {},
 ): Promise<number> {
   try {
-    return argv[0] === "preview"
-      ? await runPreview(argv.slice(1), io, signal)
-      : await runRender(argv, io, signal);
+    if (argv[0] === "preview") return await runPreview(argv.slice(1), io, signal);
+    if (argv[0] === "setup") return await runSetup(argv.slice(1), io);
+    return await runRender(argv, io, signal);
   } catch (error) {
     if (error instanceof MdRenderError) {
       io.err(`error: ${error.message}\n`);
@@ -214,21 +242,4 @@ export async function main(
     }
     throw error;
   }
-}
-
-function isEntryPoint(): boolean {
-  const entry = process.argv[1];
-  if (!entry) return false;
-  try {
-    return import.meta.url === pathToFileURL(realpathSync(entry)).href;
-  } catch {
-    return false;
-  }
-}
-
-if (isEntryPoint()) {
-  const controller = new AbortController();
-  process.once("SIGINT", () => controller.abort());
-  process.once("SIGTERM", () => controller.abort());
-  process.exitCode = await main(process.argv.slice(2), defaultIo, { signal: controller.signal });
 }

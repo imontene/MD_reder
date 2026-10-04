@@ -68,6 +68,23 @@ describe("batch conversion", () => {
   });
 });
 
+describe("--quiet and --verbose", () => {
+  it("--quiet prints only problems; --verbose adds config and timings", async () => {
+    const root = project();
+    writeFileSync(path.join(root, "mdrender.config.json"), "{}");
+    const docs = path.join(root, "docs");
+
+    const quiet = capture();
+    expect(await main([docs, "-f", "html", "-q"], quiet.sink)).toBe(ExitCode.Ok);
+    expect(quiet.io).toEqual({ out: "", err: "" });
+
+    const verbose = capture();
+    expect(await main([docs, "-f", "html", "--verbose"], verbose.sink)).toBe(ExitCode.Ok);
+    expect(verbose.io.err).toContain(`config: ${path.join(root, "mdrender.config.json")}`);
+    expect(verbose.io.err).toMatch(/uno\.md: \d+ ms/);
+  });
+});
+
 describe("themes", () => {
   it("adds the dark stylesheet and accepts a custom theme file", async () => {
     const root = project();

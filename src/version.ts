@@ -1,7 +1,4 @@
-import { readFileSync } from "node:fs";
+import { PACKAGE_JSON, readTextAsset } from "./assets.js";
 
-// package.json sits one level above both src/ (dev) and dist/ (build).
-const pkgUrl = new URL("../package.json", import.meta.url);
-
-export const version: string = (JSON.parse(readFileSync(pkgUrl, "utf8")) as { version: string })
+export const version: string = (JSON.parse(readTextAsset(PACKAGE_JSON)) as { version: string })
   .version;

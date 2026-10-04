@@ -7,7 +7,7 @@ import { MdRenderError } from "./errors.js";
 import { ExitCode } from "./exit-codes.js";
 import { expandInputs, planOutputs, type Job } from "./inputs.js";
 import { isMarkdownFile, type OutputFormat } from "./paths.js";
-import { displayPath, runJob, type Io } from "./run.js";
+import { displayPath, info, runJob, type Io } from "./run.js";
 
 export interface WatchOptions {
   inputs: string[];
@@ -48,7 +48,9 @@ const time = () => new Date().toTimeString().slice(0, 8);
  */
 export async function watchAndConvert(options: WatchOptions): Promise<ExitCode> {
   const { format, settings, io, signal, cwd = process.cwd() } = options;
-  const browsers = new BrowserPool(settings.browser);
+  const browsers = new BrowserPool(settings.browser, (file) => {
+    if (io.verbose) io.err(`browser: ${file}\n`);
+  });
   const dependencies = new Set<string>();
   let jobs: Job[] = [];
   let watcher: FSWatcher | undefined = undefined;
@@ -58,7 +60,7 @@ export async function watchAndConvert(options: WatchOptions): Promise<ExitCode> 
 
   const convert = async (selected: Job[]) => {
     for (const job of selected) {
-      io.err(`[${time()}] ${displayPath(job.input, cwd)}\n`);
+      info(io, `[${time()}] ${displayPath(job.input, cwd)}\n`);
       const result = await runJob(job, format, settings, browsers, io);
       // Also watch the config files and stylesheets the documents use.
       for (const dep of result.dependencies) {
@@ -94,7 +96,7 @@ export async function watchAndConvert(options: WatchOptions): Promise<ExitCode> 
   await new Promise<void>((resolve) => watcher!.once("ready", () => resolve()));
 
   await convert(jobs);
-  io.err(`Watching for changes (Ctrl+C to stop)…\n`);
+  info(io, `Watching for changes (Ctrl+C to stop)…\n`);
 
   const pending = new Set<string>();
   let timer: NodeJS.Timeout | undefined;

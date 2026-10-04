@@ -164,7 +164,7 @@ describe("executable", () => {
   it("runs as a real process via tsx", async () => {
     const require = createRequire(import.meta.url);
     const tsxCli = require.resolve("tsx/cli");
-    const cli = fileURLToPath(new URL("../src/cli.ts", import.meta.url));
+    const cli = fileURLToPath(new URL("../src/bin.ts", import.meta.url));
     const { stdout } = await promisify(execFile)(process.execPath, [tsxCli, cli, "--version"]);
     expect(stdout.trim()).toBe(version);
   });

@@ -21,6 +21,32 @@ export interface PrintOptions {
   /** Chrome header/footer templates; both omitted means no header or footer. */
   headerTemplate?: string;
   footerTemplate?: string;
+  /** Let the page load http(s) resources (remote images, stylesheets). Off by default. */
+  allowRemote?: boolean;
+}
+
+/**
+ * Only allow requests the document needs: inline data, plus http(s) when `allowRemote`.
+ * file: URLs are always refused, so HTML in a Markdown file cannot pull local files into
+ * the PDF (local images are embedded beforehand). Returns the URLs that were blocked.
+ */
+async function restrictNetwork(page: Page, allowRemote: boolean): Promise<string[]> {
+  const blocked: string[] = [];
+  await page.setRequestInterception(true);
+  page.on("request", (request) => {
+    if (request.isInterceptResolutionHandled()) return;
+    const url = request.url();
+    const scheme = url.slice(0, url.indexOf(":")).toLowerCase();
+    if (scheme === "data" || scheme === "about" || scheme === "blob") {
+      void request.continue();
+    } else if (allowRemote && (scheme === "http" || scheme === "https")) {
+      void request.continue();
+    } else {
+      blocked.push(url);
+      void request.abort("blockedbyclient");
+    }
+  });
+  return blocked;
 }
 
 /** One headless browser shared by every step of a conversion (Mermaid, then PDF). */
@@ -41,10 +67,14 @@ export class BrowserSession {
     }
   }
 
-  /** A page for trusted code only (our own scripts); see `printPdf` for user content. */
+  /**
+   * A page for trusted code only (our own scripts), with no network access; see `printPdf` for
+   * user content.
+   */
   async newPage(): Promise<Page> {
     const page = await this.browser.newPage();
     page.setDefaultTimeout(this.timeout);
+    await restrictNetwork(page, false);
     return page;
   }
 
@@ -53,11 +83,13 @@ export class BrowserSession {
    * rendered by then (math by KaTeX, diagrams by Mermaid), and any <script> in the Markdown
    * must not run.
    */
-  async printPdf(html: string, options: PrintOptions): Promise<void> {
+  async printPdf(html: string, options: PrintOptions): Promise<{ blocked: string[] }> {
     const margin = options.margin ?? { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" };
     const headerFooter =
       options.headerTemplate !== undefined || options.footerTemplate !== undefined;
-    const page = await this.newPage();
+    const page = await this.browser.newPage();
+    page.setDefaultTimeout(this.timeout);
+    const blocked = await restrictNetwork(page, options.allowRemote ?? false);
     try {
       await page.setJavaScriptEnabled(false);
       await page.setContent(html, { waitUntil: "load" });
@@ -77,6 +109,7 @@ export class BrowserSession {
         tagged: true,
         timeout: this.timeout,
       });
+      return { blocked: [...new Set(blocked)] };
     } catch (error) {
       throw new RenderError(`failed to render PDF: ${(error as Error).message}`);
     } finally {

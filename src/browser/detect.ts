@@ -1,11 +1,14 @@
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { BrowserNotFoundError } from "../errors.js";
+import { installedBrowser } from "./cache.js";
 
 export interface DetectOptions {
   platform?: NodeJS.Platform;
   env?: Record<string, string | undefined>;
   exists?: (file: string) => boolean;
+  /** Browser downloaded by `mdrender setup`; looked up in the cache folder by default. */
+  downloaded?: () => string | undefined;
 }
 
 /** Look up an environment variable case-insensitively (Windows env names are not case-sensitive). */
@@ -77,7 +80,8 @@ function isFile(file: string): boolean {
 /**
  * Find a Chromium-based browser executable.
  *
- * Order: the explicit path (`--browser`), then `MDRENDER_BROWSER`, then well-known locations.
+ * Order: the explicit path (`--browser`), then `MDRENDER_BROWSER`, then well-known locations,
+ * then the browser downloaded by `mdrender setup`.
  * An explicit path or env var that does not exist is an error rather than silently ignored.
  */
 export function findBrowser(explicit?: string, options: DetectOptions = {}): string {
@@ -93,9 +97,12 @@ export function findBrowser(explicit?: string, options: DetectOptions = {}): str
 
   const found = browserCandidates(options.platform, env).find(exists);
   if (found) return found;
+  const downloaded = (options.downloaded ?? installedBrowser)();
+  if (downloaded) return downloaded;
 
   throw new BrowserNotFoundError(
     "no Chromium-based browser found (Google Chrome, Chromium, Microsoft Edge or Brave).\n" +
-      "Install one, or point to it with --browser <path> or the MDRENDER_BROWSER variable.",
+      "Run `mdrender setup` to download one, install one, or point to it with --browser <path>\n" +
+      "or the MDRENDER_BROWSER variable.",
   );
 }

@@ -34,17 +34,17 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
 
       - name: Smoke test built CLI
         shell: bash
         run: |
-          node dist/cli.js --version
-          node dist/cli.js --help
-          node dist/cli.js tests/fixtures/sample.md tests/fixtures/math.md tests/fixtures/mermaid.md tests/fixtures/document.md -o out/
-          node dist/cli.js tests/fixtures/sample.md -f html -o out/
-          node dist/cli.js tests/fixtures/document.md --theme dark -o out/dark/
+          node dist/bin.js --version
+          node dist/bin.js --help
+          node dist/bin.js tests/fixtures/sample.md tests/fixtures/math.md tests/fixtures/mermaid.md tests/fixtures/document.md -o out/
+          node dist/bin.js tests/fixtures/sample.md -f html -o out/
+          node dist/bin.js tests/fixtures/document.md --theme dark -o out/dark/
           for f in sample math mermaid document dark/document; do test -s "out/$f.pdf"; done
           test -s out/sample.html
 
@@ -54,3 +54,58 @@ jobs:
         with:
           name: sample-${{ matrix.os }}
           path: out/
+
+  executable:
+    name: Executable · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:exe
+
+      - name: Smoke test the executable outside the project
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/exe test"
+          exe=build/sea/mdrender; [ -f "$exe.exe" ] && exe="$exe.exe"
+          cp "$exe" "$RUNNER_TEMP/exe test/"
+          cp -r tests/fixtures "$RUNNER_TEMP/exe test/fixtures"
+          cd "$RUNNER_TEMP/exe test"
+          ./mdrender --version
+          ./mdrender fixtures/sample.md fixtures/math.md fixtures/mermaid.md fixtures/document.md -o out/
+          for f in sample math mermaid document; do test -s "out/$f.pdf"; done
+
+  setup:
+    name: mdrender setup · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      - name: Download Chrome Headless Shell and render with it
+        shell: bash
+        env:
+          MDRENDER_CACHE_DIR: ${{ runner.temp }}/mdrender-cache
+        run: |
+          browser="$(node dist/bin.js setup --force)"
+          echo "Downloaded: $browser"
+          test -f "$browser"
+          node dist/bin.js tests/fixtures/mermaid.md --browser "$browser" -o out/
+          test -s out/mermaid.pdf

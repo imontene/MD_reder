@@ -1,63 +1,62 @@
-# MD_reder
+# MD_reder · `mdrender`
 
-**Renderiza archivos Markdown (`.md`) a PDF desde la línea de comandos — en Windows y Linux.**
-Con soporte para ecuaciones LaTeX, diagramas Mermaid y tipografía [Inter](https://fonts.google.com/specimen/Inter).
+**Convierte archivos Markdown (`.md`) en PDF y HTML desde la línea de comandos, en Windows y
+Linux**, con ecuaciones LaTeX, diagramas Mermaid y la tipografía
+[Inter](https://fonts.google.com/specimen/Inter).
 
-> ⚠️ **Estado: pre-alfa (Fase 4 completa).** Convierte Markdown (GFM, código resaltado,
-> imágenes, notas al pie, alertas), **ecuaciones LaTeX** y **diagramas Mermaid** a PDF y HTML
-> con Inter: uno o muchos archivos, con `--watch`, vista previa en vivo y temas claro/oscuro.
-> Falta la distribución (Fase 5). Consulta el [Plan maestro](docs/PLAN_MAESTRO.md).
+```bash
+mdrender informe.md            # → informe.pdf
+```
 
----
+Ejemplo: [`examples/ejemplo.md`](examples/ejemplo.md) → [`examples/ejemplo.pdf`](examples/ejemplo.pdf)
 
 ## Características
 
-- 📄 **Markdown → PDF** con un solo comando (también exporta HTML autocontenido).
-- ➗ **Ecuaciones** en línea `$E = mc^2$` y en bloque `$$ ... $$`, renderizadas con KaTeX.
-- 📊 **Diagramas Mermaid**: flujo, secuencia, clases, estados, ER, Gantt, pie, mindmap…
-- 🔤 **Tipografía Inter** (Google Fonts) incrustada en el PDF; JetBrains Mono para código.
-- 🧩 **GFM**: tablas, listas de tareas, tachado, notas al pie, resaltado de sintaxis.
-- 🖨️ Tamaño de página, márgenes, orientación, encabezado/pie y números de página.
-- 📚 Tabla de contenidos opcional y marcadores en el PDF.
-- 🔌 **Funciona offline**: fuentes, KaTeX y Mermaid van empaquetados.
-- 💻 **Multiplataforma**: Windows 10/11 y Linux (x64).
+- 📄 **Markdown → PDF o HTML autocontenido** (fuentes, imágenes y diagramas incluidos).
+- ➗ **Ecuaciones** `$…$` y `$$…$$` con KaTeX, dibujadas al convertir (sin JavaScript en la salida).
+- 📊 **Diagramas Mermaid**: flujo, secuencia, clases, estados, ER, Gantt, torta, mapa mental…
+- 🔤 **Inter** para el texto y **JetBrains Mono** para el código, incrustadas en el PDF.
+- 🧩 **GFM**: tablas, listas de tareas, tachado, notas al pie, alertas `> [!NOTE]`,
+  resaltado de código para ~35 lenguajes.
+- 🖨️ Tamaño de página, márgenes, orientación, encabezado/pie con números de página,
+  tabla de contenidos y marcadores del PDF.
+- 🗂️ **Lotes**: varios archivos, carpetas completas o patrones `docs/**/*.md`.
+- 🔁 **`--watch`** y **vista previa en vivo** en el navegador.
+- 🎨 Temas **claro** y **oscuro**, o tu propio CSS.
+- 🔌 **Sin conexión**: todo va empaquetado; por defecto no descarga nada de internet.
+- 💻 **Windows 10/11 y Linux** (x64; arm64 en Linux), probado en ambos en cada cambio.
 
-## Cómo funciona
+## Instalación
 
-```mermaid
-flowchart LR
-    A[documento.md] --> B[markdown-it<br/>+ KaTeX]
-    B --> C[HTML + Inter]
-    C --> D[Chromium headless]
-    D -->|Mermaid → SVG| E[documento.pdf]
-```
+mdrender usa un navegador basado en Chromium para dibujar el PDF. **Microsoft Edge** ya viene
+en Windows 10/11; en Linux sirve **Google Chrome**, **Chromium**, **Edge** o **Brave**. Se
+detecta automáticamente. ¿No tienes ninguno? Ejecuta `mdrender setup` y se descarga Chrome
+Headless Shell (~100 MB) en tu carpeta de usuario.
 
-El Markdown se convierte a HTML (las ecuaciones se renderizan con KaTeX), se aplica una
-plantilla con la fuente Inter y se abre en un Chromium sin interfaz, donde Mermaid dibuja
-los diagramas. Finalmente la página se imprime a PDF.
+### Opción 1: ejecutable (sin instalar Node.js)
 
-## Requisitos
+Descarga el archivo de tu sistema desde [Releases](../../releases):
 
-- **Node.js 22.12+** (solo para instalar vía npm; los ejecutables independientes no lo necesitan).
-- Un navegador basado en Chromium: **Microsoft Edge** (incluido en Windows 10/11),
-  **Google Chrome**, **Chromium** o **Brave**. Se detecta automáticamente; también puedes
-  indicarlo con `--browser <ruta>` o la variable de entorno `MDRENDER_BROWSER`.
-  (`mdrender setup` para descargar uno llegará en la Fase 5.)
+| Sistema     | Archivo                                 |
+| ----------- | --------------------------------------- |
+| Windows x64 | `mdrender-<versión>-win-x64.zip`        |
+| Linux x64   | `mdrender-<versión>-linux-x64.tar.gz`   |
+| Linux arm64 | `mdrender-<versión>-linux-arm64.tar.gz` |
 
-## Instalación (planificada)
+Descomprímelo y deja `mdrender` (o `mdrender.exe`) en una carpeta que esté en el `PATH`.
+`SHA256SUMS.txt` permite verificar la descarga.
+
+### Opción 2: npm (Node.js 22.12 o superior)
 
 ```bash
-# Con npm (Windows y Linux)
-npm install -g mdrender
+npm install -g @imontene/mdrender
+mdrender --version
 
-# O sin instalar
-npx mdrender documento.md
+# o sin instalar
+npx @imontene/mdrender documento.md
 ```
 
-También se publicarán ejecutables independientes para `win-x64` y `linux-x64` en
-[Releases](../../releases).
-
-### Desde el código fuente
+### Opción 3: desde el código fuente
 
 ```bash
 git clone https://github.com/imontene/MD_reder.git
@@ -76,7 +75,7 @@ mdrender documento.md
 # Elegir salida, tamaño de página y tabla de contenidos
 mdrender documento.md -o salida/informe.pdf --page-size Letter --toc
 
-# Exportar a HTML (autocontenido: fuentes, imágenes y diagramas incluidos)
+# HTML autocontenido
 mdrender documento.md --format html
 
 # Varios archivos, carpetas (recursivo) o patrones; -o es entonces una carpeta
@@ -84,7 +83,7 @@ mdrender capitulo1.md capitulo2.md -o pdf/
 mdrender docs/ -o pdf/            # conserva la estructura de subcarpetas
 mdrender "docs/**/*.md" -o pdf/   # los patrones funcionan también en Windows
 
-# Regenerar automáticamente al guardar (Ctrl+C para salir)
+# Regenerar al guardar (Ctrl+C para salir)
 mdrender docs/ -o pdf/ --watch
 
 # Vista previa en el navegador que se recarga sola al guardar
@@ -93,12 +92,10 @@ mdrender preview documento.md
 # Tema oscuro, o un CSS propio que reemplaza el tema
 mdrender documento.md --theme dark
 mdrender documento.md --theme mi-tema.css
-```
 
-Con varios archivos se usa un solo navegador para todos; si uno falla, el resto se convierte
-igual y el código de salida indica el error más grave. `mdrender preview` sirve la página en
-`http://127.0.0.1` (solo accesible desde tu equipo); `--port` fija el puerto y `--no-open`
-no abre el navegador.
+# Descargar un navegador si no tienes Chrome, Edge ni Chromium
+mdrender setup
+```
 
 En Windows (PowerShell o CMD) los comandos son idénticos:
 
@@ -106,29 +103,36 @@ En Windows (PowerShell o CMD) los comandos son idénticos:
 mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\notas.pdf"
 ```
 
-### Opciones principales
+Con varios archivos se usa un solo navegador para todos; si uno falla, el resto se convierte
+igual. `mdrender preview` sirve la página en `http://127.0.0.1` (solo accesible desde tu
+equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 
-| Opción                       | Descripción                                                | Por defecto                        |
-| ---------------------------- | ---------------------------------------------------------- | ---------------------------------- |
-| `-o, --output <ruta>`        | Archivo o carpeta de salida                                | junto al `.md`                     |
-| `-f, --format <pdf\|html>`   | Formato de salida                                          | `pdf`                              |
-| `--page-size <tamaño>`       | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`             | `A4`                               |
-| `--margin <valor>`           | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`…   | `20mm`                             |
-| `--landscape`                | Orientación horizontal                                     | —                                  |
-| `--toc`                      | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)   | —                                  |
-| `--toc-depth <n>`            | Nivel de título más profundo en la tabla de contenidos     | `3`                                |
-| `--header <texto>`           | Encabezado de página (ver abajo)                           | —                                  |
-| `--footer <texto>`           | Pie de página (ver abajo)                                  | `{page} / {pages}`                 |
-| `--no-page-numbers`          | Sin el pie con números de página                           | —                                  |
-| `--css <archivo.css>`        | CSS adicional (se puede repetir)                           | —                                  |
-| `--mermaid-theme <tema>`     | `default`, `neutral`, `dark`, `forest`, `base`             | `neutral` (`dark` con tema oscuro) |
-| `--lang <código>`            | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…) | `es`                               |
-| `--title <texto>`            | Título del documento (muestra un bloque de título)         | primer `# título`                  |
-| `--config <archivo>`         | Archivo de configuración                                   | el más cercano                     |
-| `--no-config`                | Ignorar `mdrender.config.json`                             | —                                  |
-| `--browser <ruta>`           | Ruta a Chrome/Edge/Chromium                                | autodetección                      |
-| `--theme <light\|dark\|css>` | `light`, `dark` o un `.css` que reemplaza el tema          | `light`                            |
-| `-w, --watch`                | Regenerar al guardar                                       | —                                  |
+### Opciones
+
+| Opción                       | Descripción                                                 | Por defecto        |
+| ---------------------------- | ----------------------------------------------------------- | ------------------ |
+| `-o, --output <ruta>`        | Archivo de salida, o carpeta con varios archivos            | junto al `.md`     |
+| `-f, --format <pdf\|html>`   | Formato de salida                                           | `pdf`              |
+| `--page-size <tamaño>`       | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`              | `A4`               |
+| `--margin <valor>`           | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`…    | `20mm`             |
+| `--landscape`                | Orientación horizontal                                      | —                  |
+| `--toc`                      | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)    | —                  |
+| `--toc-depth <n>`            | Nivel de título más profundo en la tabla de contenidos      | `3`                |
+| `--header <texto>`           | Encabezado de página (ver abajo)                            | —                  |
+| `--footer <texto>`           | Pie de página (ver abajo)                                   | `{page} / {pages}` |
+| `--no-page-numbers`          | Sin el pie con números de página                            | —                  |
+| `--theme <light\|dark\|css>` | `light`, `dark` o un `.css` que reemplaza el tema           | `light`            |
+| `--css <archivo.css>`        | CSS adicional (se puede repetir)                            | —                  |
+| `--mermaid-theme <tema>`     | `default`, `neutral`, `dark`, `forest`, `base`              | `neutral` / `dark` |
+| `--lang <código>`            | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…)  | `es`               |
+| `--title <texto>`            | Título del documento (muestra un bloque de título)          | primer `# título`  |
+| `--config <archivo>`         | Archivo de configuración                                    | el más cercano     |
+| `--no-config`                | Ignorar `mdrender.config.json`                              | —                  |
+| `--browser <ruta>`           | Ruta a Chrome/Edge/Chromium (o variable `MDRENDER_BROWSER`) | autodetección      |
+| `--allow-remote`             | Permitir que el PDF descargue imágenes/CSS de internet      | bloqueado          |
+| `-w, --watch`                | Regenerar al guardar                                        | —                  |
+| `-q, --quiet`                | Mostrar solo advertencias y errores                         | —                  |
+| `-v, --verbose`              | Mostrar también configuración, navegador y tiempos          | —                  |
 
 **Encabezado y pie**: texto con marcadores `{page}`, `{pages}`, `{title}`, `{author}` y
 `{date}`; `|` separa columnas izquierda, centro y derecha. Ejemplos:
@@ -146,7 +150,6 @@ title: Informe técnico
 subtitle: Resultados del trimestre
 author: Ana Pérez
 date: 2026-10-04
-lang: es
 toc: true
 page-size: Letter
 header: "{title} | | {date}"
@@ -163,15 +166,7 @@ header: "{title} | | {date}"
 ```
 
 Con `title` en el front matter se muestra un bloque de título (título, subtítulo, autor y
-fecha). Las rutas de `css` son relativas al archivo donde aparecen.
-
-### Más Markdown
-
-- **Resaltado de código** para ~35 lenguajes comunes (` ```ts `, ` ```python `, ` ```bash `…).
-- **Alertas** estilo GitHub: `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`,
-  `[!CAUTION]`, con el título traducido según `lang`.
-- **Notas al pie**: `Texto[^1]` y `[^1]: La nota.`
-- **Marcadores del PDF** generados a partir de los títulos, y PDF etiquetado (accesible).
+fecha). Las rutas de `css` y `theme` son relativas al archivo donde aparecen.
 
 ## Ecuaciones y diagramas
 
@@ -182,88 +177,62 @@ fecha). Las rutas de `css` son relativas al archivo donde aparecen.
 | ` ```math `                       | Ecuación en bloque (sintaxis de GitHub) |
 | ` ```mermaid `                    | Diagrama Mermaid, incrustado como SVG   |
 
-- Las fórmulas se dibujan con [KaTeX](https://katex.org/docs/supported) (soporta `aligned`,
-  `matrix`, `cases`, `\def`, `\newcommand`…). Las macros valen para todo el documento.
+- Las fórmulas usan [KaTeX](https://katex.org/docs/supported) (`aligned`, `matrix`, `cases`,
+  `\def`, `\newcommand`…). Las macros valen para todo el documento.
 - `Cuesta $5 y $10` no se interpreta como fórmula; para un `$` literal usa `\$`.
-- Diagramas soportados: flujo, secuencia, clases, estados, entidad-relación, Gantt, torta,
-  mapa mental y el resto de tipos de [Mermaid](https://mermaid.js.org/intro/).
 - Si una fórmula o diagrama tiene un error, el documento se genera igual con una caja roja en
   su lugar, se informa `error: archivo.md:LÍNEA: mensaje` y el comando termina con código `2`.
 
-## Ejemplo de documento
+## Más Markdown
 
-````markdown
----
-title: Informe de ejemplo
-author: Ivan
----
+- **Alertas** estilo GitHub: `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`,
+  `[!CAUTION]`, con el título traducido según el idioma.
+- **Notas al pie**: `Texto[^1]` y `[^1]: La nota.`
+- **Imágenes locales** (`![](img/foto.png)` o `<img src="img/foto.png" width="200">`) con rutas
+  relativas al `.md`, aunque tengan espacios o acentos: se incrustan en el resultado.
 
-# Introducción
+## Seguridad
 
-La identidad de Euler, $e^{i\pi} + 1 = 0$, relaciona cinco constantes.
+- El PDF se genera con JavaScript desactivado: un `<script>` dentro del Markdown no se ejecuta.
+- Por defecto no se descarga nada de internet; las imágenes remotas se omiten con una
+  advertencia (`--allow-remote` lo permite). Los archivos locales solo entran al documento
+  como imágenes referenciadas desde el `.md`.
+- Mermaid corre en una página aparte, sin contenido del usuario, con `securityLevel: "strict"`.
+- La vista previa solo escucha en `127.0.0.1`.
 
-$$
-\int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}
-$$
+## Códigos de salida
 
-```mermaid
-sequenceDiagram
-    Usuario->>mdrender: documento.md
-    mdrender->>Chromium: HTML + Inter
-    Chromium-->>Usuario: documento.pdf
-```
-
-| Fase | Estado |
-| ---- | ------ |
-| MVP  | ⏳     |
-````
+| Código | Significado                                              |
+| ------ | -------------------------------------------------------- |
+| `0`    | Éxito                                                    |
+| `1`    | Error de uso (argumentos, opciones, archivo inexistente) |
+| `2`    | Error de renderizado (fórmula o diagrama inválido)       |
+| `3`    | Navegador no encontrado (ejecuta `mdrender setup`)       |
 
 ## Desarrollo
 
 Requisitos: Node.js 22.12+ y npm.
 
 ```bash
-npm install          # instalar dependencias
-npm run dev -- --help   # ejecutar la CLI desde el código fuente (tsx)
-npm test             # pruebas (Vitest)
-npm run lint         # ESLint
-npm run typecheck    # TypeScript sin emitir
-npm run format       # Prettier
-npm run check        # todo lo anterior, igual que en CI
-npm run build        # compila a dist/
+npm install
+npm run dev -- documento.md   # ejecutar desde el código fuente (tsx)
+npm test                      # pruebas (Vitest)
+npm run test:coverage         # pruebas con cobertura (mínimo 80 %)
+npm run check                 # formato + lint + tipos + pruebas, como en CI
+npm run build                 # compila a dist/
+npm run build:exe             # ejecutable independiente en build/sea/
 ```
 
-El CI (GitHub Actions) ejecuta `npm run check` y `npm run build` en **Windows y Linux**
-con Node 22 y 24 en cada pull request.
+El CI (GitHub Actions) prueba en **Windows y Linux** con Node 22 y 24, construye y prueba el
+ejecutable y valida `mdrender setup`. Al publicar una etiqueta `v*`, el flujo **Release**
+construye los ejecutables, crea el GitHub Release con sus sumas SHA-256 y publica en npm si
+el secreto `NPM_TOKEN` está configurado.
 
-| Código de salida | Significado                                    |
-| ---------------- | ---------------------------------------------- |
-| `0`              | Éxito                                          |
-| `1`              | Error de uso (argumentos, archivo inexistente) |
-| `2`              | Error de renderizado                           |
-| `3`              | Navegador no encontrado                        |
-
-## Hoja de ruta
-
-| Fase | Contenido                                                | Estado       |
-| ---- | -------------------------------------------------------- | ------------ |
-| 0    | Fundaciones: plan, README, proyecto TS, CI Windows/Linux | ✅           |
-| 1    | MVP Markdown → PDF con Inter                             | ✅           |
-| 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | ✅           |
-| 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | ✅           |
-| 4    | Lotes, `--watch`, vista previa, temas                    | ✅           |
-| 5    | Distribución: npm, ejecutables, GitHub Releases          | 🟡 siguiente |
-| 6    | Endurecimiento y v1.0                                    | ⬜           |
-
-Detalle completo en [docs/PLAN_MAESTRO.md](docs/PLAN_MAESTRO.md).
-
-## Tecnologías
-
-[Node.js](https://nodejs.org) · TypeScript · [markdown-it](https://github.com/markdown-it/markdown-it) ·
-[KaTeX](https://katex.org) · [Mermaid](https://mermaid.js.org) ·
-[Puppeteer](https://pptr.dev) · [Inter](https://rsms.me/inter/) · [JetBrains Mono](https://www.jetbrains.com/lp/mono/)
+Plan completo y decisiones de diseño: [docs/PLAN_MAESTRO.md](docs/PLAN_MAESTRO.md) ·
+cambios: [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
-Por definir (se propone MIT). La fuente Inter y JetBrains Mono se distribuyen bajo
-[SIL Open Font License 1.1](https://openfontlicense.org).
+[MIT](LICENSE). Inter y JetBrains Mono se distribuyen bajo la
+[SIL Open Font License 1.1](https://openfontlicense.org); los ejecutables incluyen
+`THIRD-PARTY-NOTICES.txt` con las licencias de todos los componentes.

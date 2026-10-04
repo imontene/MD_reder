@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { MERMAID_JS, readTextAsset } from "../assets.js";
 import type { Diagnostic } from "../diagnostics.js";
 import type { MermaidBlock } from "../markdown/env.js";
 import type { MermaidTheme } from "../options.js";
@@ -7,8 +6,6 @@ import { mermaidPlaceholder } from "../markdown/mermaid.js";
 import type { BrowserSession } from "./browser.js";
 import { fontFaceCss } from "./fonts.js";
 import { escapeHtml } from "../html.js";
-
-const require = createRequire(import.meta.url);
 
 export { MERMAID_THEMES, type MermaidTheme } from "../options.js";
 
@@ -30,7 +27,7 @@ export async function renderMermaid(
   /** Width of the text column, so diagrams are laid out at their printed size. */
   widthPx = DEFAULT_WIDTH_PX,
 ): Promise<DiagramResult[]> {
-  mermaidJs ??= readFileSync(require.resolve("mermaid/dist/mermaid.min.js"), "utf8");
+  mermaidJs ??= readTextAsset(MERMAID_JS);
 
   const page = await session.newPage();
   try {

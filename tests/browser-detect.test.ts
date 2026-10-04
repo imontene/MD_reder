@@ -1,6 +1,12 @@
+import { writeFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { browserCandidates, findBrowser } from "../src/browser/detect.js";
 import { BrowserNotFoundError } from "../src/errors.js";
+import { cacheDir, installedBrowser, RECORD_FILE } from "../src/browser/cache.js";
+import { tempDir } from "./helpers.js";
+import { setup } from "../src/browser/setup.js";
+import { ExitCode } from "../src/exit-codes.js";
 
 describe("browserCandidates", () => {
   it("lists Chrome before Edge in Program Files and LOCALAPPDATA on Windows", () => {
@@ -36,7 +42,11 @@ describe("browserCandidates", () => {
 });
 
 describe("findBrowser", () => {
-  const linux = { platform: "linux" as const, env: { PATH: "/usr/bin" } };
+  const linux = {
+    platform: "linux" as const,
+    env: { PATH: "/usr/bin" },
+    downloaded: () => undefined,
+  };
 
   it("returns the first existing candidate", () => {
     const exists = (f: string) => f === "/usr/bin/chromium";
@@ -55,9 +65,63 @@ describe("findBrowser", () => {
     expect(() => findBrowser("/nope", { ...linux, exists })).toThrow(/--browser/);
   });
 
+  it("falls back to the browser downloaded by mdrender setup", () => {
+    const options = {
+      ...linux,
+      exists: () => false,
+      downloaded: () => "/cache/chrome-headless-shell",
+    };
+    expect(findBrowser(undefined, options)).toBe("/cache/chrome-headless-shell");
+  });
+
   it("throws BrowserNotFoundError when nothing is installed", () => {
     expect(() => findBrowser(undefined, { ...linux, exists: () => false })).toThrow(
       BrowserNotFoundError,
     );
+  });
+});
+
+describe("cacheDir", () => {
+  it("follows each platform's convention and MDRENDER_CACHE_DIR", () => {
+    expect(
+      cacheDir({ LOCALAPPDATA: "C:\\Users\\yo\\AppData\\Local" }, "win32", "C:\\Users\\yo"),
+    ).toBe("C:\\Users\\yo\\AppData\\Local\\mdrender");
+    expect(cacheDir({}, "linux", "/home/yo")).toBe("/home/yo/.cache/mdrender");
+    expect(cacheDir({ XDG_CACHE_HOME: "/xdg" }, "linux", "/home/yo")).toBe("/xdg/mdrender");
+    expect(cacheDir({}, "darwin", "/Users/yo")).toBe("/Users/yo/Library/Caches/mdrender");
+    expect(cacheDir({ MDRENDER_CACHE_DIR: "/tmp/x" }, "linux", "/home/yo")).toBe(
+      path.resolve("/tmp/x"),
+    );
+  });
+
+  it("reads the record written by setup, ignoring missing browsers", () => {
+    const dir = tempDir();
+    expect(installedBrowser(dir)).toBeUndefined();
+    const exe = path.join(dir, "chrome");
+    writeFileSync(exe, "");
+    writeFileSync(path.join(dir, RECORD_FILE), JSON.stringify({ executablePath: exe }));
+    expect(installedBrowser(dir)).toBe(exe);
+    writeFileSync(path.join(dir, RECORD_FILE), JSON.stringify({ executablePath: exe + "x" }));
+    expect(installedBrowser(dir)).toBeUndefined();
+  });
+});
+
+describe("mdrender setup", () => {
+  it("does not download when a browser is already available", async () => {
+    const exe = path.join(tempDir(), "chrome");
+    writeFileSync(exe, "");
+    const previous = process.env.MDRENDER_BROWSER;
+    process.env.MDRENDER_BROWSER = exe;
+    try {
+      let out = "";
+      let err = "";
+      const code = await setup({ io: { out: (t) => (out += t), err: (t) => (err += t) } });
+      expect(code).toBe(ExitCode.Ok);
+      expect(out.trim()).toBe(exe);
+      expect(err).toContain("No download needed");
+    } finally {
+      if (previous === undefined) delete process.env.MDRENDER_BROWSER;
+      else process.env.MDRENDER_BROWSER = previous;
+    }
   });
 });
