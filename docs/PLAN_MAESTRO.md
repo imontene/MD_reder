@@ -72,8 +72,8 @@ flowchart LR
 | `cli`      | Parseo de argumentos, ayuda, códigos de salida                                    | `commander`                                                                                           |
 | `config`   | Fusionar opciones: CLI > front-matter > archivo `mdrender.config.json` > defaults | `gray-matter`                                                                                         |
 | `markdown` | MD → HTML: GFM, anclas, TOC, footnotes, resaltado                                 | `markdown-it`, `markdown-it-anchor`, `markdown-it-footnote`, `markdown-it-task-lists`, `highlight.js` |
-| `math`     | `$...$` / `$$...$$` → HTML KaTeX (renderizado en servidor, sin JS)                | `katex`, `@vscode/markdown-it-katex`                                                                  |
-| `mermaid`  | Bloques ` ```mermaid ` → `<pre class="mermaid">`; renderizado en Chromium         | `mermaid`                                                                                             |
+| `math`     | `$...$` / `$$...$$` → HTML KaTeX (renderizado en servidor, sin JS)                | `katex` (plugin propio con número de línea en errores)                                                |
+| `mermaid`  | Bloques ` ```mermaid ` → marcador; SVG generado en Chromium y luego incrustado    | `mermaid`                                                                                             |
 | `template` | Ensamblar HTML final, inyectar CSS (Inter, KaTeX, tema), assets inline            | —                                                                                                     |
 | `fonts`    | Inter 4 estática (woff2) + JetBrains Mono para código, incrustadas como data URI  | `inter-ui`, `@fontsource/jetbrains-mono`                                                              |
 | `browser`  | Localizar/lanzar Chrome, Edge o Chromium; descarga opcional                       | `puppeteer-core`, `@puppeteer/browsers`                                                               |
@@ -191,13 +191,27 @@ dejan tal cual; el bloqueo de red por defecto queda para la Fase 6.
 
 ### Fase 2 — Ecuaciones y Mermaid (1 semana)
 
-- [ ] KaTeX: `$...$`, `$$...$$`, entornos `align`, `matrix`, etc.
-- [ ] Mermaid: flowchart, sequence, class, gantt, state, ER, pie, mindmap
-- [ ] Esperar a que todos los diagramas terminen antes de imprimir
-- [ ] Errores claros: línea del `.md` y mensaje cuando un diagrama/ecuación falla
-- [ ] Evitar cortes de página dentro de diagramas, ecuaciones y tablas (`break-inside: avoid`)
+- [x] KaTeX (en Node, sin JS en la salida): `$...$`, `$$...$$` (en bloque o en una línea),
+      bloques ` ```math `, `aligned`, `matrix`, `cases`; macros `\def`/`\newcommand` válidas en
+      todo el documento; reglas de Pandoc para que `$5 y $10` no sean fórmulas
+- [x] Mermaid: flowchart, sequence, class, gantt, state, ER, pie, mindmap; `--mermaid-theme`
+- [x] Diagramas renderizados antes de imprimir, en una página aparte sin contenido del usuario;
+      el SVG resultante se incrusta en el HTML (también en `--format html`, sin scripts)
+- [x] Errores claros: `error: archivo.md:LÍNEA: mensaje`, caja roja en el documento, código de salida 2
+- [x] Evitar cortes de página dentro de diagramas, ecuaciones, bloques de código y filas de tabla
+- [x] KaTeX y sus fuentes solo se incrustan si el documento tiene fórmulas
 
 **Criterio de salida**: fixtures de matemáticas y de los 8 tipos de diagrama renderizan sin errores; pruebas de regresión visual aprobadas.
+
+Resultado: los fixtures `math.md` y `mermaid.md` renderizan sin errores en Windows y Linux.
+En lugar de comparar píxeles se verifica el PDF (texto extraído de cada diagrama, fuentes KaTeX
+incrustadas como TrueType, ausencia de cajas de error): el antialiasing difiere entre sistemas y
+una comparación de píxeles entre Windows y Linux sería frágil. La regresión visual con imágenes
+de referencia por sistema queda para la Fase 6.
+
+**Seguridad**: el PDF se imprime con JavaScript deshabilitado, así que un `<script>` dentro del
+Markdown nunca se ejecuta. Mermaid corre con `securityLevel: "strict"` en una página propia que
+solo recibe el texto de los diagramas.
 
 ### Fase 3 — Calidad de documento (1 semana)
 

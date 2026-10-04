@@ -3,10 +3,10 @@
 **Renderiza archivos Markdown (`.md`) a PDF desde la línea de comandos — en Windows y Linux.**
 Con soporte para ecuaciones LaTeX, diagramas Mermaid y tipografía [Inter](https://fonts.google.com/specimen/Inter).
 
-> ⚠️ **Estado: pre-alfa (Fase 1 completa).** Ya convierte Markdown (GFM, tablas, listas de
-> tareas, código, imágenes locales) a PDF y HTML con Inter. Ecuaciones y Mermaid llegan en la
-> Fase 2; las opciones marcadas con † en la tabla de abajo aún no están implementadas. Consulta
-> el [Plan maestro](docs/PLAN_MAESTRO.md) para ver el avance por fases.
+> ⚠️ **Estado: pre-alfa (Fase 2 completa).** Ya convierte Markdown (GFM, tablas, listas de
+> tareas, código, imágenes locales), **ecuaciones LaTeX** y **diagramas Mermaid** a PDF y HTML
+> con Inter. Las opciones marcadas con † en la tabla de abajo aún no están implementadas.
+> Consulta el [Plan maestro](docs/PLAN_MAESTRO.md) para ver el avance por fases.
 
 ---
 
@@ -94,20 +94,37 @@ mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\nota
 
 ### Opciones principales
 
-| Opción                                 | Descripción                            | Por defecto    |
-| -------------------------------------- | -------------------------------------- | -------------- |
-| `-o, --output <ruta>`                  | Archivo o carpeta de salida            | junto al `.md` |
-| `-f, --format <pdf\|html>`             | Formato de salida                      | `pdf`          |
-| `--page-size <A4\|Letter\|Legal>` †    | Tamaño de página                       | `A4`           |
-| `--margin <valor>` †                   | Márgenes, ej. `20mm` o `15mm 20mm`     | `20mm`         |
-| `--landscape` †                        | Orientación horizontal                 | —              |
-| `--toc` †                              | Insertar tabla de contenidos           | —              |
-| `--theme <light\|dark\|archivo.css>` † | Tema visual                            | `light`        |
-| `--css <archivo.css>` †                | CSS adicional                          | —              |
-| `--mermaid-theme <tema>` †             | `default`, `neutral`, `dark`, `forest` | `neutral`      |
-| `--no-page-numbers` †                  | Ocultar números de página              | —              |
-| `--browser <ruta>`                     | Ruta a Chrome/Edge/Chromium            | autodetección  |
-| `-w, --watch` †                        | Regenerar al guardar                   | —              |
+| Opción                                 | Descripción                                    | Por defecto    |
+| -------------------------------------- | ---------------------------------------------- | -------------- |
+| `-o, --output <ruta>`                  | Archivo o carpeta de salida                    | junto al `.md` |
+| `-f, --format <pdf\|html>`             | Formato de salida                              | `pdf`          |
+| `--page-size <A4\|Letter\|Legal>` †    | Tamaño de página                               | `A4`           |
+| `--margin <valor>` †                   | Márgenes, ej. `20mm` o `15mm 20mm`             | `20mm`         |
+| `--landscape` †                        | Orientación horizontal                         | —              |
+| `--toc` †                              | Insertar tabla de contenidos                   | —              |
+| `--theme <light\|dark\|archivo.css>` † | Tema visual                                    | `light`        |
+| `--css <archivo.css>` †                | CSS adicional                                  | —              |
+| `--mermaid-theme <tema>`               | `default`, `neutral`, `dark`, `forest`, `base` | `neutral`      |
+| `--no-page-numbers` †                  | Ocultar números de página                      | —              |
+| `--browser <ruta>`                     | Ruta a Chrome/Edge/Chromium                    | autodetección  |
+| `-w, --watch` †                        | Regenerar al guardar                           | —              |
+
+## Ecuaciones y diagramas
+
+| Sintaxis                          | Resultado                               |
+| --------------------------------- | --------------------------------------- |
+| `$e^{i\pi}+1=0$`                  | Ecuación en línea                       |
+| `$$ ... $$` (una o varias líneas) | Ecuación en bloque, centrada            |
+| ` ```math `                       | Ecuación en bloque (sintaxis de GitHub) |
+| ` ```mermaid `                    | Diagrama Mermaid, incrustado como SVG   |
+
+- Las fórmulas se dibujan con [KaTeX](https://katex.org/docs/supported) (soporta `aligned`,
+  `matrix`, `cases`, `\def`, `\newcommand`…). Las macros valen para todo el documento.
+- `Cuesta $5 y $10` no se interpreta como fórmula; para un `$` literal usa `\$`.
+- Diagramas soportados: flujo, secuencia, clases, estados, entidad-relación, Gantt, torta,
+  mapa mental y el resto de tipos de [Mermaid](https://mermaid.js.org/intro/).
+- Si una fórmula o diagrama tiene un error, el documento se genera igual con una caja roja en
+  su lugar, se informa `error: archivo.md:LÍNEA: mensaje` y el comando termina con código `2`.
 
 ## Ejemplo de documento
 
@@ -168,8 +185,8 @@ con Node 22 y 24 en cada pull request.
 | ---- | -------------------------------------------------------- | ------------ |
 | 0    | Fundaciones: plan, README, proyecto TS, CI Windows/Linux | ✅           |
 | 1    | MVP Markdown → PDF con Inter                             | ✅           |
-| 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | 🟡 siguiente |
-| 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | ⬜           |
+| 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | ✅           |
+| 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | 🟡 siguiente |
 | 4    | Lotes, `--watch`, vista previa, temas                    | ⬜           |
 | 5    | Distribución: npm, ejecutables, GitHub Releases          | ⬜           |
 | 6    | Endurecimiento y v1.0                                    | ⬜           |

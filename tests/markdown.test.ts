@@ -49,16 +49,18 @@ describe("renderMarkdown", () => {
   it("embeds local images as data URIs, including paths with spaces", () => {
     const md =
       "![a](img/gradiente.png)\n\n![b](<img/logo con espacios.svg>)\n\n![c](img/logo%20con%20espacios.svg)";
-    const { html, warnings } = renderMarkdown(md, { baseDir: fixturesDir });
-    expect(warnings).toEqual([]);
+    const { html, diagnostics } = renderMarkdown(md, { baseDir: fixturesDir });
+    expect(diagnostics).toEqual([]);
     expect(html).toContain('src="data:image/png;base64,iVBORw0KGgo');
     expect(html.match(/src="data:image\/svg\+xml;base64,/g)).toHaveLength(2);
   });
 
   it("warns about missing local images and leaves remote ones alone", () => {
-    const md = "![x](no-existe.png) ![y](https://example.com/a.png)";
-    const { html, warnings } = renderMarkdown(md, { baseDir: fixturesDir });
-    expect(warnings).toEqual(["image not found: no-existe.png"]);
+    const md = "texto\n\n![x](no-existe.png) ![y](https://example.com/a.png)";
+    const { html, diagnostics } = renderMarkdown(md, { baseDir: fixturesDir });
+    expect(diagnostics).toEqual([
+      { severity: "warning", message: "image not found: no-existe.png", line: 3 },
+    ]);
     expect(html).toContain('src="https://example.com/a.png"');
   });
 });

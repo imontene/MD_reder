@@ -72,7 +72,29 @@ describe("main", () => {
     const dir = tempDir();
     const { code, err } = await run([fixture("missing-image.md"), "-f", "html", "-o", dir]);
     expect(code).toBe(ExitCode.Ok);
-    expect(err).toContain("warning: image not found: no-existe.png");
+    expect(err).toMatch(/warning: .*missing-image\.md:3: image not found: no-existe\.png/);
+  });
+
+  it("rejects an unknown Mermaid theme", async () => {
+    const { code, err } = await run([fixture("basic.md"), "--mermaid-theme", "rosa"]);
+    expect(code).toBe(ExitCode.Usage);
+    expect(err).toContain("--mermaid-theme");
+  });
+
+  it("exits with code 2 and file:line diagnostics on render errors", async () => {
+    const dir = tempDir();
+    const { code, out, err } = await run([fixture("math-error.md"), "-f", "html", "-o", dir]);
+    expect(code).toBe(ExitCode.Render);
+    expect(out.trim()).toBe(path.join(dir, "math-error.html"));
+    expect(err).toMatch(/error: .*math-error\.md:3: LaTeX: /);
+    expect(err).toMatch(/error: .*math-error\.md:5: LaTeX: /);
+  });
+
+  it("needs a browser for HTML output when the document has diagrams", async () => {
+    const missing = path.join(tempDir(), "no-browser");
+    const args = [fixture("mermaid.md"), "-f", "html", "-o", tempDir(), "--browser", missing];
+    const { code } = await run(args);
+    expect(code).toBe(ExitCode.BrowserNotFound);
   });
 
   it("exits with code 3 when the browser cannot be found", async () => {

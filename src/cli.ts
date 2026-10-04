@@ -3,15 +3,18 @@ import { existsSync, realpathSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { Command, CommanderError, Option } from "commander";
 import { convertFile } from "./convert.js";
+import { formatDiagnostic } from "./diagnostics.js";
 import { MdRenderError } from "./errors.js";
 import { ExitCode } from "./exit-codes.js";
 import { isMarkdownFile, resolveOutputPath, type OutputFormat } from "./paths.js";
+import { MERMAID_THEMES, type MermaidTheme } from "./render/mermaid.js";
 import { version } from "./version.js";
 
 interface CliOptions {
   output?: string;
   format: OutputFormat;
   browser?: string;
+  mermaidTheme: MermaidTheme;
 }
 
 interface Io {
@@ -33,6 +36,11 @@ function buildProgram(io: Io): Command {
     .option("-o, --output <path>", "output file or directory")
     .addOption(
       new Option("-f, --format <format>", "output format").choices(["pdf", "html"]).default("pdf"),
+    )
+    .addOption(
+      new Option("--mermaid-theme <theme>", "Mermaid diagram theme")
+        .choices(MERMAID_THEMES)
+        .default("neutral"),
     )
     .option("--browser <path>", "Chrome, Edge or Chromium executable (default: auto-detect)")
     .exitOverride()
@@ -77,10 +85,15 @@ export async function main(argv: string[], io: Io = defaultIo): Promise<number> 
       output: target,
       format: options.format,
       browser: options.browser,
+      mermaidTheme: options.mermaidTheme,
     });
-    for (const warning of result.warnings) io.err(`warning: ${warning}\n`);
+    for (const diagnostic of result.diagnostics) {
+      io.err(`${formatDiagnostic(diagnostic, input)}\n`);
+    }
     io.out(`${result.output}\n`);
-    return ExitCode.Ok;
+    // The file is still written (errors are shown inline) but the run counts as failed.
+    const failed = result.diagnostics.some((d) => d.severity === "error");
+    return failed ? ExitCode.Render : ExitCode.Ok;
   } catch (error) {
     if (error instanceof MdRenderError) {
       io.err(`error: ${error.message}\n`);

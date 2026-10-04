@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Env, MarkdownIt } from "markdown-it";
+import type { MarkdownIt } from "markdown-it";
+import { tokenLine, type RenderEnv } from "./env.js";
 
 const MIME_TYPES: Record<string, string> = {
   ".png": "image/png",
@@ -14,12 +15,6 @@ const MIME_TYPES: Record<string, string> = {
   ".bmp": "image/bmp",
   ".ico": "image/x-icon",
 };
-
-export interface ImageEnv extends Env {
-  /** Directory that relative image paths are resolved against (the .md file's folder). */
-  baseDir: string;
-  warnings: string[];
-}
 
 /** Resolve an image `src` to a local file path, or undefined for remote/data URLs. */
 export function localImagePath(src: string, baseDir: string): string | undefined {
@@ -44,6 +39,10 @@ function toDataUri(file: string): string | undefined {
   return `data:${mime};base64,${readFileSync(file).toString("base64")}`;
 }
 
+function warn(env: RenderEnv, message: string, line?: number): void {
+  env.diagnostics.push({ severity: "warning", message, line });
+}
+
 /**
  * Embed local images as data URIs so the output is self-contained and the browser never needs
  * file system access. Remote images are left untouched.
@@ -52,18 +51,18 @@ export function inlineLocalImages(md: MarkdownIt): void {
   const fallback = md.renderer.rules.image!;
 
   md.renderer.rules.image = (tokens, idx, options, rawEnv, self) => {
-    const env = rawEnv as ImageEnv | undefined;
+    const env = rawEnv as RenderEnv | undefined;
     const token = tokens[idx]!;
     const src = String(token.attrGet("src") ?? "");
     const file = src && env?.baseDir ? localImagePath(src, env.baseDir) : undefined;
 
     if (env && file) {
       if (!existsSync(file) || !statSync(file).isFile()) {
-        env.warnings.push(`image not found: ${src}`);
+        warn(env, `image not found: ${src}`, tokenLine(token));
       } else {
         const dataUri = toDataUri(file);
         if (dataUri) token.attrSet("src", dataUri);
-        else env.warnings.push(`unsupported image type: ${src}`);
+        else warn(env, `unsupported image type: ${src}`, tokenLine(token));
       }
     }
     return fallback(tokens, idx, options, env, self);
