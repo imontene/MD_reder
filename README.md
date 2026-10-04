@@ -37,7 +37,7 @@ los diagramas. Finalmente la página se imprime a PDF.
 
 ## Requisitos
 
-- **Node.js 20+** (solo para instalar vía npm; los ejecutables independientes no lo necesitan).
+- **Node.js 22.12+** (solo para instalar vía npm; los ejecutables independientes no lo necesitan).
 - Un navegador basado en Chromium: **Microsoft Edge** (incluido en Windows 10/11),
   **Google Chrome** o **Chromium**. Si no tienes ninguno, ejecuta `mdrender setup`.
 
@@ -91,20 +91,20 @@ mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\nota
 
 ### Opciones principales
 
-| Opción | Descripción | Por defecto |
-|--------|-------------|-------------|
-| `-o, --output <ruta>` | Archivo o carpeta de salida | junto al `.md` |
-| `-f, --format <pdf\|html>` | Formato de salida | `pdf` |
-| `--page-size <A4\|Letter\|Legal>` | Tamaño de página | `A4` |
-| `--margin <valor>` | Márgenes, ej. `20mm` o `15mm 20mm` | `20mm` |
-| `--landscape` | Orientación horizontal | — |
-| `--toc` | Insertar tabla de contenidos | — |
-| `--theme <light\|dark\|archivo.css>` | Tema visual | `light` |
-| `--css <archivo.css>` | CSS adicional | — |
-| `--mermaid-theme <tema>` | `default`, `neutral`, `dark`, `forest` | `neutral` |
-| `--no-page-numbers` | Ocultar números de página | — |
-| `--browser <ruta>` | Ruta a Chrome/Edge/Chromium | autodetección |
-| `-w, --watch` | Regenerar al guardar | — |
+| Opción                               | Descripción                            | Por defecto    |
+| ------------------------------------ | -------------------------------------- | -------------- |
+| `-o, --output <ruta>`                | Archivo o carpeta de salida            | junto al `.md` |
+| `-f, --format <pdf\|html>`           | Formato de salida                      | `pdf`          |
+| `--page-size <A4\|Letter\|Legal>`    | Tamaño de página                       | `A4`           |
+| `--margin <valor>`                   | Márgenes, ej. `20mm` o `15mm 20mm`     | `20mm`         |
+| `--landscape`                        | Orientación horizontal                 | —              |
+| `--toc`                              | Insertar tabla de contenidos           | —              |
+| `--theme <light\|dark\|archivo.css>` | Tema visual                            | `light`        |
+| `--css <archivo.css>`                | CSS adicional                          | —              |
+| `--mermaid-theme <tema>`             | `default`, `neutral`, `dark`, `forest` | `neutral`      |
+| `--no-page-numbers`                  | Ocultar números de página              | —              |
+| `--browser <ruta>`                   | Ruta a Chrome/Edge/Chromium            | autodetección  |
+| `-w, --watch`                        | Regenerar al guardar                   | —              |
 
 ## Ejemplo de documento
 
@@ -130,21 +130,46 @@ sequenceDiagram
 ```
 
 | Fase | Estado |
-|------|--------|
+| ---- | ------ |
 | MVP  | ⏳     |
 ````
 
+## Desarrollo
+
+Requisitos: Node.js 22.12+ y npm.
+
+```bash
+npm install          # instalar dependencias
+npm run dev -- --help   # ejecutar la CLI desde el código fuente (tsx)
+npm test             # pruebas (Vitest)
+npm run lint         # ESLint
+npm run typecheck    # TypeScript sin emitir
+npm run format       # Prettier
+npm run check        # todo lo anterior, igual que en CI
+npm run build        # compila a dist/
+```
+
+El CI (GitHub Actions) ejecuta `npm run check` y `npm run build` en **Windows y Linux**
+con Node 22 y 24 en cada pull request.
+
+| Código de salida | Significado                                    |
+| ---------------- | ---------------------------------------------- |
+| `0`              | Éxito                                          |
+| `1`              | Error de uso (argumentos, archivo inexistente) |
+| `2`              | Error de renderizado                           |
+| `3`              | Navegador no encontrado                        |
+
 ## Hoja de ruta
 
-| Fase | Contenido | Estado |
-|------|-----------|--------|
-| 0 | Fundaciones: plan, README, proyecto TS, CI Windows/Linux | 🟡 en curso |
-| 1 | MVP Markdown → PDF con Inter | ⬜ |
-| 2 | Ecuaciones (KaTeX) y diagramas Mermaid | ⬜ |
-| 3 | Resaltado, encabezado/pie, TOC, front-matter, HTML | ⬜ |
-| 4 | Lotes, `--watch`, vista previa, temas | ⬜ |
-| 5 | Distribución: npm, ejecutables, GitHub Releases | ⬜ |
-| 6 | Endurecimiento y v1.0 | ⬜ |
+| Fase | Contenido                                                | Estado       |
+| ---- | -------------------------------------------------------- | ------------ |
+| 0    | Fundaciones: plan, README, proyecto TS, CI Windows/Linux | ✅           |
+| 1    | MVP Markdown → PDF con Inter                             | 🟡 siguiente |
+| 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | ⬜           |
+| 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | ⬜           |
+| 4    | Lotes, `--watch`, vista previa, temas                    | ⬜           |
+| 5    | Distribución: npm, ejecutables, GitHub Releases          | ⬜           |
+| 6    | Endurecimiento y v1.0                                    | ⬜           |
 
 Detalle completo en [docs/PLAN_MAESTRO.md](docs/PLAN_MAESTRO.md).
 

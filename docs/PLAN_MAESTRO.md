@@ -10,22 +10,22 @@
 
 ### 1.1 Funcionales
 
-| ID   | Requisito                                                                 | Prioridad |
-|------|---------------------------------------------------------------------------|-----------|
-| RF1  | Convertir un `.md` a PDF con un solo comando                              | Must      |
-| RF2  | Markdown CommonMark + GFM (tablas, listas de tareas, tachado, autolinks)  | Must      |
-| RF3  | Ecuaciones en línea `$...$` y en bloque `$$...$$` (LaTeX)                 | Must      |
-| RF4  | Diagramas Mermaid en bloques ` ```mermaid `                               | Must      |
-| RF5  | Tipografía Inter para el texto; monoespaciada para código                 | Must      |
-| RF6  | Resaltado de sintaxis en bloques de código                                | Should    |
-| RF7  | Exportar también a HTML autocontenido                                     | Should    |
-| RF8  | Procesar varios archivos o una carpeta completa (batch)                   | Should    |
-| RF9  | Opciones de página: tamaño (A4/Letter), márgenes, orientación             | Should    |
-| RF10 | Encabezado/pie de página con número de página                             | Should    |
-| RF11 | Tabla de contenidos opcional (`--toc`)                                    | Could     |
-| RF12 | Modo `--watch` que regenera al guardar                                    | Could     |
-| RF13 | Front-matter YAML (título, autor, fecha) y CSS personalizado              | Could     |
-| RF14 | Vista previa en el navegador (`preview`)                                  | Could     |
+| ID   | Requisito                                                                | Prioridad |
+| ---- | ------------------------------------------------------------------------ | --------- |
+| RF1  | Convertir un `.md` a PDF con un solo comando                             | Must      |
+| RF2  | Markdown CommonMark + GFM (tablas, listas de tareas, tachado, autolinks) | Must      |
+| RF3  | Ecuaciones en línea `$...$` y en bloque `$$...$$` (LaTeX)                | Must      |
+| RF4  | Diagramas Mermaid en bloques ` ```mermaid `                              | Must      |
+| RF5  | Tipografía Inter para el texto; monoespaciada para código                | Must      |
+| RF6  | Resaltado de sintaxis en bloques de código                               | Should    |
+| RF7  | Exportar también a HTML autocontenido                                    | Should    |
+| RF8  | Procesar varios archivos o una carpeta completa (batch)                  | Should    |
+| RF9  | Opciones de página: tamaño (A4/Letter), márgenes, orientación            | Should    |
+| RF10 | Encabezado/pie de página con número de página                            | Should    |
+| RF11 | Tabla de contenidos opcional (`--toc`)                                   | Could     |
+| RF12 | Modo `--watch` que regenera al guardar                                   | Could     |
+| RF13 | Front-matter YAML (título, autor, fecha) y CSS personalizado             | Could     |
+| RF14 | Vista previa en el navegador (`preview`)                                 | Could     |
 
 ### 1.2 No funcionales
 
@@ -41,12 +41,12 @@
 
 ### 2.1 Stack elegido: Node.js + TypeScript + Chromium headless
 
-| Alternativa                         | Ecuaciones | Mermaid            | Fuentes web | Veredicto |
-|-------------------------------------|-----------|--------------------|-------------|-----------|
-| **Node + markdown-it + Chromium**   | KaTeX ✔   | Nativo (JS) ✔      | ✔           | **Elegida** |
-| Python + markdown + WeasyPrint      | ✔ (MathML parcial) | ✘ necesita JS/mmdc | ✔ | Descartada |
-| Pandoc + LaTeX                      | ✔         | ✘ filtros externos | Complejo    | Descartada (instalación pesada en Windows) |
-| Go/Rust nativo                      | Limitado  | ✘                  | Limitado    | Descartada |
+| Alternativa                       | Ecuaciones         | Mermaid            | Fuentes web | Veredicto                                  |
+| --------------------------------- | ------------------ | ------------------ | ----------- | ------------------------------------------ |
+| **Node + markdown-it + Chromium** | KaTeX ✔            | Nativo (JS) ✔      | ✔           | **Elegida**                                |
+| Python + markdown + WeasyPrint    | ✔ (MathML parcial) | ✘ necesita JS/mmdc | ✔           | Descartada                                 |
+| Pandoc + LaTeX                    | ✔                  | ✘ filtros externos | Complejo    | Descartada (instalación pesada en Windows) |
+| Go/Rust nativo                    | Limitado           | ✘                  | Limitado    | Descartada                                 |
 
 **Razón principal**: Mermaid es una librería JavaScript que necesita un DOM real para
 dibujar SVG. Usar Chromium headless (vía Puppeteer) permite renderizar Markdown, KaTeX y
@@ -67,18 +67,18 @@ flowchart LR
     D --> I[archivo.html]
 ```
 
-| Módulo            | Responsabilidad                                                        | Librerías |
-|-------------------|------------------------------------------------------------------------|-----------|
-| `cli`             | Parseo de argumentos, ayuda, códigos de salida                         | `commander` |
-| `config`          | Fusionar opciones: CLI > front-matter > archivo `mdrender.config.json` > defaults | `gray-matter` |
-| `markdown`        | MD → HTML: GFM, anclas, TOC, footnotes, resaltado                      | `markdown-it`, `markdown-it-anchor`, `markdown-it-footnote`, `markdown-it-task-lists`, `highlight.js` |
-| `math`            | `$...$` / `$$...$$` → HTML KaTeX (renderizado en servidor, sin JS)     | `katex`, `@vscode/markdown-it-katex` |
-| `mermaid`         | Bloques ` ```mermaid ` → `<pre class="mermaid">`; renderizado en Chromium | `mermaid` |
-| `template`        | Ensamblar HTML final, inyectar CSS (Inter, KaTeX, tema), assets inline | — |
-| `fonts`           | Inter (variable, woff2) + JetBrains Mono para código, empaquetadas     | `@fontsource-variable/inter`, `@fontsource/jetbrains-mono` |
-| `browser`         | Localizar/lanzar Chrome, Edge o Chromium; descarga opcional           | `puppeteer-core`, `@puppeteer/browsers` |
-| `pdf`             | Esperar a Mermaid y fuentes, `page.pdf()` con encabezado/pie          | `puppeteer-core` |
-| `watch`           | Regenerar al cambiar archivos                                          | `chokidar` |
+| Módulo     | Responsabilidad                                                                   | Librerías                                                                                             |
+| ---------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `cli`      | Parseo de argumentos, ayuda, códigos de salida                                    | `commander`                                                                                           |
+| `config`   | Fusionar opciones: CLI > front-matter > archivo `mdrender.config.json` > defaults | `gray-matter`                                                                                         |
+| `markdown` | MD → HTML: GFM, anclas, TOC, footnotes, resaltado                                 | `markdown-it`, `markdown-it-anchor`, `markdown-it-footnote`, `markdown-it-task-lists`, `highlight.js` |
+| `math`     | `$...$` / `$$...$$` → HTML KaTeX (renderizado en servidor, sin JS)                | `katex`, `@vscode/markdown-it-katex`                                                                  |
+| `mermaid`  | Bloques ` ```mermaid ` → `<pre class="mermaid">`; renderizado en Chromium         | `mermaid`                                                                                             |
+| `template` | Ensamblar HTML final, inyectar CSS (Inter, KaTeX, tema), assets inline            | —                                                                                                     |
+| `fonts`    | Inter (variable, woff2) + JetBrains Mono para código, empaquetadas                | `@fontsource-variable/inter`, `@fontsource/jetbrains-mono`                                            |
+| `browser`  | Localizar/lanzar Chrome, Edge o Chromium; descarga opcional                       | `puppeteer-core`, `@puppeteer/browsers`                                                               |
+| `pdf`      | Esperar a Mermaid y fuentes, `page.pdf()` con encabezado/pie                      | `puppeteer-core`                                                                                      |
+| `watch`    | Regenerar al cambiar archivos                                                     | `chokidar`                                                                                            |
 
 ### 2.3 Estrategia de navegador (clave para Windows/Linux)
 
@@ -86,7 +86,7 @@ flowchart LR
 2. Detección automática de navegadores instalados:
    - **Windows**: Microsoft Edge (siempre presente en Win 10/11) y Google Chrome.
    - **Linux**: `google-chrome`, `chromium`, `chromium-browser`, `microsoft-edge`.
-3. Si no se encuentra ninguno: `mdrender setup` descarga *Chrome Headless Shell* a la caché
+3. Si no se encuentra ninguno: `mdrender setup` descarga _Chrome Headless Shell_ a la caché
    del usuario (`%LOCALAPPDATA%\mdrender` / `~/.cache/mdrender`).
 
 Así el ejecutable se mantiene liviano y no obliga a descargar ~150 MB si ya existe un navegador.
@@ -158,14 +158,18 @@ MD_reder/
 ## 5. Fases y entregables
 
 ### Fase 0 — Fundaciones (½ semana)
+
 - [x] Acceso al repositorio y análisis del alcance
 - [x] Plan maestro y README inicial
-- [ ] Inicializar proyecto Node 20+ / TypeScript, ESLint, Prettier, Vitest
-- [ ] CI en GitHub Actions con matriz `windows-latest` + `ubuntu-latest`
+- [x] Inicializar proyecto Node 22.12+ / TypeScript, ESLint, Prettier, Vitest
+- [x] Esqueleto de CLI (`commander`): `--help`, `--version`, validación de entrada, códigos de salida
+- [x] Cálculo de ruta de salida probado con semántica Windows y POSIX
+- [x] CI en GitHub Actions con matriz `windows-latest` + `ubuntu-latest` × Node 22 y 24
 
 **Criterio de salida**: `npm test` pasa en ambos sistemas en CI.
 
 ### Fase 1 — MVP: Markdown → PDF (1 semana)
+
 - [ ] CLI básica `mdrender archivo.md -o archivo.pdf`
 - [ ] markdown-it con GFM (tablas, listas de tareas, tachado)
 - [ ] Plantilla HTML con **Inter** incrustada y tema claro
@@ -175,6 +179,7 @@ MD_reder/
 **Criterio de salida**: un `.md` con títulos, tablas, código e imágenes produce un PDF correcto en Windows y Linux.
 
 ### Fase 2 — Ecuaciones y Mermaid (1 semana)
+
 - [ ] KaTeX: `$...$`, `$$...$$`, entornos `align`, `matrix`, etc.
 - [ ] Mermaid: flowchart, sequence, class, gantt, state, ER, pie, mindmap
 - [ ] Esperar a que todos los diagramas terminen antes de imprimir
@@ -184,6 +189,7 @@ MD_reder/
 **Criterio de salida**: fixtures de matemáticas y de los 8 tipos de diagrama renderizan sin errores; pruebas de regresión visual aprobadas.
 
 ### Fase 3 — Calidad de documento (1 semana)
+
 - [ ] Resaltado de sintaxis (highlight.js) con JetBrains Mono
 - [ ] Encabezado/pie con número de página, tamaño/márgenes/orientación
 - [ ] Tabla de contenidos `--toc` y marcadores (outline) del PDF
@@ -192,12 +198,14 @@ MD_reder/
 - [ ] Notas al pie, admoniciones (`> [!NOTE]`)
 
 ### Fase 4 — Productividad (½ semana)
+
 - [ ] Procesamiento por lotes (múltiples archivos / carpetas / globs)
 - [ ] `--watch`
 - [ ] `preview` en navegador
 - [ ] Temas: claro, oscuro, CSS personalizado
 
 ### Fase 5 — Distribución (1 semana)
+
 - [ ] Publicación en npm: `npm i -g mdrender` / `npx mdrender`
 - [ ] Ejecutables independientes (Node SEA) para `win-x64`, `linux-x64` (y `linux-arm64`)
 - [ ] `mdrender setup` para descargar Chromium cuando no hay navegador
@@ -205,6 +213,7 @@ MD_reder/
 - [ ] Opcional: paquetes `winget`/`scoop` (Windows) y `.deb`/AppImage (Linux)
 
 ### Fase 6 — Endurecimiento y v1.0 (½ semana)
+
 - [ ] Rutas con espacios, Unicode y acentos (`ñ`, `á`) en nombres de archivo y contenido
 - [ ] Rutas de Windows (`C:\...`) y UNC
 - [ ] Documentos grandes (100+ páginas, 50+ diagramas)
@@ -217,27 +226,27 @@ MD_reder/
 
 ## 6. Estrategia de pruebas
 
-| Tipo                 | Qué se valida                                             | Herramienta |
-|----------------------|-----------------------------------------------------------|-------------|
-| Unitarias            | Parser MD → HTML, plugins, config                          | Vitest |
-| Snapshot HTML        | HTML generado estable para cada fixture                    | Vitest snapshots |
-| Integración PDF      | El PDF existe, nº de páginas, texto extraíble, fuente Inter embebida | `pdf-parse` / `pdfjs-dist` |
-| Regresión visual     | PDF → PNG comparado con referencia                        | `pdf-to-img` + `pixelmatch` |
-| E2E CLI              | Códigos de salida, opciones, rutas en Windows y Linux     | Vitest + `execa` en CI matrix |
+| Tipo             | Qué se valida                                                        | Herramienta                   |
+| ---------------- | -------------------------------------------------------------------- | ----------------------------- |
+| Unitarias        | Parser MD → HTML, plugins, config                                    | Vitest                        |
+| Snapshot HTML    | HTML generado estable para cada fixture                              | Vitest snapshots              |
+| Integración PDF  | El PDF existe, nº de páginas, texto extraíble, fuente Inter embebida | `pdf-parse` / `pdfjs-dist`    |
+| Regresión visual | PDF → PNG comparado con referencia                                   | `pdf-to-img` + `pixelmatch`   |
+| E2E CLI          | Códigos de salida, opciones, rutas en Windows y Linux                | Vitest + `execa` en CI matrix |
 
 ---
 
 ## 7. Riesgos y mitigaciones
 
-| Riesgo | Impacto | Mitigación |
-|--------|---------|------------|
-| No hay navegador Chromium en la máquina | Alto | Detección de Edge (siempre en Windows) + `mdrender setup` |
-| Ejecutable demasiado grande | Medio | No empaquetar Chromium; usar navegador del sistema |
-| Diagramas Mermaid cortados entre páginas | Medio | `break-inside: avoid`, escalado de SVG anchos |
-| Ecuaciones con macros no soportadas por KaTeX | Bajo | Mensaje claro; opción `--katex-macros` |
-| Diferencias de fuentes entre SO | Medio | Fuentes empaquetadas, nunca depender de fuentes del sistema |
-| Cambios de API en Mermaid | Bajo | Versión fijada + pruebas de regresión visual |
-| Markdown malicioso (HTML/JS embebido) | Medio | Sanitizar HTML, bloquear red y scripts del usuario por defecto |
+| Riesgo                                        | Impacto | Mitigación                                                     |
+| --------------------------------------------- | ------- | -------------------------------------------------------------- |
+| No hay navegador Chromium en la máquina       | Alto    | Detección de Edge (siempre en Windows) + `mdrender setup`      |
+| Ejecutable demasiado grande                   | Medio   | No empaquetar Chromium; usar navegador del sistema             |
+| Diagramas Mermaid cortados entre páginas      | Medio   | `break-inside: avoid`, escalado de SVG anchos                  |
+| Ecuaciones con macros no soportadas por KaTeX | Bajo    | Mensaje claro; opción `--katex-macros`                         |
+| Diferencias de fuentes entre SO               | Medio   | Fuentes empaquetadas, nunca depender de fuentes del sistema    |
+| Cambios de API en Mermaid                     | Bajo    | Versión fijada + pruebas de regresión visual                   |
+| Markdown malicioso (HTML/JS embebido)         | Medio   | Sanitizar HTML, bloquear red y scripts del usuario por defecto |
 
 ---
 
