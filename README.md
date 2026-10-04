@@ -108,7 +108,7 @@ mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\nota
 | `--no-page-numbers`        | Sin el pie con números de página                           | —                  |
 | `--css <archivo.css>`      | CSS adicional (se puede repetir)                           | —                  |
 | `--mermaid-theme <tema>`   | `default`, `neutral`, `dark`, `forest`, `base`             | `neutral`          |
-| `--lang <código>`          | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…) | `en`               |
+| `--lang <código>`          | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…) | `es`               |
 | `--title <texto>`          | Título del documento (muestra un bloque de título)         | primer `# título`  |
 | `--config <archivo>`       | Archivo de configuración                                   | el más cercano     |
 | `--no-config`              | Ignorar `mdrender.config.json`                             | —                  |
