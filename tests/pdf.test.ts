@@ -21,7 +21,9 @@ async function pdfText(file: string): Promise<{ pages: number; text: string }> {
   }
   const pages = doc.numPages;
   await close();
-  return { pages, text };
+  // Text runs are split differently per platform (e.g. "Mermaid   error" on Windows):
+  // collapse whitespace so assertions only depend on the words.
+  return { pages, text: text.replace(/\s+/g, " ") };
 }
 
 describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
