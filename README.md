@@ -3,10 +3,10 @@
 **Renderiza archivos Markdown (`.md`) a PDF desde la línea de comandos — en Windows y Linux.**
 Con soporte para ecuaciones LaTeX, diagramas Mermaid y tipografía [Inter](https://fonts.google.com/specimen/Inter).
 
-> ⚠️ **Estado: pre-alfa (Fase 3 completa).** Convierte Markdown (GFM, código resaltado,
+> ⚠️ **Estado: pre-alfa (Fase 4 completa).** Convierte Markdown (GFM, código resaltado,
 > imágenes, notas al pie, alertas), **ecuaciones LaTeX** y **diagramas Mermaid** a PDF y HTML
-> con Inter, con encabezado/pie, tabla de contenidos y front matter. Las opciones marcadas con
-> † aún no están implementadas. Consulta el [Plan maestro](docs/PLAN_MAESTRO.md).
+> con Inter: uno o muchos archivos, con `--watch`, vista previa en vivo y temas claro/oscuro.
+> Falta la distribución (Fase 5). Consulta el [Plan maestro](docs/PLAN_MAESTRO.md).
 
 ---
 
@@ -76,15 +76,29 @@ mdrender documento.md
 # Elegir salida, tamaño de página y tabla de contenidos
 mdrender documento.md -o salida/informe.pdf --page-size Letter --toc
 
-# Exportar a HTML
+# Exportar a HTML (autocontenido: fuentes, imágenes y diagramas incluidos)
 mdrender documento.md --format html
 
-# Convertir todos los .md de una carpeta
-mdrender docs/ -o pdf/
+# Varios archivos, carpetas (recursivo) o patrones; -o es entonces una carpeta
+mdrender capitulo1.md capitulo2.md -o pdf/
+mdrender docs/ -o pdf/            # conserva la estructura de subcarpetas
+mdrender "docs/**/*.md" -o pdf/   # los patrones funcionan también en Windows
 
-# Regenerar automáticamente al guardar
-mdrender documento.md --watch
+# Regenerar automáticamente al guardar (Ctrl+C para salir)
+mdrender docs/ -o pdf/ --watch
+
+# Vista previa en el navegador que se recarga sola al guardar
+mdrender preview documento.md
+
+# Tema oscuro, o un CSS propio que reemplaza el tema
+mdrender documento.md --theme dark
+mdrender documento.md --theme mi-tema.css
 ```
+
+Con varios archivos se usa un solo navegador para todos; si uno falla, el resto se convierte
+igual y el código de salida indica el error más grave. `mdrender preview` sirve la página en
+`http://127.0.0.1` (solo accesible desde tu equipo); `--port` fija el puerto y `--no-open`
+no abre el navegador.
 
 En Windows (PowerShell o CMD) los comandos son idénticos:
 
@@ -94,27 +108,27 @@ mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\nota
 
 ### Opciones principales
 
-| Opción                     | Descripción                                                | Por defecto        |
-| -------------------------- | ---------------------------------------------------------- | ------------------ |
-| `-o, --output <ruta>`      | Archivo o carpeta de salida                                | junto al `.md`     |
-| `-f, --format <pdf\|html>` | Formato de salida                                          | `pdf`              |
-| `--page-size <tamaño>`     | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`             | `A4`               |
-| `--margin <valor>`         | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`…   | `20mm`             |
-| `--landscape`              | Orientación horizontal                                     | —                  |
-| `--toc`                    | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)   | —                  |
-| `--toc-depth <n>`          | Nivel de título más profundo en la tabla de contenidos     | `3`                |
-| `--header <texto>`         | Encabezado de página (ver abajo)                           | —                  |
-| `--footer <texto>`         | Pie de página (ver abajo)                                  | `{page} / {pages}` |
-| `--no-page-numbers`        | Sin el pie con números de página                           | —                  |
-| `--css <archivo.css>`      | CSS adicional (se puede repetir)                           | —                  |
-| `--mermaid-theme <tema>`   | `default`, `neutral`, `dark`, `forest`, `base`             | `neutral`          |
-| `--lang <código>`          | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…) | `es`               |
-| `--title <texto>`          | Título del documento (muestra un bloque de título)         | primer `# título`  |
-| `--config <archivo>`       | Archivo de configuración                                   | el más cercano     |
-| `--no-config`              | Ignorar `mdrender.config.json`                             | —                  |
-| `--browser <ruta>`         | Ruta a Chrome/Edge/Chromium                                | autodetección      |
-| `--theme <light\|dark>` †  | Tema visual                                                | `light`            |
-| `-w, --watch` †            | Regenerar al guardar                                       | —                  |
+| Opción                       | Descripción                                                | Por defecto                        |
+| ---------------------------- | ---------------------------------------------------------- | ---------------------------------- |
+| `-o, --output <ruta>`        | Archivo o carpeta de salida                                | junto al `.md`                     |
+| `-f, --format <pdf\|html>`   | Formato de salida                                          | `pdf`                              |
+| `--page-size <tamaño>`       | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`             | `A4`                               |
+| `--margin <valor>`           | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`…   | `20mm`                             |
+| `--landscape`                | Orientación horizontal                                     | —                                  |
+| `--toc`                      | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)   | —                                  |
+| `--toc-depth <n>`            | Nivel de título más profundo en la tabla de contenidos     | `3`                                |
+| `--header <texto>`           | Encabezado de página (ver abajo)                           | —                                  |
+| `--footer <texto>`           | Pie de página (ver abajo)                                  | `{page} / {pages}`                 |
+| `--no-page-numbers`          | Sin el pie con números de página                           | —                                  |
+| `--css <archivo.css>`        | CSS adicional (se puede repetir)                           | —                                  |
+| `--mermaid-theme <tema>`     | `default`, `neutral`, `dark`, `forest`, `base`             | `neutral` (`dark` con tema oscuro) |
+| `--lang <código>`            | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…) | `es`                               |
+| `--title <texto>`            | Título del documento (muestra un bloque de título)         | primer `# título`                  |
+| `--config <archivo>`         | Archivo de configuración                                   | el más cercano                     |
+| `--no-config`                | Ignorar `mdrender.config.json`                             | —                                  |
+| `--browser <ruta>`           | Ruta a Chrome/Edge/Chromium                                | autodetección                      |
+| `--theme <light\|dark\|css>` | `light`, `dark` o un `.css` que reemplaza el tema          | `light`                            |
+| `-w, --watch`                | Regenerar al guardar                                       | —                                  |
 
 **Encabezado y pie**: texto con marcadores `{page}`, `{pages}`, `{title}`, `{author}` y
 `{date}`; `|` separa columnas izquierda, centro y derecha. Ejemplos:
@@ -237,8 +251,8 @@ con Node 22 y 24 en cada pull request.
 | 1    | MVP Markdown → PDF con Inter                             | ✅           |
 | 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | ✅           |
 | 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | ✅           |
-| 4    | Lotes, `--watch`, vista previa, temas                    | 🟡 siguiente |
-| 5    | Distribución: npm, ejecutables, GitHub Releases          | ⬜           |
+| 4    | Lotes, `--watch`, vista previa, temas                    | ✅           |
+| 5    | Distribución: npm, ejecutables, GitHub Releases          | 🟡 siguiente |
 | 6    | Endurecimiento y v1.0                                    | ⬜           |
 
 Detalle completo en [docs/PLAN_MAESTRO.md](docs/PLAN_MAESTRO.md).

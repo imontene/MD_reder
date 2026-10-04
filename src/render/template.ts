@@ -6,8 +6,21 @@ import { version } from "../version.js";
 
 export { escapeHtml };
 
-const themeUrl = new URL("../assets/theme.css", import.meta.url);
-let themeCss: string | undefined;
+const builtinCss = new Map<string, string>();
+
+function asset(name: string): string {
+  let css = builtinCss.get(name);
+  if (css === undefined) {
+    css = readFileSync(new URL(`../assets/${name}`, import.meta.url), "utf8");
+    builtinCss.set(name, css);
+  }
+  return css;
+}
+
+/** Stylesheets of a built-in theme ("light" or "dark"). */
+export function builtinThemeCss(theme: "light" | "dark"): string[] {
+  return theme === "dark" ? [asset("theme.css"), asset("theme-dark.css")] : [asset("theme.css")];
+}
 
 export interface DocumentParts {
   title: string;
@@ -20,7 +33,9 @@ export interface DocumentParts {
   author?: string;
   date?: string;
   showTitle?: boolean;
-  /** Extra stylesheet contents, applied after the built-in theme. */
+  /** Theme stylesheet contents. Defaults to the built-in light theme. */
+  themeCss?: string[];
+  /** Extra stylesheet contents, applied after the theme. */
   extraCss?: string[];
 }
 
@@ -40,8 +55,8 @@ function titleBlock({ title, subtitle, author, date }: DocumentParts): string {
 /** Wrap a rendered Markdown fragment in a complete, self-contained HTML document. */
 export function buildHtmlDocument(parts: DocumentParts): string {
   const { title, body, math = false, lang, author, extraCss = [] } = parts;
-  themeCss ??= readFileSync(themeUrl, "utf8");
-  const styles = [fontFaceCss(), ...(math ? [katexCss()] : []), themeCss, ...extraCss];
+  const themeCss = parts.themeCss ?? builtinThemeCss("light");
+  const styles = [fontFaceCss(), ...(math ? [katexCss()] : []), ...themeCss, ...extraCss];
 
   return `<!doctype html>
 <html${lang ? ` lang="${escapeHtml(lang)}"` : ""}>

@@ -239,10 +239,17 @@ escribe el autor en los metadatos del PDF (solo el título).
 
 ### Fase 4 — Productividad (½ semana)
 
-- [ ] Procesamiento por lotes (múltiples archivos / carpetas / globs)
-- [ ] `--watch`
-- [ ] `preview` en navegador
-- [ ] Temas: claro, oscuro, CSS personalizado
+- [x] Procesamiento por lotes: varios archivos, carpetas (recursivo, sin carpetas ocultas ni
+      `node_modules`) y patrones `docs/**/*.md` expandidos por la propia app (funcionan en
+      Windows); `-o` como carpeta conserva la estructura; un solo navegador para todo el lote;
+      se sigue ante errores y el código de salida es el más grave
+- [x] `--watch`: reconvierte el archivo cambiado; cambios en configuración, CSS o imágenes
+      reconvierten todo; detecta archivos nuevos en carpetas vigiladas
+- [x] `mdrender preview <archivo>`: servidor local en 127.0.0.1 con recarga automática
+      (Server-Sent Events), `--port`, `--no-open`; los errores se muestran en la página
+- [x] Temas: `--theme light|dark|archivo.css`; el oscuro pinta la hoja completa y usa Mermaid
+      oscuro salvo que se indique `--mermaid-theme`
+- [x] Idioma por defecto: español (`--lang en` para inglés)
 
 ### Fase 5 — Distribución (1 semana)
 

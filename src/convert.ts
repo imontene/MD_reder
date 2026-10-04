@@ -14,18 +14,17 @@ import {
   OptionsError,
   parseMargin,
   type DocumentOptions,
+  type MermaidTheme,
 } from "./options.js";
 import type { OutputFormat } from "./paths.js";
 import { BrowserSession } from "./render/browser.js";
 import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js";
 import { fillMermaid, renderMermaid } from "./render/mermaid.js";
 import { contentWidthPx } from "./render/page.js";
-import { buildHtmlDocument } from "./render/template.js";
+import { buildHtmlDocument, builtinThemeCss } from "./render/template.js";
 
-export interface ConvertOptions {
-  input: string;
-  output: string;
-  format: OutputFormat;
+/** Settings shared by every file of a run (batch, watch or preview). */
+export interface RenderSettings {
   /** Explicit browser executable. */
   browser?: string;
   /**
@@ -37,6 +36,14 @@ export interface ConvertOptions {
   overrides?: Partial<DocumentOptions>;
 }
 
+export interface ConvertOptions extends RenderSettings {
+  input: string;
+  output: string;
+  format: OutputFormat;
+  /** Reuse a browser across conversions; without it each conversion starts its own. */
+  browsers?: BrowserPool;
+}
+
 export interface ConvertResult {
   output: string;
   /** Problems found while rendering; the output is still written, with errors shown inline. */
@@ -45,6 +52,33 @@ export interface ConvertResult {
   options: DocumentOptions;
   /** Config file that was applied, if any. */
   configFile?: string;
+  /** Files the output depends on besides the Markdown (config file, stylesheets). */
+  dependencies: string[];
+}
+
+export interface RenderedDocument extends Omit<ConvertResult, "output"> {
+  html: string;
+  title: string;
+}
+
+/** Starts one browser on first use and keeps it for later conversions. */
+export class BrowserPool {
+  private session?: Promise<BrowserSession>;
+
+  constructor(private readonly executable?: string) {}
+
+  get(): Promise<BrowserSession> {
+    this.session ??= BrowserSession.open(findBrowser(this.executable));
+    // A failed start is not cached: the next conversion tries again.
+    this.session.catch(() => (this.session = undefined));
+    return this.session;
+  }
+
+  async close(): Promise<void> {
+    const session = await this.session?.catch(() => undefined);
+    this.session = undefined;
+    await session?.close();
+  }
 }
 
 function readStylesheet(file: string): string {
@@ -55,27 +89,43 @@ function readStylesheet(file: string): string {
   }
 }
 
-/** Read a Markdown file and write it as a self-contained HTML document or a PDF. */
-export async function convertFile(convert: ConvertOptions): Promise<ConvertResult> {
-  const input = path.resolve(convert.input);
-  const output = path.resolve(convert.output);
+function themeStylesheets(theme: string): string[] {
+  return theme === "light" || theme === "dark" ? builtinThemeCss(theme) : [readStylesheet(theme)];
+}
+
+/** Mermaid theme: explicit choice, else dark diagrams for the dark page theme. */
+export function effectiveMermaidTheme(options: DocumentOptions): MermaidTheme {
+  return options.mermaidTheme ?? (options.theme === "dark" ? "dark" : "neutral");
+}
+
+/**
+ * Render a Markdown file to a complete HTML document. A browser is only started (through
+ * `browsers`) when the document has Mermaid diagrams.
+ */
+export async function renderDocument(
+  inputPath: string,
+  settings: RenderSettings,
+  browsers: BrowserPool,
+): Promise<RenderedDocument> {
+  const input = path.resolve(inputPath);
   const baseDir = path.dirname(input);
 
   const source = await readFile(input, "utf8");
   const frontMatter = extractFrontMatter(source, input);
 
   const configFile =
-    convert.config === false
+    settings.config === false
       ? undefined
-      : convert.config
-        ? path.resolve(convert.config)
+      : settings.config
+        ? path.resolve(settings.config)
         : findConfigFile(baseDir);
   const options = mergeOptions(
     configFile ? loadConfig(configFile) : {},
     normalizeOptions(frontMatter.data, `${input} (front matter)`, baseDir),
-    convert.overrides ?? {},
+    settings.overrides ?? {},
   );
   const margin = parseMargin(options.margin);
+  const themeCss = themeStylesheets(options.theme);
   const extraCss = options.css.map(readStylesheet);
 
   const md = renderMarkdown(frontMatter.body, { baseDir, lang: options.lang });
@@ -91,39 +141,56 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
     body = toc + body;
   }
 
-  // A browser is needed to print PDFs and to lay out Mermaid diagrams (also for HTML output).
-  const needsBrowser = convert.format === "pdf" || md.mermaid.length > 0;
-  const session = needsBrowser
-    ? await BrowserSession.open(findBrowser(convert.browser))
-    : undefined;
+  // Mermaid needs a real DOM to lay out diagrams, also for HTML output.
+  if (md.mermaid.length > 0) {
+    const session = await browsers.get();
+    const width = contentWidthPx(options.pageSize, options.landscape, margin);
+    const theme = effectiveMermaidTheme(options);
+    const results = await renderMermaid(session, md.mermaid, theme, width);
+    const filled = fillMermaid(body, md.nonce, md.mermaid, results);
+    body = filled.html;
+    diagnostics.push(...filled.diagnostics);
+  }
+
+  const html = buildHtmlDocument({
+    title,
+    body,
+    math: md.hasMath,
+    lang: options.lang,
+    subtitle: options.subtitle,
+    author: options.author,
+    date: options.date,
+    showTitle: options.title !== undefined,
+    themeCss,
+    extraCss,
+  });
+
+  diagnostics.sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
+  const dependencies = [
+    ...(configFile ? [configFile] : []),
+    ...(options.theme.endsWith(".css") ? [options.theme] : []),
+    ...options.css,
+  ];
+  return { html, title, diagnostics, options, configFile, dependencies };
+}
+
+/** Read a Markdown file and write it as a self-contained HTML document or a PDF. */
+export async function convertFile(convert: ConvertOptions): Promise<ConvertResult> {
+  const output = path.resolve(convert.output);
+  const browsers = convert.browsers ?? new BrowserPool(convert.browser);
 
   try {
-    if (session && md.mermaid.length > 0) {
-      const width = contentWidthPx(options.pageSize, options.landscape, margin);
-      const results = await renderMermaid(session, md.mermaid, options.mermaidTheme, width);
-      const filled = fillMermaid(body, md.nonce, md.mermaid, results);
-      body = filled.html;
-      diagnostics.push(...filled.diagnostics);
-    }
-
-    const html = buildHtmlDocument({
-      title,
-      body,
-      math: md.hasMath,
-      lang: options.lang,
-      subtitle: options.subtitle,
-      author: options.author,
-      date: options.date,
-      showTitle: options.title !== undefined,
-      extraCss,
-    });
+    const doc = await renderDocument(convert.input, convert, browsers);
+    const { options } = doc;
 
     await mkdir(path.dirname(output), { recursive: true });
     if (convert.format === "pdf") {
-      const values = { title, author: options.author, date: options.date };
+      const margin = parseMargin(options.margin);
+      const values = { title: doc.title, author: options.author, date: options.date };
       const footer = options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined);
       const hasHeaderFooter = options.header !== undefined || footer !== undefined;
-      await session!.printPdf(html, {
+      const session = await browsers.get();
+      await session.printPdf(doc.html, {
         output,
         format: options.pageSize,
         landscape: options.landscape,
@@ -134,12 +201,16 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
         footerTemplate: hasHeaderFooter ? headerFooterTemplate(footer, values, margin) : undefined,
       });
     } else {
-      await writeFile(output, html, "utf8");
+      await writeFile(output, doc.html, "utf8");
     }
+    return {
+      output,
+      diagnostics: doc.diagnostics,
+      options,
+      configFile: doc.configFile,
+      dependencies: doc.dependencies,
+    };
   } finally {
-    await session?.close();
+    if (!convert.browsers) await browsers.close();
   }
-
-  diagnostics.sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
-  return { output, diagnostics, options, configFile };
 }

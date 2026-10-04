@@ -8,6 +8,7 @@ import {
   parseMargin,
 } from "../src/options.js";
 import { contentWidthPx } from "../src/render/page.js";
+import { effectiveMermaidTheme } from "../src/convert.js";
 
 describe("parseMargin", () => {
   it.each([
@@ -91,5 +92,15 @@ describe("contentWidthPx", () => {
   it("computes the text column width in CSS pixels", () => {
     expect(contentWidthPx("A4", false, { left: "20mm", right: "20mm" })).toBe(643);
     expect(contentWidthPx("Letter", true, { left: "1in", right: "1in" })).toBe(864);
+  });
+});
+
+describe("effectiveMermaidTheme", () => {
+  it("follows the page theme unless set explicitly", () => {
+    expect(effectiveMermaidTheme(mergeOptions())).toBe("neutral");
+    expect(effectiveMermaidTheme(mergeOptions({ theme: "dark" }))).toBe("dark");
+    expect(effectiveMermaidTheme(mergeOptions({ theme: "dark", mermaidTheme: "forest" }))).toBe(
+      "forest",
+    );
   });
 });

@@ -9,6 +9,8 @@ export type PageSize = (typeof PAGE_SIZES)[number];
 export const MERMAID_THEMES = ["default", "neutral", "dark", "forest", "base"] as const;
 export type MermaidTheme = (typeof MERMAID_THEMES)[number];
 
+export const BUILTIN_THEMES = ["light", "dark"] as const;
+
 /** Rendering options, merged from defaults < config file < front matter < command line. */
 export interface DocumentOptions {
   pageSize: PageSize;
@@ -23,7 +25,10 @@ export interface DocumentOptions {
   /** Header/footer text; see render/header-footer.ts for placeholders and `|` columns. */
   header?: string;
   footer?: string;
-  mermaidTheme: MermaidTheme;
+  /** Mermaid theme; when unset, "neutral" for light pages and "dark" for the dark theme. */
+  mermaidTheme?: MermaidTheme;
+  /** "light", "dark", or the absolute path of a stylesheet that replaces the built-in theme. */
+  theme: string;
   /** Extra stylesheets (absolute paths), applied after the built-in theme. */
   css: string[];
   /** BCP 47 language of the document, e.g. "es" or "en". */
@@ -41,7 +46,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   toc: false,
   tocDepth: 3,
   pageNumbers: true,
-  mermaidTheme: "neutral",
+  theme: "light",
   css: [],
   lang: DEFAULT_LANG,
 };
@@ -118,6 +123,13 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   header: text,
   footer: text,
   mermaidTheme: oneOf(MERMAID_THEMES),
+  theme: (value, describe, baseDir) => {
+    const theme = text(value, describe, baseDir) as string;
+    const builtin = BUILTIN_THEMES.find((t) => t === theme.toLowerCase());
+    if (builtin) return builtin;
+    if (/\.css$/i.test(theme)) return path.resolve(baseDir, theme);
+    throw new OptionsError(`${describe} must be light, dark or a .css file`);
+  },
   css: (value, describe, baseDir) => {
     const list = Array.isArray(value) ? value : [value];
     if (!list.every(isString)) throw new OptionsError(`${describe} must be a file path or a list`);

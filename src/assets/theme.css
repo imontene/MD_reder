@@ -11,6 +11,29 @@
   --color-border: #d1d9e0;
   --color-subtle-bg: #f6f8fa;
   --color-accent: #0969da;
+  --color-bg: #ffffff;
+  --color-stripe: #fbfcfd;
+  --color-error: #b42318;
+  --color-error-bg: #fef3f2;
+  --color-error-border: #fda29b;
+  --alert-note: #0969da;
+  --alert-tip: #1a7f37;
+  --alert-important: #8250df;
+  --alert-warning: #9a6700;
+  --alert-caution: #cf222e;
+  /* Syntax highlighting (GitHub light) */
+  --code-keyword: #cf222e;
+  --code-title: #8250df;
+  --code-constant: #0550ae;
+  --code-string: #0a3069;
+  --code-builtin: #953800;
+  --code-comment: #6e7781;
+  --code-tag: #116329;
+  --code-text: #24292f;
+  --code-added: #116329;
+  --code-added-bg: #dafbe1;
+  --code-removed: #82071e;
+  --code-removed-bg: #ffebe9;
 }
 
 * {
@@ -23,9 +46,13 @@ html {
   print-color-adjust: exact;
 }
 
+html,
+body {
+  background: var(--color-bg);
+}
+
 body {
   margin: 0;
-  background: #fff;
   color: var(--color-text);
   font-family: var(--font-text);
   font-feature-settings: "calt", "kern";
@@ -180,7 +207,7 @@ ul.contains-task-list ul.contains-task-list {
   vertical-align: -0.1em;
   border: 1.5px solid var(--color-muted);
   border-radius: 3px;
-  background: #fff;
+  background: var(--color-bg);
 }
 
 .task-list-item-checkbox:checked {
@@ -255,7 +282,7 @@ th {
 }
 
 tbody tr:nth-child(2n) {
-  background: #fbfcfd;
+  background: var(--color-stripe);
 }
 
 /* Media */
@@ -282,10 +309,10 @@ img {
 }
 
 .math-error {
-  color: #b42318;
+  color: var(--color-error);
   font-family: var(--font-code);
   font-size: 0.88em;
-  background: #fef3f2;
+  background: var(--color-error-bg);
   border-radius: 4px;
   padding: 0.1em 0.3em;
 }
@@ -314,13 +341,13 @@ div.math-error {
 }
 
 .mermaid-error {
-  color: #b42318;
+  color: var(--color-error);
   text-align: left;
-  border-color: #fda29b;
-  background: #fef3f2;
+  border-color: var(--color-error-border);
+  background: var(--color-error-bg);
 }
 
-/* Syntax highlighting (highlight.js classes, GitHub light palette) */
+/* Syntax highlighting (highlight.js classes; colors in :root) */
 .hljs-doctag,
 .hljs-keyword,
 .hljs-meta .hljs-keyword,
@@ -328,14 +355,14 @@ div.math-error {
 .hljs-template-variable,
 .hljs-type,
 .hljs-variable.language_ {
-  color: #cf222e;
+  color: var(--code-keyword);
 }
 
 .hljs-title,
 .hljs-title.class_,
 .hljs-title.class_.inherited__,
 .hljs-title.function_ {
-  color: #8250df;
+  color: var(--code-title);
 }
 
 .hljs-attr,
@@ -348,24 +375,24 @@ div.math-error {
 .hljs-selector-attr,
 .hljs-selector-class,
 .hljs-selector-id {
-  color: #0550ae;
+  color: var(--code-constant);
 }
 
 .hljs-regexp,
 .hljs-string,
 .hljs-meta .hljs-string {
-  color: #0a3069;
+  color: var(--code-string);
 }
 
 .hljs-built_in,
 .hljs-symbol {
-  color: #953800;
+  color: var(--code-builtin);
 }
 
 .hljs-comment,
 .hljs-code,
 .hljs-formula {
-  color: #6e7781;
+  color: var(--code-comment);
   font-style: italic;
 }
 
@@ -373,20 +400,20 @@ div.math-error {
 .hljs-quote,
 .hljs-selector-tag,
 .hljs-selector-pseudo {
-  color: #116329;
+  color: var(--code-tag);
 }
 
 .hljs-subst {
-  color: #24292f;
+  color: var(--code-text);
 }
 
 .hljs-section {
-  color: #0550ae;
+  color: var(--code-constant);
   font-weight: 700;
 }
 
 .hljs-bullet {
-  color: #953800;
+  color: var(--code-builtin);
 }
 
 .hljs-emphasis {
@@ -398,13 +425,13 @@ div.math-error {
 }
 
 .hljs-addition {
-  color: #116329;
-  background-color: #dafbe1;
+  color: var(--code-added);
+  background-color: var(--code-added-bg);
 }
 
 .hljs-deletion {
-  color: #82071e;
-  background-color: #ffebe9;
+  color: var(--code-removed);
+  background-color: var(--code-removed-bg);
 }
 
 /* Title block (front matter title, subtitle, author, date) */
@@ -469,7 +496,7 @@ div.math-error {
 
 /* Alerts: > [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION] */
 .markdown-alert {
-  --alert-color: #0969da;
+  --alert-color: var(--alert-note);
   padding: 0.5em 1em;
   color: inherit;
   border-left: 0.25em solid var(--alert-color);
@@ -483,19 +510,19 @@ div.math-error {
 }
 
 .markdown-alert-tip {
-  --alert-color: #1a7f37;
+  --alert-color: var(--alert-tip);
 }
 
 .markdown-alert-important {
-  --alert-color: #8250df;
+  --alert-color: var(--alert-important);
 }
 
 .markdown-alert-warning {
-  --alert-color: #9a6700;
+  --alert-color: var(--alert-warning);
 }
 
 .markdown-alert-caution {
-  --alert-color: #cf222e;
+  --alert-color: var(--alert-caution);
 }
 
 /* Footnotes */

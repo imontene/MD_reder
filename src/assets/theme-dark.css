@@ -1,0 +1,40 @@
+/* mdrender dark theme: loaded after theme.css, overrides its color variables. */
+
+:root {
+  --color-text: #e6edf3;
+  --color-muted: #9198a1;
+  --color-heading: #f0f6fc;
+  --color-link: #4493f8;
+  --color-border: #3d444d;
+  --color-subtle-bg: #151b23;
+  --color-accent: #4493f8;
+  --color-bg: #0d1117;
+  --color-stripe: #11161d;
+  --color-error: #ffa198;
+  --color-error-bg: #2d1416;
+  --color-error-border: #8e1519;
+  --alert-note: #4493f8;
+  --alert-tip: #3fb950;
+  --alert-important: #ab7df8;
+  --alert-warning: #d29922;
+  --alert-caution: #f85149;
+  /* Syntax highlighting (GitHub dark) */
+  --code-keyword: #ff7b72;
+  --code-title: #d2a8ff;
+  --code-constant: #79c0ff;
+  --code-string: #a5d6ff;
+  --code-builtin: #ffa657;
+  --code-comment: #8b949e;
+  --code-tag: #7ee787;
+  --code-text: #e6edf3;
+  --code-added: #aff5b4;
+  --code-added-bg: #033a16;
+  --code-removed: #ffdcd7;
+  --code-removed-bg: #67060c;
+  color-scheme: dark;
+}
+
+/* Paint the whole sheet, margins included (the root background stops at the margins). */
+@page {
+  background: #0d1117;
+}
