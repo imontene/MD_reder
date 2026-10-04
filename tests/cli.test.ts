@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -95,6 +95,61 @@ describe("main", () => {
     const args = [fixture("mermaid.md"), "-f", "html", "-o", tempDir(), "--browser", missing];
     const { code } = await run(args);
     expect(code).toBe(ExitCode.BrowserNotFound);
+  });
+
+  it("applies front matter: language, title block and table of contents", async () => {
+    const dir = tempDir();
+    const { code } = await run([fixture("document.md"), "-f", "html", "-o", dir]);
+    expect(code).toBe(ExitCode.Ok);
+    const html = readFileSync(path.join(dir, "document.html"), "utf8");
+    expect(html).toContain('<html lang="es">');
+    expect(html).toContain('<h1 class="doc-title">Informe técnico</h1>');
+    expect(html).toContain('<p class="doc-meta">Equipo mdrender · 2026-10-04</p>');
+    expect(html).toContain('<p class="toc-title">Contenido</p>');
+    expect(html).toContain('<meta name="author" content="Equipo mdrender">');
+  });
+
+  it("lets command-line options win over front matter", async () => {
+    const dir = tempDir();
+    const args = [fixture("document.md"), "-f", "html", "-o", dir, "--lang", "en", "--title", "X"];
+    expect((await run(args)).code).toBe(ExitCode.Ok);
+    const html = readFileSync(path.join(dir, "document.html"), "utf8");
+    expect(html).toContain('<html lang="en">');
+    expect(html).toContain("<title>X</title>");
+    expect(html).toContain('<p class="toc-title">Contents</p>');
+  });
+
+  it("uses the nearest mdrender.config.json unless --no-config", async () => {
+    const dir = tempDir();
+    copyFileSync(fixture("basic.md"), path.join(dir, "doc.md"));
+    writeFileSync(path.join(dir, "extra.css"), "body { --marca: #123456; }");
+    writeFileSync(
+      path.join(dir, "mdrender.config.json"),
+      JSON.stringify({ lang: "fr", css: "extra.css", toc: true }),
+    );
+    const input = path.join(dir, "doc.md");
+
+    expect((await run([input, "-f", "html"])).code).toBe(ExitCode.Ok);
+    let html = readFileSync(path.join(dir, "doc.html"), "utf8");
+    expect(html).toContain('<html lang="fr">');
+    expect(html).toContain("--marca: #123456;");
+
+    expect((await run([input, "-f", "html", "--no-config"])).code).toBe(ExitCode.Ok);
+    html = readFileSync(path.join(dir, "doc.html"), "utf8");
+    expect(html).toContain('<html lang="en">');
+    expect(html).not.toContain("--marca");
+  });
+
+  it.each([
+    [["--margin", "mucho"], /command line: --margin: invalid margin "mucho"/],
+    [["--page-size", "B5"], /command line: --page-size must be one of/],
+    [["--toc-depth", "0"], /--toc-depth must be a whole number/],
+    [["--css", "no-existe.css"], /stylesheet not found: .*no-existe\.css/],
+    [["--config", "no-existe.json"], /no-existe\.json: /],
+  ])("rejects invalid options %j with a usage error", async (flags, message) => {
+    const { code, err } = await run([fixture("basic.md"), "-f", "html", "-o", tempDir(), ...flags]);
+    expect(code).toBe(ExitCode.Usage);
+    expect(err).toMatch(message);
   });
 
   it("exits with code 3 when the browser cannot be found", async () => {

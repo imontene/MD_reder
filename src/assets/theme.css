@@ -319,3 +319,200 @@ div.math-error {
   border-color: #fda29b;
   background: #fef3f2;
 }
+
+/* Syntax highlighting (highlight.js classes, GitHub light palette) */
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: #cf222e;
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: #8250df;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #0550ae;
+}
+
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: #0a3069;
+}
+
+.hljs-built_in,
+.hljs-symbol {
+  color: #953800;
+}
+
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: #6e7781;
+  font-style: italic;
+}
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: #116329;
+}
+
+.hljs-subst {
+  color: #24292f;
+}
+
+.hljs-section {
+  color: #0550ae;
+  font-weight: 700;
+}
+
+.hljs-bullet {
+  color: #953800;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+.hljs-addition {
+  color: #116329;
+  background-color: #dafbe1;
+}
+
+.hljs-deletion {
+  color: #82071e;
+  background-color: #ffebe9;
+}
+
+/* Title block (front matter title, subtitle, author, date) */
+.doc-header {
+  margin-bottom: 2em;
+}
+
+.doc-header .doc-title {
+  margin: 0 0 0.25em;
+  font-size: 2.4em;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.doc-subtitle {
+  margin: 0 0 0.6em;
+  font-size: 1.25em;
+  color: var(--color-muted);
+}
+
+.doc-meta {
+  margin: 0;
+  padding-bottom: 1em;
+  color: var(--color-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Table of contents */
+.toc {
+  margin: 0 0 2em;
+  padding: 1em 1.4em;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-subtle-bg);
+  break-inside: avoid;
+}
+
+.toc-title {
+  margin: 0 0 0.4em;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.toc ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.toc > ul {
+  padding-left: 0;
+}
+
+.toc li + li,
+.toc li > ul {
+  margin-top: 0.15em;
+}
+
+.toc a {
+  color: var(--color-text);
+}
+
+/* Alerts: > [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION] */
+.markdown-alert {
+  --alert-color: #0969da;
+  padding: 0.5em 1em;
+  color: inherit;
+  border-left: 0.25em solid var(--alert-color);
+  break-inside: avoid;
+}
+
+.markdown-alert-title {
+  margin: 0 0 0.3em;
+  font-weight: 600;
+  color: var(--alert-color);
+}
+
+.markdown-alert-tip {
+  --alert-color: #1a7f37;
+}
+
+.markdown-alert-important {
+  --alert-color: #8250df;
+}
+
+.markdown-alert-warning {
+  --alert-color: #9a6700;
+}
+
+.markdown-alert-caution {
+  --alert-color: #cf222e;
+}
+
+/* Footnotes */
+.footnote-ref a,
+.footnote-backref {
+  text-decoration: none;
+}
+
+hr.footnotes-sep {
+  margin: 2.5em 0 1em;
+}
+
+.footnotes {
+  font-size: 0.9em;
+  color: var(--color-muted);
+}
+
+.footnotes-list {
+  padding-left: 1.4em;
+}

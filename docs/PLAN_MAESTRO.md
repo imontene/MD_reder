@@ -70,7 +70,7 @@ flowchart LR
 | Módulo     | Responsabilidad                                                                   | Librerías                                                                                             |
 | ---------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `cli`      | Parseo de argumentos, ayuda, códigos de salida                                    | `commander`                                                                                           |
-| `config`   | Fusionar opciones: CLI > front-matter > archivo `mdrender.config.json` > defaults | `gray-matter`                                                                                         |
+| `config`   | Fusionar opciones: CLI > front-matter > archivo `mdrender.config.json` > defaults | `yaml`                                                                                                |
 | `markdown` | MD → HTML: GFM, anclas, TOC, footnotes, resaltado                                 | `markdown-it`, `markdown-it-anchor`, `markdown-it-footnote`, `markdown-it-task-lists`, `highlight.js` |
 | `math`     | `$...$` / `$$...$$` → HTML KaTeX (renderizado en servidor, sin JS)                | `katex` (plugin propio con número de línea en errores)                                                |
 | `mermaid`  | Bloques ` ```mermaid ` → marcador; SVG generado en Chromium y luego incrustado    | `mermaid`                                                                                             |
@@ -215,12 +215,27 @@ solo recibe el texto de los diagramas.
 
 ### Fase 3 — Calidad de documento (1 semana)
 
-- [ ] Resaltado de sintaxis (highlight.js) con JetBrains Mono
-- [ ] Encabezado/pie con número de página, tamaño/márgenes/orientación
-- [ ] Tabla de contenidos `--toc` y marcadores (outline) del PDF
-- [ ] Front-matter YAML y archivo de configuración `mdrender.config.json`
+- [x] Resaltado de sintaxis (highlight.js, ~35 lenguajes, paleta GitHub) con JetBrains Mono;
+      sin autodetección para que el resultado sea estable
+- [x] Encabezado/pie con marcadores (`{page}`, `{pages}`, `{title}`, `{author}`, `{date}`) y
+      columnas `izq | centro | der`; Inter incrustada también ahí
+- [x] Tamaño (A3, A4, A5, Letter, Legal, Tabloid), márgenes estilo CSS y orientación; los
+      diagramas Mermaid se dibujan al ancho real de la columna de texto
+- [x] Tabla de contenidos `--toc`, `--toc-depth` o marcador `[[toc]]`; marcadores (outline) del
+      PDF y PDF etiquetado
+- [x] Front matter YAML y `mdrender.config.json` (búsqueda hacia carpetas superiores,
+      `--config`, `--no-config`); prioridad CLI > front matter > config > defaults; errores de
+      configuración con código 1
+- [x] Bloque de título desde el front matter (título, subtítulo, autor, fecha) e idioma
+      (`lang`) con textos traducidos (es, en, pt, fr, de)
+- [x] CSS adicional `--css` (repetible)
 - [x] Salida HTML autocontenida (`--format html`) — adelantada en Fase 1
-- [ ] Notas al pie, admoniciones (`> [!NOTE]`)
+- [x] Notas al pie y alertas de GitHub (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`,
+      `[!CAUTION]`)
+
+Notas: Chrome no permite números de página dentro de la tabla de contenidos (no soporta
+`target-counter`); la navegación se cubre con enlaces y marcadores del PDF. Chrome tampoco
+escribe el autor en los metadatos del PDF (solo el título).
 
 ### Fase 4 — Productividad (½ semana)
 

@@ -12,6 +12,27 @@ async function openPdf(file: string) {
   return { doc: await task.promise, close: () => task.destroy() };
 }
 
+async function pdfOutline(file: string): Promise<string[]> {
+  const { doc, close } = await openPdf(file);
+  const titles: string[] = [];
+  const walk = (items: { title: string; items: unknown[] }[] | null, depth: number) => {
+    for (const item of items ?? []) {
+      titles.push("  ".repeat(depth) + item.title);
+      walk(item.items as typeof items, depth + 1);
+    }
+  };
+  walk(await doc.getOutline(), 0);
+  await close();
+  return titles;
+}
+
+async function pageSize(file: string): Promise<number[]> {
+  const { doc, close } = await openPdf(file);
+  const view = (await doc.getPage(1)).view.map(Math.round);
+  await close();
+  return view;
+}
+
 async function pdfText(file: string): Promise<{ pages: number; text: string }> {
   const { doc, close } = await openPdf(file);
   let text = "";
@@ -124,5 +145,46 @@ describe.skipIf(!browser && !browserRequired)("math and diagrams", () => {
     expect(result.diagnostics[1]!.message).toMatch(/^Mermaid: /);
     const { text } = await pdfText(output);
     expect(text).toContain("Mermaid error");
+  });
+});
+
+describe.skipIf(!browser && !browserRequired)("document layout", () => {
+  it("prints header, page-number footer, bookmarks and highlighted code", async () => {
+    const output = path.join(tempDir(), "document.pdf");
+    const result = await convertFile({ input: fixture("document.md"), output, format: "pdf" });
+    expect(result.diagnostics).toEqual([]);
+
+    const { pages, text } = await pdfText(output);
+    expect(pages).toBe(2);
+    expect(text).toContain("1 / 2");
+    expect(text).toContain("2 / 2");
+    // Header "{title} | | {date}" on every page, plus the title block.
+    expect(text.match(/Informe técnico/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(text).toContain("Advertencia");
+    expect(text).toContain("Una nota al pie simple.");
+
+    expect(await pdfOutline(output)).toEqual([
+      "Informe técnico",
+      "  Introducción",
+      "  Código",
+      "    Lenguaje desconocido",
+      "  Notas",
+    ]);
+
+    const raw = readFileSync(output).toString("latin1");
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+JetBrainsMono-Italic/); // highlighted comments
+  });
+
+  it("honours page size, orientation and the page-numbers switch", async () => {
+    const output = path.join(tempDir(), "letter.pdf");
+    await convertFile({
+      input: fixture("basic.md"),
+      output,
+      format: "pdf",
+      overrides: { pageSize: "Letter", landscape: true, margin: "1in", pageNumbers: false },
+    });
+    expect(await pageSize(output)).toEqual([0, 0, 792, 612]);
+    const { text } = await pdfText(output);
+    expect(text).not.toContain("1 / 1");
   });
 });

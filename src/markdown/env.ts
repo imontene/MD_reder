@@ -20,6 +20,10 @@ export interface RenderEnv extends Env {
   macros: Record<string, string | object>;
   /** Set when the document contains at least one formula. */
   hasMath: boolean;
+  /** Document language, for translated labels (alert titles). */
+  lang: string;
+  /** Set when the document places its table of contents with a `[[toc]]` marker. */
+  hasTocMarker: boolean;
 }
 
 /** 1-based line of a token, from markdown-it's 0-based `[start, end)` line map. */

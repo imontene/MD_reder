@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import type { Diagnostic } from "../diagnostics.js";
 import type { MermaidBlock } from "../markdown/env.js";
+import type { MermaidTheme } from "../options.js";
 import { mermaidPlaceholder } from "../markdown/mermaid.js";
 import type { BrowserSession } from "./browser.js";
 import { fontFaceCss } from "./fonts.js";
@@ -9,11 +10,10 @@ import { escapeHtml } from "../html.js";
 
 const require = createRequire(import.meta.url);
 
-export const MERMAID_THEMES = ["default", "neutral", "dark", "forest", "base"] as const;
-export type MermaidTheme = (typeof MERMAID_THEMES)[number];
+export { MERMAID_THEMES, type MermaidTheme } from "../options.js";
 
-/** Width of the text column on A4 with 20 mm margins, so diagrams are laid out at print size. */
-const CONTENT_WIDTH_PX = 642;
+/** Width of the text column on A4 with 20 mm margins. */
+const DEFAULT_WIDTH_PX = 642;
 
 type DiagramResult = { svg: string } | { error: string };
 
@@ -27,6 +27,8 @@ export async function renderMermaid(
   session: BrowserSession,
   blocks: MermaidBlock[],
   theme: MermaidTheme = "neutral",
+  /** Width of the text column, so diagrams are laid out at their printed size. */
+  widthPx = DEFAULT_WIDTH_PX,
 ): Promise<DiagramResult[]> {
   mermaidJs ??= readFileSync(require.resolve("mermaid/dist/mermaid.min.js"), "utf8");
 
@@ -34,7 +36,7 @@ export async function renderMermaid(
   try {
     await page.setContent(
       `<!doctype html><html><head><meta charset="utf-8"><style>${fontFaceCss()}
-body { margin: 0; width: ${CONTENT_WIDTH_PX}px; font-family: "Inter", sans-serif; }</style>
+body { margin: 0; width: ${widthPx}px; font-family: "Inter", sans-serif; }</style>
 </head><body></body></html>`,
     );
     await page.evaluate(mermaidJs);

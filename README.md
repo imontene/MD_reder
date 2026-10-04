@@ -3,10 +3,10 @@
 **Renderiza archivos Markdown (`.md`) a PDF desde la línea de comandos — en Windows y Linux.**
 Con soporte para ecuaciones LaTeX, diagramas Mermaid y tipografía [Inter](https://fonts.google.com/specimen/Inter).
 
-> ⚠️ **Estado: pre-alfa (Fase 2 completa).** Ya convierte Markdown (GFM, tablas, listas de
-> tareas, código, imágenes locales), **ecuaciones LaTeX** y **diagramas Mermaid** a PDF y HTML
-> con Inter. Las opciones marcadas con † en la tabla de abajo aún no están implementadas.
-> Consulta el [Plan maestro](docs/PLAN_MAESTRO.md) para ver el avance por fases.
+> ⚠️ **Estado: pre-alfa (Fase 3 completa).** Convierte Markdown (GFM, código resaltado,
+> imágenes, notas al pie, alertas), **ecuaciones LaTeX** y **diagramas Mermaid** a PDF y HTML
+> con Inter, con encabezado/pie, tabla de contenidos y front matter. Las opciones marcadas con
+> † aún no están implementadas. Consulta el [Plan maestro](docs/PLAN_MAESTRO.md).
 
 ---
 
@@ -94,20 +94,70 @@ mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\nota
 
 ### Opciones principales
 
-| Opción                                 | Descripción                                    | Por defecto    |
-| -------------------------------------- | ---------------------------------------------- | -------------- |
-| `-o, --output <ruta>`                  | Archivo o carpeta de salida                    | junto al `.md` |
-| `-f, --format <pdf\|html>`             | Formato de salida                              | `pdf`          |
-| `--page-size <A4\|Letter\|Legal>` †    | Tamaño de página                               | `A4`           |
-| `--margin <valor>` †                   | Márgenes, ej. `20mm` o `15mm 20mm`             | `20mm`         |
-| `--landscape` †                        | Orientación horizontal                         | —              |
-| `--toc` †                              | Insertar tabla de contenidos                   | —              |
-| `--theme <light\|dark\|archivo.css>` † | Tema visual                                    | `light`        |
-| `--css <archivo.css>` †                | CSS adicional                                  | —              |
-| `--mermaid-theme <tema>`               | `default`, `neutral`, `dark`, `forest`, `base` | `neutral`      |
-| `--no-page-numbers` †                  | Ocultar números de página                      | —              |
-| `--browser <ruta>`                     | Ruta a Chrome/Edge/Chromium                    | autodetección  |
-| `-w, --watch` †                        | Regenerar al guardar                           | —              |
+| Opción                     | Descripción                                              | Por defecto        |
+| -------------------------- | -------------------------------------------------------- | ------------------ |
+| `-o, --output <ruta>`      | Archivo o carpeta de salida                              | junto al `.md`     |
+| `-f, --format <pdf\|html>` | Formato de salida                                        | `pdf`              |
+| `--page-size <tamaño>`     | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`           | `A4`               |
+| `--margin <valor>`         | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`… | `20mm`             |
+| `--landscape`              | Orientación horizontal                                   | —                  |
+| `--toc`                    | Tabla de contenidos al inicio (o donde pongas `[[toc]]`) | —                  |
+| `--toc-depth <n>`          | Nivel de título más profundo en la tabla de contenidos   | `3`                |
+| `--header <texto>`         | Encabezado de página (ver abajo)                         | —                  |
+| `--footer <texto>`         | Pie de página (ver abajo)                                | `{page} / {pages}` |
+| `--no-page-numbers`        | Sin el pie con números de página                         | —                  |
+| `--css <archivo.css>`      | CSS adicional (se puede repetir)                         | —                  |
+| `--mermaid-theme <tema>`   | `default`, `neutral`, `dark`, `forest`, `base`           | `neutral`          |
+| `--lang <código>`          | Idioma del documento (`es`, `en`, `pt`, `fr`, `de`…)     | `en`               |
+| `--title <texto>`          | Título del documento (muestra un bloque de título)       | primer `# título`  |
+| `--config <archivo>`       | Archivo de configuración                                 | el más cercano     |
+| `--no-config`              | Ignorar `mdrender.config.json`                           | —                  |
+| `--browser <ruta>`         | Ruta a Chrome/Edge/Chromium                              | autodetección      |
+| `--theme <light\|dark>` †  | Tema visual                                              | `light`            |
+| `-w, --watch` †            | Regenerar al guardar                                     | —                  |
+
+**Encabezado y pie**: texto con marcadores `{page}`, `{pages}`, `{title}`, `{author}` y
+`{date}`; `|` separa columnas izquierda, centro y derecha. Ejemplos:
+`--header "{title} | | {date}"`, `--footer "Confidencial | {page} de {pages}"`.
+
+### Front matter y configuración
+
+Las mismas opciones pueden ir en un bloque YAML al inicio del `.md` o en un archivo
+`mdrender.config.json` (se busca junto al `.md` y en las carpetas superiores). Prioridad:
+**línea de comandos > front matter > archivo de configuración > valores por defecto**.
+
+```markdown
+---
+title: Informe técnico
+subtitle: Resultados del trimestre
+author: Ana Pérez
+date: 2026-10-04
+lang: es
+toc: true
+page-size: Letter
+header: "{title} | | {date}"
+---
+```
+
+```json
+{
+  "lang": "es",
+  "pageSize": "A4",
+  "margin": "25mm 20mm",
+  "css": "estilos/empresa.css"
+}
+```
+
+Con `title` en el front matter se muestra un bloque de título (título, subtítulo, autor y
+fecha). Las rutas de `css` son relativas al archivo donde aparecen.
+
+### Más Markdown
+
+- **Resaltado de código** para ~35 lenguajes comunes (` ```ts `, ` ```python `, ` ```bash `…).
+- **Alertas** estilo GitHub: `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`,
+  `[!CAUTION]`, con el título traducido según `lang`.
+- **Notas al pie**: `Texto[^1]` y `[^1]: La nota.`
+- **Marcadores del PDF** generados a partir de los títulos, y PDF etiquetado (accesible).
 
 ## Ecuaciones y diagramas
 
@@ -186,8 +236,8 @@ con Node 22 y 24 en cada pull request.
 | 0    | Fundaciones: plan, README, proyecto TS, CI Windows/Linux | ✅           |
 | 1    | MVP Markdown → PDF con Inter                             | ✅           |
 | 2    | Ecuaciones (KaTeX) y diagramas Mermaid                   | ✅           |
-| 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | 🟡 siguiente |
-| 4    | Lotes, `--watch`, vista previa, temas                    | ⬜           |
+| 3    | Resaltado, encabezado/pie, TOC, front-matter, HTML       | ✅           |
+| 4    | Lotes, `--watch`, vista previa, temas                    | 🟡 siguiente |
 | 5    | Distribución: npm, ejecutables, GitHub Releases          | ⬜           |
 | 6    | Endurecimiento y v1.0                                    | ⬜           |
 

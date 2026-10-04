@@ -46,8 +46,9 @@ jobs:
           node dist/cli.js tests/fixtures/sample.md -f html -o out/
           node dist/cli.js tests/fixtures/math.md -o out/
           node dist/cli.js tests/fixtures/mermaid.md -o out/
+          node dist/cli.js tests/fixtures/document.md -o out/
           test -s out/sample.pdf && test -s out/sample.html
-          test -s out/math.pdf && test -s out/mermaid.pdf
+          test -s out/math.pdf && test -s out/mermaid.pdf && test -s out/document.pdf
 
       - name: Upload sample output
         if: matrix.node == 22

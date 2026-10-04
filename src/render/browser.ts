@@ -16,7 +16,11 @@ function launchArgs(): string[] {
 export interface PrintOptions {
   output: string;
   format?: PDFOptions["format"];
-  margin?: string;
+  landscape?: boolean;
+  margin?: { top: string; right: string; bottom: string; left: string };
+  /** Chrome header/footer templates; both omitted means no header or footer. */
+  headerTemplate?: string;
+  footerTemplate?: string;
 }
 
 /** One headless browser shared by every step of a conversion (Mermaid, then PDF). */
@@ -50,7 +54,9 @@ export class BrowserSession {
    * must not run.
    */
   async printPdf(html: string, options: PrintOptions): Promise<void> {
-    const margin = options.margin ?? "20mm";
+    const margin = options.margin ?? { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" };
+    const headerFooter =
+      options.headerTemplate !== undefined || options.footerTemplate !== undefined;
     const page = await this.newPage();
     try {
       await page.setJavaScriptEnabled(false);
@@ -60,8 +66,15 @@ export class BrowserSession {
       await page.pdf({
         path: options.output,
         format: options.format ?? "A4",
-        margin: { top: margin, right: margin, bottom: margin, left: margin },
+        landscape: options.landscape ?? false,
+        margin,
         printBackground: true,
+        displayHeaderFooter: headerFooter,
+        headerTemplate: options.headerTemplate ?? "<span></span>",
+        footerTemplate: options.footerTemplate ?? "<span></span>",
+        // PDF bookmarks from the headings, and a tagged (accessible) PDF.
+        outline: true,
+        tagged: true,
         timeout: this.timeout,
       });
     } catch (error) {

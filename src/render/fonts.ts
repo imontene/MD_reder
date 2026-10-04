@@ -30,17 +30,28 @@ function woff2DataUri(file: string): string {
   return `data:font/woff2;base64,${readFileSync(file).toString("base64")}`;
 }
 
-function interCss(): string {
-  const dir = path.join(path.dirname(require.resolve("inter-ui/package.json")), "web");
-  return INTER_FACES.map(
-    ({ weight, style, file }) => `@font-face {
+const interDir = () => path.join(path.dirname(require.resolve("inter-ui/package.json")), "web");
+
+function interFace({ weight, style, file }: (typeof INTER_FACES)[number]): string {
+  return `@font-face {
   font-family: "Inter";
   font-style: ${style};
   font-weight: ${weight};
   font-display: block;
-  src: url(${woff2DataUri(path.join(dir, file))}) format("woff2");
-}`,
-  ).join("\n");
+  src: url(${woff2DataUri(path.join(interDir(), file))}) format("woff2");
+}`;
+}
+
+function interCss(): string {
+  return INTER_FACES.map(interFace).join("\n");
+}
+
+let regularFace: string | undefined;
+
+/** Inter Regular alone, for page headers/footers (Chrome renders them apart from the page). */
+export function interRegularFontFace(): string {
+  regularFace ??= interFace(INTER_FACES[0]!);
+  return regularFace;
 }
 
 /**
