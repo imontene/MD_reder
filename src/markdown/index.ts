@@ -3,6 +3,7 @@ import markdownIt, { type MarkdownIt } from "markdown-it";
 import anchor from "markdown-it-anchor";
 import footnote from "markdown-it-footnote";
 import type { Diagnostic } from "../diagnostics.js";
+import { DEFAULT_LANG } from "../i18n.js";
 import { alerts } from "./alerts.js";
 import { inlineChildLines, type MermaidBlock, type RenderEnv } from "./env.js";
 import { highlightCode } from "./highlight.js";
@@ -31,7 +32,7 @@ export interface MarkdownResult {
 export interface MarkdownOptions {
   /** Directory used to resolve relative image paths. Defaults to the current directory. */
   baseDir?: string;
-  /** Document language for translated labels. Defaults to English. */
+  /** Document language for translated labels. Defaults to Spanish. */
   lang?: string;
 }
 
@@ -65,7 +66,7 @@ export function renderMarkdown(source: string, options: MarkdownOptions = {}): M
     nonce: randomBytes(8).toString("hex"),
     macros: {},
     hasMath: false,
-    lang: options.lang ?? "en",
+    lang: options.lang ?? DEFAULT_LANG,
     hasTocMarker: false,
   };
   const tokens = md.parse(source, env);

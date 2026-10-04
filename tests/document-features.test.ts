@@ -24,9 +24,14 @@ describe("alerts", () => {
   it("turns [!NOTE] blockquotes into titled callouts", () => {
     const { html } = renderMarkdown("> [!NOTE]\n> Texto **importante**.");
     expect(html).toContain('<blockquote class="markdown-alert markdown-alert-note">');
-    expect(html).toContain('<p class="markdown-alert-title">Note</p>');
+    expect(html).toContain('<p class="markdown-alert-title">Nota</p>');
     expect(html).toContain("<p>Texto <strong>importante</strong>.</p>");
     expect(html).not.toContain("[!NOTE]");
+  });
+
+  it("uses English titles with lang en", () => {
+    const { html } = renderMarkdown("> [!WARNING]\n> Careful.", { lang: "en" });
+    expect(html).toContain('<p class="markdown-alert-title">Warning</p>');
   });
 
   it("translates titles with the document language", () => {
@@ -37,7 +42,7 @@ describe("alerts", () => {
 
   it("supports a marker alone in its paragraph", () => {
     const { html } = renderMarkdown("> [!TIP]\n>\n> Párrafo aparte.");
-    expect(html).toContain('<p class="markdown-alert-title">Tip</p>\n<p>Párrafo aparte.</p>');
+    expect(html).toContain('<p class="markdown-alert-title">Consejo</p>\n<p>Párrafo aparte.</p>');
   });
 
   it("leaves other blockquotes alone", () => {
@@ -96,7 +101,9 @@ describe("table of contents", () => {
 
   it("uses translated titles", () => {
     expect(strings("es").toc).toBe("Contenido");
-    expect(strings("xx").toc).toBe("Contents");
+    expect(strings("en-US").toc).toBe("Contents");
+    // Unknown languages fall back to the default, Spanish.
+    expect(strings("xx").toc).toBe("Contenido");
   });
 });
 

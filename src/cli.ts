@@ -70,7 +70,7 @@ function buildProgram(io: Io): Command {
       "--mermaid-theme <theme>",
       `Mermaid diagram theme: ${MERMAID_THEMES.join(", ")} (default: neutral)`,
     )
-    .option("--lang <tag>", "document language, e.g. es or en (default: en)")
+    .option("--lang <tag>", "document language, e.g. es or en (default: es)")
     .option("--title <text>", "document title (shown as a title block)")
     .option("--config <file>", "config file (default: nearest mdrender.config.json)")
     .option("--no-config", "ignore mdrender.config.json files")

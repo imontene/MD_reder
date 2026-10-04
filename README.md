@@ -94,27 +94,27 @@ mdrender "C:\Users\yo\Documentos\notas de clase.md" -o "C:\Users\yo\Desktop\nota
 
 ### Opciones principales
 
-| Opción                     | Descripción                                              | Por defecto        |
-| -------------------------- | -------------------------------------------------------- | ------------------ |
-| `-o, --output <ruta>`      | Archivo o carpeta de salida                              | junto al `.md`     |
-| `-f, --format <pdf\|html>` | Formato de salida                                        | `pdf`              |
-| `--page-size <tamaño>`     | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`           | `A4`               |
-| `--margin <valor>`         | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`… | `20mm`             |
-| `--landscape`              | Orientación horizontal                                   | —                  |
-| `--toc`                    | Tabla de contenidos al inicio (o donde pongas `[[toc]]`) | —                  |
-| `--toc-depth <n>`          | Nivel de título más profundo en la tabla de contenidos   | `3`                |
-| `--header <texto>`         | Encabezado de página (ver abajo)                         | —                  |
-| `--footer <texto>`         | Pie de página (ver abajo)                                | `{page} / {pages}` |
-| `--no-page-numbers`        | Sin el pie con números de página                         | —                  |
-| `--css <archivo.css>`      | CSS adicional (se puede repetir)                         | —                  |
-| `--mermaid-theme <tema>`   | `default`, `neutral`, `dark`, `forest`, `base`           | `neutral`          |
-| `--lang <código>`          | Idioma del documento (`es`, `en`, `pt`, `fr`, `de`…)     | `en`               |
-| `--title <texto>`          | Título del documento (muestra un bloque de título)       | primer `# título`  |
-| `--config <archivo>`       | Archivo de configuración                                 | el más cercano     |
-| `--no-config`              | Ignorar `mdrender.config.json`                           | —                  |
-| `--browser <ruta>`         | Ruta a Chrome/Edge/Chromium                              | autodetección      |
-| `--theme <light\|dark>` †  | Tema visual                                              | `light`            |
-| `-w, --watch` †            | Regenerar al guardar                                     | —                  |
+| Opción                     | Descripción                                                | Por defecto        |
+| -------------------------- | ---------------------------------------------------------- | ------------------ |
+| `-o, --output <ruta>`      | Archivo o carpeta de salida                                | junto al `.md`     |
+| `-f, --format <pdf\|html>` | Formato de salida                                          | `pdf`              |
+| `--page-size <tamaño>`     | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`             | `A4`               |
+| `--margin <valor>`         | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`…   | `20mm`             |
+| `--landscape`              | Orientación horizontal                                     | —                  |
+| `--toc`                    | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)   | —                  |
+| `--toc-depth <n>`          | Nivel de título más profundo en la tabla de contenidos     | `3`                |
+| `--header <texto>`         | Encabezado de página (ver abajo)                           | —                  |
+| `--footer <texto>`         | Pie de página (ver abajo)                                  | `{page} / {pages}` |
+| `--no-page-numbers`        | Sin el pie con números de página                           | —                  |
+| `--css <archivo.css>`      | CSS adicional (se puede repetir)                           | —                  |
+| `--mermaid-theme <tema>`   | `default`, `neutral`, `dark`, `forest`, `base`             | `neutral`          |
+| `--lang <código>`          | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…) | `en`               |
+| `--title <texto>`          | Título del documento (muestra un bloque de título)         | primer `# título`  |
+| `--config <archivo>`       | Archivo de configuración                                   | el más cercano     |
+| `--no-config`              | Ignorar `mdrender.config.json`                             | —                  |
+| `--browser <ruta>`         | Ruta a Chrome/Edge/Chromium                                | autodetección      |
+| `--theme <light\|dark>` †  | Tema visual                                                | `light`            |
+| `-w, --watch` †            | Regenerar al guardar                                       | —                  |
 
 **Encabezado y pie**: texto con marcadores `{page}`, `{pages}`, `{title}`, `{author}` y
 `{date}`; `|` separa columnas izquierda, centro y derecha. Ejemplos:

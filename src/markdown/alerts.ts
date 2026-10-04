@@ -1,5 +1,5 @@
 import type { MarkdownIt, Token } from "markdown-it";
-import { strings, type AlertType } from "../i18n.js";
+import { DEFAULT_LANG, strings, type AlertType } from "../i18n.js";
 
 const MARKER = /^\[!(note|tip|important|warning|caution)\][ \t]*$/i;
 
@@ -10,7 +10,7 @@ const MARKER = /^\[!(note|tip|important|warning|caution)\][ \t]*$/i;
 export function alerts(md: MarkdownIt): void {
   md.core.ruler.after("inline", "github_alerts", (state) => {
     const tokens = state.tokens;
-    const titles = strings((state.env as { lang?: string }).lang ?? "en").alerts;
+    const titles = strings((state.env as { lang?: string }).lang ?? DEFAULT_LANG).alerts;
 
     for (let i = 0; i + 2 < tokens.length; i++) {
       const open = tokens[i]!;

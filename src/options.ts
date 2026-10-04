@@ -1,6 +1,7 @@
 import path from "node:path";
 import { ExitCode } from "./exit-codes.js";
 import { MdRenderError } from "./errors.js";
+import { DEFAULT_LANG } from "./i18n.js";
 
 export const PAGE_SIZES = ["A3", "A4", "A5", "Letter", "Legal", "Tabloid"] as const;
 export type PageSize = (typeof PAGE_SIZES)[number];
@@ -42,7 +43,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   pageNumbers: true,
   mermaidTheme: "neutral",
   css: [],
-  lang: "en",
+  lang: DEFAULT_LANG,
 };
 
 export class OptionsError extends MdRenderError {

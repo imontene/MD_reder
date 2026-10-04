@@ -58,7 +58,10 @@ const STRINGS: Record<string, Strings> = {
   },
 };
 
-/** UI strings for a BCP 47 language tag ("es-AR" uses "es"); English as fallback. */
+/** Default document language: Spanish. English and others are available with `lang`. */
+export const DEFAULT_LANG = "es";
+
+/** UI strings for a BCP 47 language tag ("es-AR" uses "es"); Spanish as fallback. */
 export function strings(lang: string): Strings {
-  return STRINGS[lang.toLowerCase().split("-")[0]!] ?? STRINGS.en!;
+  return STRINGS[lang.toLowerCase().split("-")[0]!] ?? STRINGS[DEFAULT_LANG]!;
 }

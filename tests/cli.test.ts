@@ -136,7 +136,7 @@ describe("main", () => {
 
     expect((await run([input, "-f", "html", "--no-config"])).code).toBe(ExitCode.Ok);
     html = readFileSync(path.join(dir, "doc.html"), "utf8");
-    expect(html).toContain('<html lang="en">');
+    expect(html).toContain('<html lang="es">');
     expect(html).not.toContain("--marca");
   });
 
