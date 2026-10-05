@@ -78,8 +78,21 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run check
+      # The full test suite already ran in CI for this commit; here: static checks, then the
+      # executable itself is tested below.
+      - run: npm run format:check && npm run lint && npm run typecheck
       - run: npm run build:exe
+
+      - name: Smoke test the executable
+        shell: bash
+        run: |
+          exe=build/sea/mdrender; [ -f "$exe.exe" ] && exe="$exe.exe"
+          "$exe" --version
+          # Hosted ARM runners have no Chrome: only check that the executable starts there.
+          if [ "${{ matrix.target }}" != linux-arm64 ]; then
+            "$exe" tests/fixtures/sample.md tests/fixtures/mermaid.md tests/fixtures/math.md -o smoke/
+            for f in sample mermaid math; do test -s "smoke/$f.pdf"; done
+          fi
 
       - name: Package
         shell: bash
