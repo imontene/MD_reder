@@ -1,18 +1,66 @@
 name: Release
 
-# Push a tag like v1.0.0 to build the executables, publish a GitHub Release and, when the
-# NPM_TOKEN secret is configured, publish the package to npm.
+# Publishes a version: builds the executables, creates the GitHub Release (and its tag) with
+# SHA-256 sums and, when the NPM_TOKEN secret is configured, publishes the package to npm.
+#
+# Start it either way:
+#   - push a tag:        git tag v1.0.0 && git push origin v1.0.0
+#   - or run it by hand: Actions → Release → Run workflow, with the version (e.g. 1.0.0).
+#     The tag is created by the release itself, on the commit the workflow runs from.
+# Without a tag or a version it only builds the executables (a dry run).
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish, e.g. 1.0.0 (must match package.json). Empty: build only."
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
 jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: Resolve and check the version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag="$GITHUB_REF_NAME"
+          elif [ -n "$INPUT_VERSION" ]; then
+            tag="v${INPUT_VERSION#v}"
+          else
+            echo "version=dev" >> "$GITHUB_OUTPUT"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "No tag or version: build only."
+            exit 0
+          fi
+          version="${tag#v}"
+          package_version="$(node -p 'require("./package.json").version')"
+          if [ "$version" != "$package_version" ]; then
+            echo "::error::Version $version does not match package.json ($package_version)."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+          echo "Publishing $tag"
+
   executables:
     name: Build ${{ matrix.target }}
+    needs: prepare
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.optional }}
     strategy:
@@ -36,9 +84,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          [ "$GITHUB_REF_TYPE" = tag ] || version="dev"
-          name="mdrender-${version}-${{ matrix.target }}"
+          name="mdrender-${{ needs.prepare.outputs.version }}-${{ matrix.target }}"
           mkdir -p "dist-release/$name"
           exe=build/sea/mdrender; [ -f "$exe.exe" ] && exe="$exe.exe"
           cp "$exe" build/sea/THIRD-PARTY-NOTICES.txt README.md LICENSE "dist-release/$name/"
@@ -57,8 +103,8 @@ jobs:
 
   release:
     name: GitHub Release
-    needs: executables
-    if: github.ref_type == 'tag'
+    needs: [prepare, executables]
+    if: needs.prepare.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -72,14 +118,16 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        # --target creates the tag on this commit when it does not exist yet (manual runs).
         run: |
-          gh release create "$GITHUB_REF_NAME" assets/* \
-            --repo "$GITHUB_REPOSITORY" --title "mdrender $GITHUB_REF_NAME" --generate-notes
+          gh release create "$TAG" assets/* --target "$GITHUB_SHA" \
+            --repo "$GITHUB_REPOSITORY" --title "mdrender $TAG" --generate-notes
 
   npm:
     name: Publish to npm
-    needs: executables
-    if: github.ref_type == 'tag'
+    needs: [prepare, executables]
+    if: needs.prepare.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
