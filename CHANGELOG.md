@@ -1,5 +1,12 @@
 # Cambios
 
+## 1.0.1 — 2026-10-12
+
+- Corrige un error EPIPE sin capturar cuando la salida se corta con una tubería
+  (por ejemplo `mdrender --help | head`); ahora el comando termina normalmente.
+- El flujo de publicación se puede lanzar a mano con la versión
+  (Actions → Release → Run workflow).
+
 ## 1.0.0 — 2026-10-04
 
 Primera versión estable.

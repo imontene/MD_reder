@@ -1,6 +1,6 @@
 {
   "name": "@imontene/mdrender",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Command-line app for Windows and Linux that renders Markdown — with LaTeX equations and Mermaid diagrams — to PDF and HTML using the Inter typeface",
   "keywords": [
     "markdown",
