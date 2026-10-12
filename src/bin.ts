@@ -6,6 +6,12 @@ const controller = new AbortController();
 process.once("SIGINT", () => controller.abort());
 process.once("SIGTERM", () => controller.abort());
 
+// A reader that stops early (`mdrender --help | head`) closes the pipe: drop the rest of the
+// output instead of crashing with an unhandled EPIPE.
+process.stdout.on("error", (error: NodeJS.ErrnoException) => {
+  if (error.code !== "EPIPE") throw error;
+});
+
 main(process.argv.slice(2), defaultIo, { signal: controller.signal }).then(
   (code) => {
     process.exitCode = code;

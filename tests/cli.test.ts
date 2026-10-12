@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -161,11 +161,25 @@ describe("main", () => {
 });
 
 describe("executable", () => {
+  const require = createRequire(import.meta.url);
+  const tsxCli = require.resolve("tsx/cli");
+  const cli = fileURLToPath(new URL("../src/bin.ts", import.meta.url));
+
   it("runs as a real process via tsx", async () => {
-    const require = createRequire(import.meta.url);
-    const tsxCli = require.resolve("tsx/cli");
-    const cli = fileURLToPath(new URL("../src/bin.ts", import.meta.url));
     const { stdout } = await promisify(execFile)(process.execPath, [tsxCli, cli, "--version"]);
     expect(stdout.trim()).toBe(version);
+  });
+
+  it("exits cleanly when its output pipe is closed early (mdrender --help | head)", async () => {
+    const child = spawn(process.execPath, [tsxCli, cli, "--help"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    // Close the read end before the program writes, like `head` exiting.
+    child.stdout.destroy();
+    let stderr = "";
+    child.stderr.on("data", (chunk: Buffer) => (stderr += chunk));
+    const code = await new Promise<number | null>((resolve) => child.on("close", resolve));
+    expect(stderr).not.toContain("EPIPE");
+    expect(code).toBe(0);
   });
 });
