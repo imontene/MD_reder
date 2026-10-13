@@ -33,6 +33,17 @@ async function pageSize(file: string): Promise<number[]> {
   return view;
 }
 
+/** Smallest x of the text on page 1, in PDF points: where the left margin ends. */
+async function leftmostText(file: string): Promise<number> {
+  const { doc, close } = await openPdf(file);
+  const content = await (await doc.getPage(1)).getTextContent();
+  const xs = content.items
+    .filter((item) => "str" in item && item.str.trim() !== "")
+    .map((item) => ("transform" in item ? (item.transform as number[])[4]! : Infinity));
+  await close();
+  return Math.min(...xs);
+}
+
 async function pdfText(file: string): Promise<{ pages: number; text: string }> {
   const { doc, close } = await openPdf(file);
   let text = "";
@@ -181,10 +192,57 @@ describe.skipIf(!browser && !browserRequired)("document layout", () => {
       input: fixture("basic.md"),
       output,
       format: "pdf",
-      overrides: { pageSize: "Letter", landscape: true, margin: "1in", pageNumbers: false },
+      overrides: {
+        pageSize: "Letter",
+        orientation: "landscape",
+        margin: "1in",
+        pageNumbers: false,
+      },
     });
     expect(await pageSize(output)).toEqual([0, 0, 792, 612]);
     const { text } = await pdfText(output);
     expect(text).not.toContain("1 / 1");
+  });
+});
+
+describe.skipIf(!browser && !browserRequired)("page size, orientation and margins", () => {
+  const mm = (value: number) => (value * 72) / 25.4;
+  // Chrome rounds margins to whole CSS pixels (10 mm = 37.8 px → 37 px), so allow ~1.5 pt.
+  const expectNear = (actual: number, expected: number) =>
+    expect(Math.abs(actual - expected)).toBeLessThan(1.5);
+
+  it("defaults to Letter portrait with 10 mm margins", async () => {
+    const output = path.join(tempDir(), "default.pdf");
+    await convertFile({ input: fixture("basic.md"), output, format: "pdf", config: false });
+    expect(await pageSize(output)).toEqual([0, 0, 612, 792]);
+    expectNear(await leftmostText(output), mm(10));
+  });
+
+  it.each([
+    ["A4", "portrait", [0, 0, 596, 842]],
+    ["Legal", "portrait", [0, 0, 612, 1008]],
+    ["Legal", "landscape", [0, 0, 1008, 612]],
+  ] as const)("prints %s %s", async (pageSize_, orientation, expected) => {
+    const output = path.join(tempDir(), "size.pdf");
+    await convertFile({
+      input: fixture("basic.md"),
+      output,
+      format: "pdf",
+      config: false,
+      overrides: { pageSize: pageSize_, orientation },
+    });
+    expect(await pageSize(output)).toEqual(expected);
+  });
+
+  it("applies a single left margin on top of the shorthand", async () => {
+    const output = path.join(tempDir(), "left.pdf");
+    await convertFile({
+      input: fixture("basic.md"),
+      output,
+      format: "pdf",
+      config: false,
+      overrides: { margin: "10mm", marginLeft: "40mm" },
+    });
+    expectNear(await leftmostText(output), mm(40));
   });
 });

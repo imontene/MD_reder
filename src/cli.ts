@@ -32,7 +32,13 @@ interface PreviewCliOptions {
 const DOCUMENT_FLAGS = [
   "pageSize",
   "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  // --landscape before --orientation so an explicit --orientation wins.
   "landscape",
+  "orientation",
   "toc",
   "tocDepth",
   "header",
@@ -57,9 +63,17 @@ const collect = (value: string, previous: string[] = []) => [...previous, value]
 /** Options shared by `mdrender` (render) and `mdrender preview`. */
 function addDocumentOptions(command: Command): Command {
   return command
-    .option("--page-size <size>", `paper size: ${PAGE_SIZES.join(", ")} (default: A4)`)
-    .option("--margin <margin>", 'page margins, e.g. "20mm" or "15mm 20mm" (default: 20mm)')
-    .option("--landscape", "landscape orientation")
+    .option("--page-size <size>", `paper size: ${PAGE_SIZES.join(", ")} (default: Letter)`)
+    .option("--orientation <orientation>", "portrait or landscape (default: portrait)")
+    .option("--landscape", "same as --orientation landscape")
+    .option(
+      "--margin <margin>",
+      'all page margins, CSS-style: "10mm", "15mm 20mm"… (default: 10mm)',
+    )
+    .option("--margin-top <length>", "top margin, e.g. 15mm (overrides --margin)")
+    .option("--margin-right <length>", "right margin")
+    .option("--margin-bottom <length>", "bottom margin")
+    .option("--margin-left <length>", "left margin")
     .option("--toc", "insert a table of contents (or place it with [[toc]])")
     .option("--toc-depth <n>", "deepest heading level in the table of contents (default: 3)")
     .option("--header <text>", 'page header, e.g. "{title} | | {date}"')

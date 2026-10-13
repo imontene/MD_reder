@@ -73,7 +73,7 @@ npm link        # deja disponible el comando `mdrender`
 mdrender documento.md
 
 # Elegir salida, tamaño de página y tabla de contenidos
-mdrender documento.md -o salida/informe.pdf --page-size Letter --toc
+mdrender documento.md -o salida/informe.pdf --page-size A4 --toc
 
 # HTML autocontenido
 mdrender documento.md --format html
@@ -109,30 +109,40 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 
 ### Opciones
 
-| Opción                       | Descripción                                                 | Por defecto        |
-| ---------------------------- | ----------------------------------------------------------- | ------------------ |
-| `-o, --output <ruta>`        | Archivo de salida, o carpeta con varios archivos            | junto al `.md`     |
-| `-f, --format <pdf\|html>`   | Formato de salida                                           | `pdf`              |
-| `--page-size <tamaño>`       | `A3`, `A4`, `A5`, `Letter`, `Legal`, `Tabloid`              | `A4`               |
-| `--margin <valor>`           | Márgenes como en CSS: `20mm`, `15mm 20mm`, `1in 0.75in`…    | `20mm`             |
-| `--landscape`                | Orientación horizontal                                      | —                  |
-| `--toc`                      | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)    | —                  |
-| `--toc-depth <n>`            | Nivel de título más profundo en la tabla de contenidos      | `3`                |
-| `--header <texto>`           | Encabezado de página (ver abajo)                            | —                  |
-| `--footer <texto>`           | Pie de página (ver abajo)                                   | `{page} / {pages}` |
-| `--no-page-numbers`          | Sin el pie con números de página                            | —                  |
-| `--theme <light\|dark\|css>` | `light`, `dark` o un `.css` que reemplaza el tema           | `light`            |
-| `--css <archivo.css>`        | CSS adicional (se puede repetir)                            | —                  |
-| `--mermaid-theme <tema>`     | `default`, `neutral`, `dark`, `forest`, `base`              | `neutral` / `dark` |
-| `--lang <código>`            | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…)  | `es`               |
-| `--title <texto>`            | Título del documento (muestra un bloque de título)          | primer `# título`  |
-| `--config <archivo>`         | Archivo de configuración                                    | el más cercano     |
-| `--no-config`                | Ignorar `mdrender.config.json`                              | —                  |
-| `--browser <ruta>`           | Ruta a Chrome/Edge/Chromium (o variable `MDRENDER_BROWSER`) | autodetección      |
-| `--allow-remote`             | Permitir que el PDF descargue imágenes/CSS de internet      | bloqueado          |
-| `-w, --watch`                | Regenerar al guardar                                        | —                  |
-| `-q, --quiet`                | Mostrar solo advertencias y errores                         | —                  |
-| `-v, --verbose`              | Mostrar también configuración, navegador y tiempos          | —                  |
+| Opción                        | Descripción                                                 | Por defecto        |
+| ----------------------------- | ----------------------------------------------------------- | ------------------ |
+| `-o, --output <ruta>`         | Archivo de salida, o carpeta con varios archivos            | junto al `.md`     |
+| `-f, --format <pdf\|html>`    | Formato de salida                                           | `pdf`              |
+| `--page-size <tamaño>`        | `Letter`, `A4`, `Legal` (también `A3`, `A5`, `Tabloid`)     | `Letter`           |
+| `--margin <valor>`            | Las cuatro márgenes como en CSS: `10mm`, `15mm 20mm`…       | `10mm`             |
+| `--margin-top <medida>`       | Margen superior, p. ej. `15mm` (prevalece sobre `--margin`) | `10mm`             |
+| `--margin-right <medida>`     | Margen derecho                                              | `10mm`             |
+| `--margin-bottom <medida>`    | Margen inferior                                             | `10mm`             |
+| `--margin-left <medida>`      | Margen izquierdo                                            | `10mm`             |
+| `--orientation <orientación>` | `portrait` (vertical) o `landscape` (horizontal)            | `portrait`         |
+| `--landscape`                 | Atajo de `--orientation landscape`                          | —                  |
+| `--toc`                       | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)    | —                  |
+| `--toc-depth <n>`             | Nivel de título más profundo en la tabla de contenidos      | `3`                |
+| `--header <texto>`            | Encabezado de página (ver abajo)                            | —                  |
+| `--footer <texto>`            | Pie de página (ver abajo)                                   | `{page} / {pages}` |
+| `--no-page-numbers`           | Sin el pie con números de página                            | —                  |
+| `--theme <light\|dark\|css>`  | `light`, `dark` o un `.css` que reemplaza el tema           | `light`            |
+| `--css <archivo.css>`         | CSS adicional (se puede repetir)                            | —                  |
+| `--mermaid-theme <tema>`      | `default`, `neutral`, `dark`, `forest`, `base`              | `neutral` / `dark` |
+| `--lang <código>`             | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…)  | `es`               |
+| `--title <texto>`             | Título del documento (muestra un bloque de título)          | primer `# título`  |
+| `--config <archivo>`          | Archivo de configuración                                    | el más cercano     |
+| `--no-config`                 | Ignorar `mdrender.config.json`                              | —                  |
+| `--browser <ruta>`            | Ruta a Chrome/Edge/Chromium (o variable `MDRENDER_BROWSER`) | autodetección      |
+| `--allow-remote`              | Permitir que el PDF descargue imágenes/CSS de internet      | bloqueado          |
+| `-w, --watch`                 | Regenerar al guardar                                        | —                  |
+| `-q, --quiet`                 | Mostrar solo advertencias y errores                         | —                  |
+| `-v, --verbose`               | Mostrar también configuración, navegador y tiempos          | —                  |
+
+**Página**: por defecto hoja **Letter vertical con márgenes de 10 mm**. Las medidas aceptan
+`mm`, `cm`, `in` o `px`. `--margin` fija las cuatro márgenes a la vez y `--margin-top`,
+`--margin-right`, `--margin-bottom` y `--margin-left` ajustan una sola, por encima de
+`--margin`. Ejemplo: `--page-size A4 --orientation landscape --margin 15mm --margin-left 25mm`.
 
 **Encabezado y pie**: texto con marcadores `{page}`, `{pages}`, `{title}`, `{author}` y
 `{date}`; `|` separa columnas izquierda, centro y derecha. Ejemplos:
@@ -151,7 +161,9 @@ subtitle: Resultados del trimestre
 author: Ana Pérez
 date: 2026-10-04
 toc: true
-page-size: Letter
+page-size: A4
+orientation: landscape
+margin-left: 25mm
 header: "{title} | | {date}"
 ---
 ```
@@ -159,8 +171,9 @@ header: "{title} | | {date}"
 ```json
 {
   "lang": "es",
-  "pageSize": "A4",
-  "margin": "25mm 20mm",
+  "pageSize": "Letter",
+  "margin": "15mm",
+  "marginLeft": "25mm",
   "css": "estilos/empresa.css"
 }
 ```

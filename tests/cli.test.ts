@@ -140,6 +140,32 @@ describe("main", () => {
     expect(html).not.toContain("--marca");
   });
 
+  it("lets --orientation win over --landscape and validates new layout flags", async () => {
+    const ok = await run([
+      fixture("basic.md"),
+      "-f",
+      "html",
+      "-o",
+      tempDir(),
+      "--landscape",
+      "--orientation",
+      "portrait",
+      "--margin-left",
+      "25mm",
+      "--page-size",
+      "legal",
+    ]);
+    expect(ok.code).toBe(ExitCode.Ok);
+
+    const bad = await run([fixture("basic.md"), "-f", "html", "--margin-left", "ancho"]);
+    expect(bad.code).toBe(ExitCode.Usage);
+    expect(bad.err).toContain("command line: --margin-left must be a length");
+
+    const badOrientation = await run([fixture("basic.md"), "-f", "html", "--orientation", "x"]);
+    expect(badOrientation.code).toBe(ExitCode.Usage);
+    expect(badOrientation.err).toContain("--orientation must be one of: portrait, landscape");
+  });
+
   it.each([
     [["--margin", "mucho"], /command line: --margin: invalid margin "mucho"/],
     [["--page-size", "B5"], /command line: --page-size must be one of/],

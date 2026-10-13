@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- Márgenes por lado: `--margin-top`, `--margin-right`, `--margin-bottom`, `--margin-left`
+  (también `marginTop`… en front matter y `mdrender.config.json`), por encima de `--margin`.
+- Orientación con `--orientation portrait|landscape` (`--landscape` sigue funcionando).
+- **Cambian los valores por defecto**: hoja **Letter** (antes A4) y márgenes de **10 mm**
+  (antes 20 mm). Para el formato anterior: `--page-size A4 --margin 20mm`, o ponerlo en
+  `mdrender.config.json`.
+- El proceso de publicación falla al inicio, con un error claro, si falta `NPM_TOKEN`.
+
 ## 1.0.1 — 2026-10-12
 
 - Corrige un error EPIPE sin capturar cuando la salida se corta con una tubería

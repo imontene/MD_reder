@@ -12,7 +12,7 @@ import {
   mergeOptions,
   normalizeOptions,
   OptionsError,
-  parseMargin,
+  resolveMargins,
   type DocumentOptions,
   type MermaidTheme,
 } from "./options.js";
@@ -139,7 +139,7 @@ export async function renderDocument(
     normalizeOptions(frontMatter.data, `${input} (front matter)`, baseDir),
     settings.overrides ?? {},
   );
-  const margin = parseMargin(options.margin);
+  const margin = resolveMargins(options);
   const themeCss = themeStylesheets(options.theme);
   const extraCss = options.css.map(readStylesheet);
 
@@ -159,7 +159,7 @@ export async function renderDocument(
   // Mermaid needs a real DOM to lay out diagrams, also for HTML output.
   if (md.mermaid.length > 0) {
     const session = await browsers.get();
-    const width = contentWidthPx(options.pageSize, options.landscape, margin);
+    const width = contentWidthPx(options.pageSize, options.orientation === "landscape", margin);
     const theme = effectiveMermaidTheme(options);
     const results = await renderMermaid(session, md.mermaid, theme, width);
     const filled = fillMermaid(body, md.nonce, md.mermaid, results);
@@ -200,7 +200,7 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
 
     await mkdir(path.dirname(output), { recursive: true });
     if (convert.format === "pdf") {
-      const margin = parseMargin(options.margin);
+      const margin = resolveMargins(options);
       const values = { title: doc.title, author: options.author, date: options.date };
       const footer = options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined);
       const hasHeaderFooter = options.header !== undefined || footer !== undefined;
@@ -208,7 +208,7 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
       const { blocked } = await session.printPdf(doc.html, {
         output,
         format: options.pageSize,
-        landscape: options.landscape,
+        landscape: options.orientation === "landscape",
         margin,
         headerTemplate: hasHeaderFooter
           ? headerFooterTemplate(options.header, values, margin)

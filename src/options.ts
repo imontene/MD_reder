@@ -6,6 +6,11 @@ import { DEFAULT_LANG } from "./i18n.js";
 export const PAGE_SIZES = ["A3", "A4", "A5", "Letter", "Legal", "Tabloid"] as const;
 export type PageSize = (typeof PAGE_SIZES)[number];
 
+export const ORIENTATIONS = ["portrait", "landscape"] as const;
+export type Orientation = (typeof ORIENTATIONS)[number];
+
+export type Margins = { top: string; right: string; bottom: string; left: string };
+
 export const MERMAID_THEMES = ["default", "neutral", "dark", "forest", "base"] as const;
 export type MermaidTheme = (typeof MERMAID_THEMES)[number];
 
@@ -16,7 +21,12 @@ export interface DocumentOptions {
   pageSize: PageSize;
   /** CSS margin shorthand: 1 to 4 lengths in mm, cm, in or px. */
   margin: string;
-  landscape: boolean;
+  /** Single sides, overriding the shorthand (see `resolveMargins`). */
+  marginTop?: string;
+  marginRight?: string;
+  marginBottom?: string;
+  marginLeft?: string;
+  orientation: Orientation;
   toc: boolean;
   /** Deepest heading level listed in the table of contents. */
   tocDepth: number;
@@ -40,9 +50,9 @@ export interface DocumentOptions {
 }
 
 export const DEFAULT_OPTIONS: DocumentOptions = {
-  pageSize: "A4",
-  margin: "20mm",
-  landscape: false,
+  pageSize: "Letter",
+  margin: "10mm",
+  orientation: "portrait",
   toc: false,
   tocDepth: 3,
   pageNumbers: true,
@@ -60,12 +70,7 @@ export class OptionsError extends MdRenderError {
 const LENGTH = /^\d+(\.\d+)?(mm|cm|in|px)$/;
 
 /** Parse a CSS margin shorthand into the four sides, or throw. */
-export function parseMargin(margin: string): {
-  top: string;
-  right: string;
-  bottom: string;
-  left: string;
-} {
+export function parseMargin(margin: string): Margins {
   const parts = margin.trim().split(/\s+/);
   if (parts.length < 1 || parts.length > 4 || !parts.every((p) => LENGTH.test(p))) {
     throw new OptionsError(
@@ -101,6 +106,13 @@ const oneOf =
     throw new OptionsError(`${describe} must be one of: ${choices.join(", ")}`);
   };
 
+const length: Validator = (value, describe) => {
+  const raw = text(value, describe, "") as string;
+  const trimmed = raw.trim();
+  if (LENGTH.test(trimmed)) return trimmed;
+  throw new OptionsError(`${describe} must be a length in mm, cm, in or px, e.g. "10mm"`);
+};
+
 const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   pageSize: oneOf(PAGE_SIZES),
   margin: (value, describe) => {
@@ -112,7 +124,11 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
     }
     return margin;
   },
-  landscape: bool,
+  marginTop: length,
+  marginRight: length,
+  marginBottom: length,
+  marginLeft: length,
+  orientation: oneOf(ORIENTATIONS),
   toc: bool,
   tocDepth: (value, describe) => {
     const depth = Number(value);
@@ -158,6 +174,12 @@ export function normalizeOptions(
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(raw)) {
     if (value === undefined || value === null) continue;
+    // `landscape: true` is kept as a shorthand for `orientation: landscape`.
+    if (toCamel(key) === "landscape") {
+      const landscape = bool(value, `${source}: ${label(key)}`, baseDir);
+      result.orientation = landscape ? "landscape" : "portrait";
+      continue;
+    }
     const name = toCamel(key) as keyof DocumentOptions;
     const validate = VALIDATORS[name];
     if (!validate) continue;
@@ -166,13 +188,31 @@ export function normalizeOptions(
   return result as Partial<DocumentOptions>;
 }
 
-/** Merge option layers, later ones winning. CSS lists accumulate instead of replacing. */
+const SIDES = ["marginTop", "marginRight", "marginBottom", "marginLeft"] as const;
+
+/**
+ * Merge option layers, later ones winning. CSS lists accumulate instead of replacing. A layer
+ * that sets the `margin` shorthand also replaces single-side margins from earlier layers, so
+ * `--margin 15mm` on the command line is not partly undone by `marginLeft` in a config file.
+ */
 export function mergeOptions(...layers: Partial<DocumentOptions>[]): DocumentOptions {
   const merged: DocumentOptions = { ...DEFAULT_OPTIONS, css: [] };
   for (const layer of layers) {
     const { css, ...rest } = layer;
+    if (rest.margin !== undefined) for (const side of SIDES) delete merged[side];
     Object.assign(merged, rest);
     if (css) merged.css.push(...css);
   }
   return merged;
+}
+
+/** The four page margins: the `margin` shorthand, with single-side options on top. */
+export function resolveMargins(options: DocumentOptions): Margins {
+  const base = parseMargin(options.margin);
+  return {
+    top: options.marginTop ?? base.top,
+    right: options.marginRight ?? base.right,
+    bottom: options.marginBottom ?? base.bottom,
+    left: options.marginLeft ?? base.left,
+  };
 }
