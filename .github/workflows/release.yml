@@ -1,7 +1,9 @@
 name: Release
 
 # Publishes a version: builds the executables, creates the GitHub Release (and its tag) with
-# SHA-256 sums and, when the NPM_TOKEN secret is configured, publishes the package to npm.
+# SHA-256 sums and publishes the package to npm. Publishing requires the NPM_TOKEN repository
+# secret (Settings → Secrets and variables → Actions → Repository secrets); without it the
+# run fails at the start, before anything is published.
 #
 # Start it either way:
 #   - push a tag:        git tag v1.0.0 && git push origin v1.0.0
@@ -36,6 +38,7 @@ jobs:
         shell: bash
         env:
           INPUT_VERSION: ${{ inputs.version }}
+          HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
         run: |
           if [ "$GITHUB_REF_TYPE" = tag ]; then
             tag="$GITHUB_REF_NAME"
@@ -51,6 +54,10 @@ jobs:
           package_version="$(node -p 'require("./package.json").version')"
           if [ "$version" != "$package_version" ]; then
             echo "::error::Version $version does not match package.json ($package_version)."
+            exit 1
+          fi
+          if [ "$HAS_NPM_TOKEN" != true ]; then
+            echo "::error::The NPM_TOKEN secret is missing or empty, so npm cannot be published. Add it under Settings → Secrets and variables → Actions → Repository secrets. Nothing was published."
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
@@ -158,7 +165,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "NPM_TOKEN is not configured: skipping npm publish."
-            exit 0
+            echo "::error::The NPM_TOKEN secret is missing or empty: cannot publish to npm."
+            exit 1
           fi
           npm publish --provenance --access public

@@ -231,7 +231,8 @@ El CI (GitHub Actions) prueba en **Windows y Linux** con Node 22 y 24, construye
 ejecutable y valida `mdrender setup`. Para publicar una versión, sube una etiqueta `v*` o
 lanza a mano **Actions → Release → Run workflow** con la versión (debe coincidir con
 `package.json`): construye los ejecutables, crea la etiqueta y el GitHub Release con sus sumas
-SHA-256, y publica en npm si el secreto `NPM_TOKEN` está configurado.
+SHA-256, y publica en npm. Requiere el secreto de repositorio `NPM_TOKEN`; si falta, la
+publicación se detiene al inicio, antes de publicar nada.
 
 Plan completo y decisiones de diseño: [docs/PLAN_MAESTRO.md](docs/PLAN_MAESTRO.md) ·
 cambios: [CHANGELOG.md](CHANGELOG.md).
