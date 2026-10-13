@@ -115,3 +115,23 @@ describe("planOutputs", () => {
     expect(() => planOutputs(inputs, "pdf", "out/", root)).toThrow(/would both be written/);
   });
 });
+
+describe("protecting the input files", () => {
+  it("refuses an output that is the input Markdown file", () => {
+    const root = tree();
+    const inputs = expandInputs(["docs/a.md"], root);
+    expect(() => planOutputs(inputs, "html", "docs/a.md", root)).toThrow(
+      /refusing to overwrite the input file .*a\.md/,
+    );
+  });
+
+  it("compares paths the way the file system does", () => {
+    const root = tree();
+    const inputs = expandInputs(["otro/c.md"], root);
+    const sameFile = path.join(root, "otro", "..", "otro", "c.md");
+    expect(() => planOutputs(inputs, "pdf", sameFile, root)).toThrow(/refusing to overwrite/);
+    if (process.platform === "win32") {
+      expect(() => planOutputs(inputs, "pdf", "OTRO/C.MD", root)).toThrow(/refusing to overwrite/);
+    }
+  });
+});

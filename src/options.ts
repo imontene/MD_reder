@@ -216,3 +216,53 @@ export function resolveMargins(options: DocumentOptions): Margins {
     left: options.marginLeft ?? base.left,
   };
 }
+
+/** Edit distance between two strings (insertions, deletions, substitutions). */
+function editDistance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      current[j] = Math.min(previous[j]! + 1, current[j - 1]! + 1, previous[j - 1]! + cost);
+    }
+    previous = current;
+  }
+  return previous[b.length]!;
+}
+
+const toKebab = (key: string) => key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+
+/** Every option name accepted in a config file, in camelCase. */
+export const OPTION_KEYS: readonly string[] = [...Object.keys(VALIDATORS), "landscape"];
+
+export interface UnknownOption {
+  key: string;
+  /** Closest known option, written in the same style (camelCase or kebab-case) as `key`. */
+  suggestion?: string;
+}
+
+/**
+ * Keys that are not options, with the closest known option when one is near: catches typos
+ * such as "pagesize" or "margn" that would otherwise be ignored silently.
+ */
+export function unknownOptions(raw: Record<string, unknown>): UnknownOption[] {
+  const unknown: UnknownOption[] = [];
+  for (const key of Object.keys(raw)) {
+    if (OPTION_KEYS.includes(toCamel(key))) continue;
+    const plain = key.toLowerCase().replace(/[-_]/g, "");
+    let best: string | undefined;
+    let bestDistance = Infinity;
+    for (const known of OPTION_KEYS) {
+      const distance = editDistance(plain, known.toLowerCase());
+      if (distance < bestDistance) {
+        best = known;
+        bestDistance = distance;
+      }
+    }
+    const close = best !== undefined && bestDistance <= Math.max(1, Math.floor(plain.length / 4));
+    const suggestion = close ? (key.includes("-") ? toKebab(best!) : best) : undefined;
+    unknown.push({ key, suggestion });
+  }
+  return unknown;
+}

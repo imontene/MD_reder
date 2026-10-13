@@ -166,6 +166,32 @@ describe("main", () => {
     expect(badOrientation.err).toContain("--orientation must be one of: portrait, landscape");
   });
 
+  it("never overwrites the Markdown file it is converting", async () => {
+    const dir = tempDir();
+    const input = path.join(dir, "doc.md");
+    writeFileSync(input, "# Original\n");
+    const { code, err } = await run([input, "-f", "html", "-o", input]);
+    expect(code).toBe(ExitCode.Usage);
+    expect(err).toContain("refusing to overwrite the input file");
+    expect(readFileSync(input, "utf8")).toBe("# Original\n");
+  });
+
+  it("warns about misspelled options in mdrender.config.json", async () => {
+    const dir = tempDir();
+    copyFileSync(fixture("basic.md"), path.join(dir, "doc.md"));
+    writeFileSync(
+      path.join(dir, "mdrender.config.json"),
+      JSON.stringify({ pagesize: "A4", "margin-lft": "5mm", fooBar: 1, lang: "en" }),
+    );
+    const { code, err } = await run([path.join(dir, "doc.md"), "-f", "html"]);
+    expect(code).toBe(ExitCode.Ok);
+    expect(err).toMatch(/unknown option "pagesize" \(did you mean "pageSize"\?\)/);
+    expect(err).toMatch(/unknown option "margin-lft" \(did you mean "margin-left"\?\)/);
+    expect(err).toMatch(/unknown option "fooBar" \(ignored\)/);
+    // Valid options in the same file still apply.
+    expect(readFileSync(path.join(dir, "doc.html"), "utf8")).toContain('<html lang="en">');
+  });
+
   it.each([
     [["--margin", "mucho"], /command line: --margin: invalid margin "mucho"/],
     [["--page-size", "B5"], /command line: --page-size must be one of/],

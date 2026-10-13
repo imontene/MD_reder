@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.0.0 — 2026-10-13
 
 - Márgenes por lado: `--margin-top`, `--margin-right`, `--margin-bottom`, `--margin-left`
   (también `marginTop`… en front matter y `mdrender.config.json`), por encima de `--margin`.
@@ -9,6 +9,13 @@
   (antes 20 mm). Para el formato anterior: `--page-size A4 --margin 20mm`, o ponerlo en
   `mdrender.config.json`.
 - El proceso de publicación falla al inicio, con un error claro, si falta `NPM_TOKEN`.
+- Nunca sobrescribe el `.md` de entrada: `mdrender doc.md -o doc.md` termina con un error.
+- Avisa de opciones desconocidas en `mdrender.config.json` y sugiere la correcta
+  (`"margn"` → `"margin"`).
+- Escritura segura: el PDF/HTML se escribe en un archivo temporal y se renombra al final; un
+  fallo no deja archivos a medias y conserva la versión anterior. Mensaje claro si el archivo
+  está abierto en otro programa.
+- Avisa si un encabezado o pie no cabe (margen superior o inferior menor de 10 mm).
 
 ## 1.0.1 — 2026-10-12
 

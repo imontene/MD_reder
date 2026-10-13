@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { findBrowser } from "./browser/detect.js";
-import { findConfigFile, loadConfig } from "./config.js";
+import { findConfigFile, readConfig } from "./config.js";
 import type { Diagnostic } from "./diagnostics.js";
 import { extractFrontMatter } from "./frontmatter.js";
 import { strings } from "./i18n.js";
@@ -14,14 +14,16 @@ import {
   OptionsError,
   resolveMargins,
   type DocumentOptions,
+  type Margins,
   type MermaidTheme,
 } from "./options.js";
 import type { OutputFormat } from "./paths.js";
 import { BrowserSession } from "./render/browser.js";
 import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js";
 import { fillMermaid, renderMermaid } from "./render/mermaid.js";
-import { contentWidthPx } from "./render/page.js";
+import { contentWidthPx, lengthToPx } from "./render/page.js";
 import { buildHtmlDocument, builtinThemeCss } from "./render/template.js";
+import { writeFileAtomic } from "./write.js";
 
 /** Settings shared by every file of a run (batch, watch or preview). */
 export interface RenderSettings {
@@ -108,6 +110,40 @@ function themeStylesheets(theme: string): string[] {
   return theme === "light" || theme === "dark" ? builtinThemeCss(theme) : [readStylesheet(theme)];
 }
 
+/**
+ * Chrome draws the header and footer inside the top and bottom margins. Measured: below about
+ * 10 mm the header touches or overlaps the first line of text (and the footer the last line).
+ */
+export const MIN_HEADER_FOOTER_MARGIN = "10mm";
+
+export function headerFooterSpaceWarnings(
+  margin: Margins,
+  hasHeader: boolean,
+  hasFooter: boolean,
+): Diagnostic[] {
+  const minimum = lengthToPx(MIN_HEADER_FOOTER_MARGIN);
+  const warnings: Diagnostic[] = [];
+  // Half a pixel of slack: "0.39in" and "10mm" are the same margin once Chrome rounds them.
+  if (hasHeader && lengthToPx(margin.top) < minimum - 0.5) {
+    warnings.push({
+      severity: "warning",
+      message:
+        `the header may overlap the text: top margin is ${margin.top}, ` +
+        `at least ${MIN_HEADER_FOOTER_MARGIN} is needed (e.g. --margin-top 15mm)`,
+    });
+  }
+  if (hasFooter && lengthToPx(margin.bottom) < minimum - 0.5) {
+    warnings.push({
+      severity: "warning",
+      message:
+        `the footer may overlap the text: bottom margin is ${margin.bottom}, ` +
+        `at least ${MIN_HEADER_FOOTER_MARGIN} is needed ` +
+        "(e.g. --margin-bottom 15mm, or --no-page-numbers for no footer)",
+    });
+  }
+  return warnings;
+}
+
 /** Mermaid theme: explicit choice, else dark diagrams for the dark page theme. */
 export function effectiveMermaidTheme(options: DocumentOptions): MermaidTheme {
   return options.mermaidTheme ?? (options.theme === "dark" ? "dark" : "neutral");
@@ -134,8 +170,9 @@ export async function renderDocument(
       : settings.config
         ? path.resolve(settings.config)
         : findConfigFile(baseDir);
+  const config = configFile ? readConfig(configFile) : { options: {}, warnings: [] };
   const options = mergeOptions(
-    configFile ? loadConfig(configFile) : {},
+    config.options,
     normalizeOptions(frontMatter.data, `${input} (front matter)`, baseDir),
     settings.overrides ?? {},
   );
@@ -144,7 +181,10 @@ export async function renderDocument(
   const extraCss = options.css.map(readStylesheet);
 
   const md = renderMarkdown(frontMatter.body, { baseDir, lang: options.lang });
-  const diagnostics = [...md.diagnostics];
+  const diagnostics: Diagnostic[] = [
+    ...config.warnings.map((message) => ({ severity: "warning" as const, message })),
+    ...md.diagnostics,
+  ];
   const title = options.title ?? md.title ?? path.parse(input).name;
 
   // Table of contents: at the [[toc]] marker, or at the start with --toc.
@@ -198,15 +238,16 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
     const doc = await renderDocument(convert.input, convert, browsers);
     const { options } = doc;
 
-    await mkdir(path.dirname(output), { recursive: true });
     if (convert.format === "pdf") {
       const margin = resolveMargins(options);
       const values = { title: doc.title, author: options.author, date: options.date };
       const footer = options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined);
       const hasHeaderFooter = options.header !== undefined || footer !== undefined;
+      doc.diagnostics.push(
+        ...headerFooterSpaceWarnings(margin, options.header !== undefined, footer !== undefined),
+      );
       const session = await browsers.get();
-      const { blocked } = await session.printPdf(doc.html, {
-        output,
+      const { pdf, blocked } = await session.printPdf(doc.html, {
         format: options.pageSize,
         landscape: options.orientation === "landscape",
         margin,
@@ -223,8 +264,9 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
           message: `resource not loaded: ${url}${hint}`,
         });
       }
+      await writeFileAtomic(output, pdf);
     } else {
-      await writeFile(output, doc.html, "utf8");
+      await writeFileAtomic(output, doc.html);
     }
     return {
       output,

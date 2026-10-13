@@ -33,7 +33,6 @@ export function shouldRetryWithoutSandbox(
 }
 
 export interface PrintOptions {
-  output: string;
   format?: PDFOptions["format"];
   landscape?: boolean;
   margin?: { top: string; right: string; bottom: string; left: string };
@@ -117,7 +116,11 @@ export class BrowserSession {
    * rendered by then (math by KaTeX, diagrams by Mermaid), and any <script> in the Markdown
    * must not run.
    */
-  async printPdf(html: string, options: PrintOptions): Promise<{ blocked: string[] }> {
+  /** Returns the PDF bytes (the caller writes them) and the URLs that were blocked. */
+  async printPdf(
+    html: string,
+    options: PrintOptions,
+  ): Promise<{ pdf: Uint8Array; blocked: string[] }> {
     const margin = options.margin ?? { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" };
     const headerFooter =
       options.headerTemplate !== undefined || options.footerTemplate !== undefined;
@@ -129,8 +132,7 @@ export class BrowserSession {
       await page.setContent(html, { waitUntil: "load" });
       // Make sure every embedded font has loaded before printing.
       await page.evaluate("document.fonts.ready.then(() => undefined)");
-      await page.pdf({
-        path: options.output,
+      const pdf = await page.pdf({
         format: options.format ?? "A4",
         landscape: options.landscape ?? false,
         margin,
@@ -143,7 +145,7 @@ export class BrowserSession {
         tagged: true,
         timeout: this.timeout,
       });
-      return { blocked: [...new Set(blocked)] };
+      return { pdf, blocked: [...new Set(blocked)] };
     } catch (error) {
       throw new RenderError(`failed to render PDF: ${(error as Error).message}`);
     } finally {

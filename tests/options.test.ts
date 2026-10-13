@@ -7,9 +7,10 @@ import {
   OptionsError,
   parseMargin,
   resolveMargins,
+  unknownOptions,
 } from "../src/options.js";
 import { contentWidthPx } from "../src/render/page.js";
-import { effectiveMermaidTheme } from "../src/convert.js";
+import { effectiveMermaidTheme, headerFooterSpaceWarnings } from "../src/convert.js";
 
 describe("parseMargin", () => {
   it.each([
@@ -176,5 +177,38 @@ describe("page defaults and layout options", () => {
     expect(() => normalizeOptions({ orientation: "diagonal" }, "t", "/")).toThrow(
       /must be one of: portrait, landscape/,
     );
+  });
+});
+
+describe("unknownOptions", () => {
+  it("ignores known keys in either style and suggests the closest one", () => {
+    expect(unknownOptions({ pageSize: 1, "page-size": 1, landscape: true, margin_top: 1 })).toEqual(
+      [],
+    );
+    expect(unknownOptions({ pagesize: 1, margn: 1, "toc-dpth": 1, colour: 1 })).toEqual([
+      { key: "pagesize", suggestion: "pageSize" },
+      { key: "margn", suggestion: "margin" },
+      { key: "toc-dpth", suggestion: "toc-depth" },
+      { key: "colour", suggestion: undefined },
+    ]);
+  });
+});
+
+describe("headerFooterSpaceWarnings", () => {
+  const margins = (top: string, bottom: string) => ({ top, bottom, left: "10mm", right: "10mm" });
+
+  it("accepts 10 mm or more, including the same length in other units", () => {
+    expect(headerFooterSpaceWarnings(margins("10mm", "1cm"), true, true)).toEqual([]);
+    expect(headerFooterSpaceWarnings(margins("0.39in", "15mm"), true, true)).toEqual([]);
+  });
+
+  it("warns per side only when that side has a header or footer", () => {
+    const warnings = headerFooterSpaceWarnings(margins("6mm", "5mm"), true, false);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]!.message).toMatch(/header may overlap the text: top margin is 6mm/);
+    expect(headerFooterSpaceWarnings(margins("6mm", "5mm"), false, true)[0]!.message).toMatch(
+      /footer may overlap the text: bottom margin is 5mm.*--no-page-numbers/,
+    );
+    expect(headerFooterSpaceWarnings(margins("2mm", "2mm"), false, false)).toEqual([]);
   });
 });

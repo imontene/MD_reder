@@ -143,6 +143,8 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 `mm`, `cm`, `in` o `px`. `--margin` fija las cuatro márgenes a la vez y `--margin-top`,
 `--margin-right`, `--margin-bottom` y `--margin-left` ajustan una sola, por encima de
 `--margin`. Ejemplo: `--page-size A4 --orientation landscape --margin 15mm --margin-left 25mm`.
+El encabezado y el pie se dibujan dentro de las márgenes superior e inferior: con menos de
+10 mm pueden tocar el texto y mdrender lo advierte.
 
 **Encabezado y pie**: texto con marcadores `{page}`, `{pages}`, `{title}`, `{author}` y
 `{date}`; `|` separa columnas izquierda, centro y derecha. Ejemplos:
@@ -212,6 +214,10 @@ fecha). Las rutas de `css` y `theme` son relativas al archivo donde aparecen.
   como imágenes referenciadas desde el `.md`.
 - Mermaid corre en una página aparte, sin contenido del usuario, con `securityLevel: "strict"`.
 - La vista previa solo escucha en `127.0.0.1`.
+- Nunca sobrescribe un `.md` de entrada, y escribe cada PDF/HTML en un archivo temporal que
+  renombra al final: si algo falla, el archivo anterior queda intacto.
+- Las opciones mal escritas en `mdrender.config.json` generan una advertencia con la opción
+  correcta sugerida.
 - En Ubuntu 23.10+ el navegador descargado con `mdrender setup` no puede usar el sandbox de
   Chrome (restricción de AppArmor); mdrender lo inicia entonces sin sandbox, lo que es seguro
   aquí porque las páginas no ejecutan JavaScript del documento ni acceden a la red

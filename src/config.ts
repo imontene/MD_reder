@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { normalizeOptions, OptionsError, type DocumentOptions } from "./options.js";
+import { normalizeOptions, OptionsError, unknownOptions, type DocumentOptions } from "./options.js";
 
 export const CONFIG_FILE = "mdrender.config.json";
 
@@ -16,8 +16,19 @@ export function findConfigFile(startDir: string): string | undefined {
   }
 }
 
+export interface LoadedConfig {
+  options: Partial<DocumentOptions>;
+  /** Problems that do not stop the conversion, such as misspelled option names. */
+  warnings: string[];
+}
+
 /** Read and validate a config file. Relative paths inside it resolve against its folder. */
 export function loadConfig(file: string): Partial<DocumentOptions> {
+  return readConfig(file).options;
+}
+
+/** Like `loadConfig`, also reporting unknown option names (likely typos). */
+export function readConfig(file: string): LoadedConfig {
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(file, "utf8"));
@@ -27,5 +38,14 @@ export function loadConfig(file: string): Partial<DocumentOptions> {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     throw new OptionsError(`${file}: the configuration must be a JSON object`);
   }
-  return normalizeOptions(raw as Record<string, unknown>, file, path.dirname(file));
+  const record = raw as Record<string, unknown>;
+  const relative = path.relative(process.cwd(), file);
+  const shown =
+    relative && !relative.startsWith("..") && !path.isAbsolute(relative) ? relative : file;
+  const warnings = unknownOptions(record).map(
+    ({ key, suggestion }) =>
+      `${shown}: unknown option "${key}"` +
+      (suggestion ? ` (did you mean "${suggestion}"?)` : " (ignored)"),
+  );
+  return { options: normalizeOptions(record, file, path.dirname(file)), warnings };
 }

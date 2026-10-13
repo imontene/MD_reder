@@ -115,7 +115,7 @@ export function planOutputs(
     if (several) {
       throw new OptionsError(`with several input files, --output must be a folder: ${output}`);
     }
-    return [{ input: inputs[0]!.file, output: outDir }];
+    return checkJobs([{ input: inputs[0]!.file, output: outDir }], inputs);
   }
 
   const jobs = inputs.map(({ file, root }) => {
@@ -125,9 +125,27 @@ export function planOutputs(
     return { input: file, output: path.join(outDir, relativeDir, name) };
   });
 
+  return checkJobs(jobs, inputs);
+}
+
+/** Path comparison key: Windows paths are case-insensitive. */
+const pathKey = (file: string) =>
+  process.platform === "win32" ? path.resolve(file).toLowerCase() : path.resolve(file);
+
+/**
+ * Refuse plans that would destroy data: an output that is one of the input Markdown files
+ * (`mdrender doc.md -o doc.md`), or two inputs written to the same output.
+ */
+function checkJobs(jobs: Job[], inputs: InputFile[]): Job[] {
+  const sources = new Set(inputs.map(({ file }) => pathKey(file)));
   const targets = new Map<string, string>();
   for (const job of jobs) {
-    const key = process.platform === "win32" ? job.output.toLowerCase() : job.output;
+    const key = pathKey(job.output);
+    if (sources.has(key)) {
+      throw new OptionsError(
+        `refusing to overwrite the input file ${job.output}; choose another --output`,
+      );
+    }
     const other = targets.get(key);
     if (other) {
       throw new OptionsError(`${other} and ${job.input} would both be written to ${job.output}`);
