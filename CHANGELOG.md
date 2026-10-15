@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.1.0 — 2026-10-15
 
 - `mdrender doctor`: revisa instalación (versión, Node.js, `PATH`), navegador (cuál y por qué,
   arranque y versión, sandbox), una conversión real de prueba, el `mdrender.config.json`
