@@ -5,6 +5,8 @@ export interface MermaidBlock {
   source: string;
   /** 1-based source line of the opening fence. */
   line?: number;
+  /** Printed together with the heading just above it (see markdown/keep-with-heading.ts). */
+  afterHeading?: boolean;
 }
 
 /** Per-document state shared by the Markdown plugins during one render. */

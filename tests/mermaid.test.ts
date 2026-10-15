@@ -10,7 +10,8 @@ describe("mermaid fences", () => {
   it("collects diagram sources with their line numbers", () => {
     const { mermaid } = renderMarkdown(doc);
     expect(mermaid).toEqual([
-      { source: "flowchart LR\n  A --> B\n", line: 3 },
+      // Right after a heading: printed together with it.
+      { source: "flowchart LR\n  A --> B\n", line: 3, afterHeading: true },
       { source: "pie\n", line: 12 },
     ]);
   });

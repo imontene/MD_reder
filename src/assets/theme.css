@@ -352,6 +352,21 @@ div.math-error {
   .mermaid-diagram svg {
     max-height: calc(var(--page-content-height) - 6mm);
   }
+
+  /* Next to its heading: leave room for it (HEADING_ALLOWANCE_EM in render/mermaid.ts). */
+  .keep-with-heading img,
+  .keep-with-heading .mermaid-diagram svg {
+    max-height: calc(var(--page-content-height) - 6mm - 5rem);
+  }
+}
+
+/* A heading and the diagram or image right after it go to the same page. */
+.keep-with-heading {
+  break-inside: avoid;
+}
+
+.markdown-body > .keep-with-heading:first-child > :first-child {
+  margin-top: 0;
 }
 
 /* Mermaid's HTML labels are <p>/<span> inside <foreignObject>: keep document styles out. */

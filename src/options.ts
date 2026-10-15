@@ -14,6 +14,9 @@ export type Margins = { top: string; right: string; bottom: string; left: string
 export const MERMAID_THEMES = ["default", "neutral", "dark", "forest", "base"] as const;
 export type MermaidTheme = (typeof MERMAID_THEMES)[number];
 
+export const MERMAID_FLIPS = ["auto", "never"] as const;
+export type MermaidFlip = (typeof MERMAID_FLIPS)[number];
+
 export const BUILTIN_THEMES = ["light", "dark"] as const;
 
 export const DENSITIES = ["normal", "compact"] as const;
@@ -40,6 +43,10 @@ export interface DocumentOptions {
   footer?: string;
   /** Mermaid theme; when unset, "neutral" for light pages and "dark" for the dark theme. */
   mermaidTheme?: MermaidTheme;
+  /** Try several layouts of each flowchart and keep the one whose text prints largest. */
+  mermaidAutofit: boolean;
+  /** Whether autofit may turn a flowchart to the other axis (LR ↔ TB) when it reads far better. */
+  mermaidFlip: MermaidFlip;
   /** Vertical spacing: "compact" tightens line height, paragraph and heading spacing. */
   density: Density;
   /** Base font size of the text, e.g. "10pt"; when unset, the theme's (10.5pt). */
@@ -63,6 +70,8 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   toc: false,
   tocDepth: 3,
   pageNumbers: true,
+  mermaidAutofit: true,
+  mermaidFlip: "auto",
   density: "normal",
   theme: "light",
   css: [],
@@ -172,6 +181,8 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   header: text,
   footer: text,
   mermaidTheme: oneOf(MERMAID_THEMES),
+  mermaidAutofit: bool,
+  mermaidFlip: oneOf(MERMAID_FLIPS),
   density: oneOf(DENSITIES),
   fontSize,
   theme: (value, describe, baseDir) => {

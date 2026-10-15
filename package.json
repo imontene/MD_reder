@@ -60,7 +60,8 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
     "build:exe": "npm run build && node scripts/build-sea.mjs",
     "prepublishOnly": "npm run check && npm run build",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "bench:mermaid": "tsx tests/bench/mermaid-autofit.ts"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",

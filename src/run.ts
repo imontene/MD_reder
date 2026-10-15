@@ -44,6 +44,12 @@ export async function runJob(
       io.err(`${formatDiagnostic(diagnostic, displayPath(job.input))}\n`);
     }
     if (io.verbose && result.configFile) io.err(`config: ${result.configFile}\n`);
+    if (io.verbose) {
+      for (const note of result.notes) {
+        const location = [displayPath(job.input), note.line].filter((p) => p !== undefined);
+        io.err(`${location.join(":")}: ${note.message}\n`);
+      }
+    }
     if (!io.quiet) io.out(`${result.output}\n`);
     if (io.verbose) io.err(`${displayPath(job.input)}: ${Date.now() - started} ms\n`);
     // The file is still written (errors are shown inline) but the run counts as failed.

@@ -140,7 +140,7 @@ describe.skipIf(!browser && !browserRequired)("math and diagrams", () => {
     expect(result.diagnostics).toEqual([]);
 
     const html = readFileSync(output, "utf8");
-    expect(html.match(/<svg[^>]+id="mermaid-\d+"/g)).toHaveLength(8);
+    expect(html.match(/<svg[^>]+id="mermaid-[\d-]+"/g)).toHaveLength(8);
     expect(html).not.toMatch(/<script/i);
   });
 

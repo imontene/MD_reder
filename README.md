@@ -134,37 +134,39 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 
 ### Opciones
 
-| Opción                        | Descripción                                                  | Por defecto        |
-| ----------------------------- | ------------------------------------------------------------ | ------------------ |
-| `-o, --output <ruta>`         | Archivo de salida, o carpeta con varios archivos             | junto al `.md`     |
-| `-f, --format <pdf\|html>`    | Formato de salida                                            | `pdf`              |
-| `--page-size <tamaño>`        | `Letter`, `A4`, `Legal` (también `A3`, `A5`, `Tabloid`)      | `Letter`           |
-| `--margin <valor>`            | Las cuatro márgenes como en CSS: `10mm`, `15mm 20mm`…        | `10mm`             |
-| `--margin-top <medida>`       | Margen superior, p. ej. `15mm` (prevalece sobre `--margin`)  | `10mm`             |
-| `--margin-right <medida>`     | Margen derecho                                               | `10mm`             |
-| `--margin-bottom <medida>`    | Margen inferior                                              | `10mm`             |
-| `--margin-left <medida>`      | Margen izquierdo                                             | `10mm`             |
-| `--orientation <orientación>` | `portrait` (vertical) o `landscape` (horizontal)             | `portrait`         |
-| `--landscape`                 | Atajo de `--orientation landscape`                           | —                  |
-| `--toc`                       | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)     | —                  |
-| `--toc-depth <n>`             | Nivel de título más profundo en la tabla de contenidos       | `3`                |
-| `--header <texto>`            | Encabezado de página (ver abajo)                             | —                  |
-| `--footer <texto>`            | Pie de página (ver abajo)                                    | `{page} / {pages}` |
-| `--no-page-numbers`           | Sin el pie con números de página                             | —                  |
-| `--density <densidad>`        | `normal` o `compact` (menos espacio entre líneas y bloques)  | `normal`           |
-| `--font-size <tamaño>`        | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt` | `10.5pt`           |
-| `--theme <light\|dark\|css>`  | `light`, `dark` o un `.css` que reemplaza el tema            | `light`            |
-| `--css <archivo.css>`         | CSS adicional (se puede repetir)                             | —                  |
-| `--mermaid-theme <tema>`      | `default`, `neutral`, `dark`, `forest`, `base`               | `neutral` / `dark` |
-| `--lang <código>`             | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…)   | `es`               |
-| `--title <texto>`             | Título del documento (muestra un bloque de título)           | primer `# título`  |
-| `--config <archivo>`          | Archivo de configuración                                     | el más cercano     |
-| `--no-config`                 | Ignorar `mdrender.config.json`                               | —                  |
-| `--browser <ruta>`            | Ruta a Chrome/Edge/Chromium (o variable `MDRENDER_BROWSER`)  | autodetección      |
-| `--allow-remote`              | Permitir que el PDF descargue imágenes/CSS de internet       | bloqueado          |
-| `-w, --watch`                 | Regenerar al guardar                                         | —                  |
-| `-q, --quiet`                 | Mostrar solo advertencias y errores                          | —                  |
-| `-v, --verbose`               | Mostrar también configuración, navegador y tiempos           | —                  |
+| Opción                         | Descripción                                                          | Por defecto        |
+| ------------------------------ | -------------------------------------------------------------------- | ------------------ |
+| `-o, --output <ruta>`          | Archivo de salida, o carpeta con varios archivos                     | junto al `.md`     |
+| `-f, --format <pdf\|html>`     | Formato de salida                                                    | `pdf`              |
+| `--page-size <tamaño>`         | `Letter`, `A4`, `Legal` (también `A3`, `A5`, `Tabloid`)              | `Letter`           |
+| `--margin <valor>`             | Las cuatro márgenes como en CSS: `10mm`, `15mm 20mm`…                | `10mm`             |
+| `--margin-top <medida>`        | Margen superior, p. ej. `15mm` (prevalece sobre `--margin`)          | `10mm`             |
+| `--margin-right <medida>`      | Margen derecho                                                       | `10mm`             |
+| `--margin-bottom <medida>`     | Margen inferior                                                      | `10mm`             |
+| `--margin-left <medida>`       | Margen izquierdo                                                     | `10mm`             |
+| `--orientation <orientación>`  | `portrait` (vertical) o `landscape` (horizontal)                     | `portrait`         |
+| `--landscape`                  | Atajo de `--orientation landscape`                                   | —                  |
+| `--toc`                        | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)             | —                  |
+| `--toc-depth <n>`              | Nivel de título más profundo en la tabla de contenidos               | `3`                |
+| `--header <texto>`             | Encabezado de página (ver abajo)                                     | —                  |
+| `--footer <texto>`             | Pie de página (ver abajo)                                            | `{page} / {pages}` |
+| `--no-page-numbers`            | Sin el pie con números de página                                     | —                  |
+| `--density <densidad>`         | `normal` o `compact` (menos espacio entre líneas y bloques)          | `normal`           |
+| `--font-size <tamaño>`         | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt`         | `10.5pt`           |
+| `--theme <light\|dark\|css>`   | `light`, `dark` o un `.css` que reemplaza el tema                    | `light`            |
+| `--css <archivo.css>`          | CSS adicional (se puede repetir)                                     | —                  |
+| `--mermaid-theme <tema>`       | `default`, `neutral`, `dark`, `forest`, `base`                       | `neutral` / `dark` |
+| `--mermaid-flip <auto\|never>` | Si el autoajuste puede girar un diagrama de flujo de eje (ver abajo) | `auto`             |
+| `--no-mermaid-autofit`         | Dibujar los diagramas de flujo tal como están escritos               | —                  |
+| `--lang <código>`              | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…)           | `es`               |
+| `--title <texto>`              | Título del documento (muestra un bloque de título)                   | primer `# título`  |
+| `--config <archivo>`           | Archivo de configuración                                             | el más cercano     |
+| `--no-config`                  | Ignorar `mdrender.config.json`                                       | —                  |
+| `--browser <ruta>`             | Ruta a Chrome/Edge/Chromium (o variable `MDRENDER_BROWSER`)          | autodetección      |
+| `--allow-remote`               | Permitir que el PDF descargue imágenes/CSS de internet               | bloqueado          |
+| `-w, --watch`                  | Regenerar al guardar                                                 | —                  |
+| `-q, --quiet`                  | Mostrar solo advertencias y errores                                  | —                  |
+| `-v, --verbose`                | Mostrar también configuración, navegador y tiempos                   | —                  |
 
 **Página**: por defecto hoja **Letter vertical con márgenes de 10 mm**. Las medidas aceptan
 `mm`, `cm`, `in` o `px`. `--margin` fija las cuatro márgenes a la vez y `--margin-top`,
@@ -236,6 +238,25 @@ fecha). Las rutas de `css` y `theme` son relativas al archivo donde aparecen.
 - `Cuesta $5 y $10` no se interpreta como fórmula; para un `$` literal usa `\$`.
 - Si una fórmula o diagrama tiene un error, el documento se genera igual con una caja roja en
   su lugar, se informa `error: archivo.md:LÍNEA: mensaje` y el comando termina con código `2`.
+
+**Autoajuste de diagramas de flujo**: en el PDF, un diagrama más ancho que la columna o más alto
+que la página se reduce entero, y su texto puede quedar diminuto. Por eso mdrender dibuja cada
+`flowchart`/`graph` con varios anchos de ajuste de las etiquetas y se queda con el que imprime el
+texto más grande; a igual legibilidad, el que ocupa menos alto. Nunca lo imprime más pequeño que
+tal como está escrito.
+
+- Si el diagrama sigue por debajo del 75 % de su tamaño, prueba además el otro eje (`LR` → `TB`,
+  o `TD` → `LR`) y lo gira si gana al menos 15 puntos. Una cadena horizontal de 8 cajas, por
+  ejemplo, pasa de imprimirse al 37 % a su tamaño real. `--mermaid-flip never` (o
+  `mermaidFlip: never`) conserva siempre la dirección escrita.
+- No se tocan los diagramas con configuración propia (`%%{init: …}%%` o `config:` en su front
+  matter) ni los de otros tipos (secuencia, torta, clases…).
+- `-v` informa la elección de cada diagrama; si alguno queda por debajo del 50 %, mdrender avisa:
+  conviene partirlo o acortar sus etiquetas.
+- `--no-mermaid-autofit` (o `mermaidAutofit: false`) lo desactiva.
+
+Un título seguido de un diagrama o una imagen pasa con ellos a la página siguiente cuando no
+caben, en lugar de quedar solo al pie de la anterior.
 
 ## Más Markdown
 

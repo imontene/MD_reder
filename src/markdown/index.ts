@@ -9,6 +9,7 @@ import { codeBlocks } from "./code-blocks.js";
 import { inlineChildLines, type MermaidBlock, type RenderEnv } from "./env.js";
 import { highlightCode } from "./highlight.js";
 import { inlineLocalImages } from "./images.js";
+import { keepWithHeading } from "./keep-with-heading.js";
 import { math } from "./math.js";
 import { mermaid } from "./mermaid.js";
 import { taskLists } from "./task-lists.js";
@@ -49,6 +50,7 @@ export function createMarkdown(): MarkdownIt {
   md.use(taskLists);
   md.use(alerts);
   md.use(tocMarker);
+  md.use(keepWithHeading);
   md.use(inlineChildLines);
   md.use(inlineLocalImages);
   // Before math and mermaid, which hand their non-code fences on to this renderer.

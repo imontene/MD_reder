@@ -18,7 +18,9 @@ export function mermaid(md: MarkdownIt): void {
       return fence(tokens, idx, options, rawEnv, self);
     }
     const env = rawEnv as RenderEnv;
-    const index = env.mermaid.push({ source: token.content, line: tokenLine(token) }) - 1;
+    const block = { source: token.content, line: tokenLine(token) };
+    const afterHeading = (token.meta as { afterHeading?: boolean } | null)?.afterHeading;
+    const index = env.mermaid.push(afterHeading ? { ...block, afterHeading } : block) - 1;
     return `<figure class="mermaid-diagram">${mermaidPlaceholder(env.nonce, index)}</figure>\n`;
   };
 }

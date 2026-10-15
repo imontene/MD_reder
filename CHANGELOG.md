@@ -1,5 +1,22 @@
 # Cambios
 
+## Sin publicar
+
+- **Autoajuste de diagramas de flujo Mermaid** (`flowchart`/`graph`): cada diagrama se dibuja
+  con varios anchos de ajuste de etiquetas y se elige el que imprime el texto más grande (a igual
+  legibilidad, el más bajo), nunca más pequeño que tal como está escrito. Si sigue por debajo del
+  75 % de su tamaño, se prueba el otro eje (`LR` → `TB`, `TD` → `LR`) y se gira si gana al menos
+  15 puntos. En el banco de pruebas, la escala media del texto pasa de 0,80 a 0,98 y ningún
+  diagrama queda por debajo de 0,6.
+  - `--mermaid-flip never` (`mermaidFlip`) conserva la dirección; `--no-mermaid-autofit`
+    (`mermaidAutofit: false`) lo desactiva. Se respetan los diagramas con `%%{init}%%` o
+    `config:` propios.
+  - `-v` informa la elección por diagrama; aviso si un diagrama se imprime por debajo del 50 %.
+- Un título seguido de un diagrama o una imagen ya no queda solo al pie de una página: pasa con
+  ellos a la siguiente.
+- `npm run bench:mermaid [-- archivo.md]` compara los diagramas de un documento con y sin
+  autoajuste.
+
 ## 2.1.0 — 2026-10-15
 
 - `mdrender doctor`: revisa instalación (versión, Node.js, `PATH`), navegador (cuál y por qué,

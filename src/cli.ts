@@ -50,6 +50,8 @@ const DOCUMENT_FLAGS = [
   "css",
   "theme",
   "mermaidTheme",
+  "mermaidAutofit",
+  "mermaidFlip",
   "lang",
   "title",
 ] as const;
@@ -89,6 +91,11 @@ function addDocumentOptions(command: Command): Command {
     .option(
       "--mermaid-theme <theme>",
       `Mermaid theme: ${MERMAID_THEMES.join(", ")} (default: neutral; dark with --theme dark)`,
+    )
+    .option("--no-mermaid-autofit", "draw flowcharts exactly as written (no layout search)")
+    .option(
+      "--mermaid-flip <mode>",
+      "auto: turn a flowchart to the other axis if its text prints too small; never (default: auto)",
     )
     .option("--lang <tag>", "document language, e.g. es or en (default: es)")
     .option("--title <text>", "document title (shown as a title block)")
@@ -150,7 +157,11 @@ function cliOverrides(program: Command): Partial<DocumentOptions> {
     if (program.getOptionValueSource(key) === "cli") raw[key] = program.getOptionValue(key);
   }
   return normalizeOptions(raw, "command line", process.cwd(), (key) =>
-    key === "pageNumbers" ? "--no-page-numbers" : toFlag(key),
+    key === "pageNumbers"
+      ? "--no-page-numbers"
+      : key === "mermaidAutofit"
+        ? "--no-mermaid-autofit"
+        : toFlag(key),
   );
 }
 

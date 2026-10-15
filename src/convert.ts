@@ -22,7 +22,8 @@ import {
 import type { OutputFormat } from "./paths.js";
 import { BrowserSession } from "./render/browser.js";
 import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js";
-import { fillMermaid, renderMermaid } from "./render/mermaid.js";
+import { fillMermaid, renderMermaid, type DiagramLayout } from "./render/mermaid.js";
+import { SMALL_SCALE } from "./render/mermaid-fit.js";
 import { contentHeightPx, contentWidthPx, lengthToPx } from "./render/page.js";
 import { buildHtmlDocument, builtinThemeCss, densityCss } from "./render/template.js";
 import { writeFileAtomic } from "./write.js";
@@ -57,6 +58,8 @@ export interface ConvertResult {
   output: string;
   /** Problems found while rendering; the output is still written, with errors shown inline. */
   diagnostics: Diagnostic[];
+  /** Details for --verbose, such as the layout chosen for each Mermaid flowchart. */
+  notes: Note[];
   /** The effective options after merging config file, front matter and command line. */
   options: DocumentOptions;
   /** Config file that was applied, if any. */
@@ -154,6 +157,26 @@ function layoutCss(options: DocumentOptions, margin: Margins): string {
   return rules.join("\n");
 }
 
+export interface Note {
+  line?: number;
+  message: string;
+}
+
+const fixed2 = (n: number) => n.toFixed(2);
+
+/** "Mermaid autofit: wrap 300, turned LR→TB, scale 0.33 → 1.00, height 81 → 903 px". */
+export function describeLayout(layout: DiagramLayout): string {
+  const changes = [
+    layout.wrap === undefined ? undefined : `wrap ${layout.wrap}`,
+    layout.turned ? `turned ${layout.turned}` : undefined,
+  ].filter(Boolean);
+  const scale = `scale ${fixed2(layout.baseScale)} → ${fixed2(layout.scale)}`;
+  const height = `height ${layout.baseHeight} → ${layout.height} px`;
+  return changes.length === 0
+    ? `Mermaid autofit: kept as written (scale ${fixed2(layout.scale)}, ${layout.tried} layouts tried)`
+    : `Mermaid autofit: ${changes.join(", ")}, ${scale}, ${height} (${layout.tried} layouts tried)`;
+}
+
 /** Mermaid theme: explicit choice, else dark diagrams for the dark page theme. */
 export function effectiveMermaidTheme(options: DocumentOptions): MermaidTheme {
   return options.mermaidTheme ?? (options.theme === "dark" ? "dark" : "neutral");
@@ -167,6 +190,8 @@ export async function renderDocument(
   inputPath: string,
   settings: RenderSettings,
   browsers: BrowserPool,
+  /** Printed on pages (PDF): diagrams are fitted to the page height, not only the width. */
+  paged = false,
 ): Promise<RenderedDocument> {
   const input = path.resolve(inputPath);
   const baseDir = path.dirname(input);
@@ -195,6 +220,7 @@ export async function renderDocument(
     ...config.warnings.map((message) => ({ severity: "warning" as const, message })),
     ...md.diagnostics,
   ];
+  const notes: Note[] = [];
   const title = options.title ?? md.title ?? path.parse(input).name;
 
   // Table of contents: at the [[toc]] marker, or at the start with --toc.
@@ -212,10 +238,35 @@ export async function renderDocument(
     const width = contentWidthPx(options.pageSize, options.orientation === "landscape", margin);
     const theme = effectiveMermaidTheme(options);
     const fontPx = fontSizePx(options.fontSize ?? DEFAULT_FONT_SIZE);
-    const results = await renderMermaid(session, md.mermaid, theme, width, fontPx);
+    const landscape = options.orientation === "landscape";
+    const results = await renderMermaid(session, md.mermaid, {
+      theme,
+      widthPx: width,
+      fontPx,
+      // Same limit as the print stylesheet: the page's text height minus 6 mm.
+      pageHeightPx: paged
+        ? contentHeightPx(options.pageSize, landscape, margin) - lengthToPx("6mm")
+        : Infinity,
+      autofit: options.mermaidAutofit,
+      flip: options.mermaidFlip,
+    });
     const filled = fillMermaid(body, md.nonce, md.mermaid, results);
     body = filled.html;
     diagnostics.push(...filled.diagnostics);
+    md.mermaid.forEach((block, i) => {
+      const result = results[i];
+      if (!result || "error" in result) return;
+      if (result.layout) notes.push({ line: block.line, message: describeLayout(result.layout) });
+      if (paged && result.scale !== undefined && result.scale < SMALL_SCALE) {
+        diagnostics.push({
+          severity: "warning",
+          line: block.line,
+          message:
+            `Mermaid diagram printed at ${Math.round(result.scale * 100)}% of its size; ` +
+            "split it or shorten its labels to make it readable",
+        });
+      }
+    });
   }
 
   const html = buildHtmlDocument({
@@ -238,7 +289,7 @@ export async function renderDocument(
     ...(options.theme.endsWith(".css") ? [options.theme] : []),
     ...options.css,
   ];
-  return { html, title, diagnostics, options, configFile, dependencies };
+  return { html, title, diagnostics, notes, options, configFile, dependencies };
 }
 
 /** Read a Markdown file and write it as a self-contained HTML document or a PDF. */
@@ -247,7 +298,7 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
   const browsers = convert.browsers ?? new BrowserPool(convert.browser);
 
   try {
-    const doc = await renderDocument(convert.input, convert, browsers);
+    const doc = await renderDocument(convert.input, convert, browsers, convert.format === "pdf");
     const { options } = doc;
 
     if (convert.format === "pdf") {
@@ -283,6 +334,7 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
     return {
       output,
       diagnostics: doc.diagnostics,
+      notes: doc.notes,
       options,
       configFile: doc.configFile,
       dependencies: doc.dependencies,
