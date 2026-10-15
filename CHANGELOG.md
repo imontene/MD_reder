@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.2.0 — 2026-10-15
 
 - **Autoajuste de diagramas de flujo Mermaid** (`flowchart`/`graph`): cada diagrama se dibuja
   con varios anchos de ajuste de etiquetas y se elige el que imprime el texto más grande (a igual
