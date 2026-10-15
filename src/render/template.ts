@@ -22,6 +22,11 @@ export function builtinThemeCss(theme: "light" | "dark"): string[] {
   return theme === "dark" ? [asset("theme.css"), asset("theme-dark.css")] : [asset("theme.css")];
 }
 
+/** Stylesheet for a density other than "normal", applied after the theme. */
+export function densityCss(density: "normal" | "compact"): string[] {
+  return density === "compact" ? [asset("density-compact.css")] : [];
+}
+
 export interface DocumentParts {
   title: string;
   body: string;
@@ -35,7 +40,9 @@ export interface DocumentParts {
   showTitle?: boolean;
   /** Theme stylesheet contents. Defaults to the built-in light theme. */
   themeCss?: string[];
-  /** Extra stylesheet contents, applied after the theme. */
+  /** Layout stylesheets (density, font size, page height), applied after the theme. */
+  layoutCss?: string[];
+  /** Extra stylesheet contents, applied after the theme and layout. */
   extraCss?: string[];
 }
 
@@ -54,9 +61,15 @@ function titleBlock({ title, subtitle, author, date }: DocumentParts): string {
 
 /** Wrap a rendered Markdown fragment in a complete, self-contained HTML document. */
 export function buildHtmlDocument(parts: DocumentParts): string {
-  const { title, body, math = false, lang, author, extraCss = [] } = parts;
+  const { title, body, math = false, lang, author, layoutCss = [], extraCss = [] } = parts;
   const themeCss = parts.themeCss ?? builtinThemeCss("light");
-  const styles = [fontFaceCss(), ...(math ? [katexCss()] : []), ...themeCss, ...extraCss];
+  const styles = [
+    fontFaceCss(),
+    ...(math ? [katexCss()] : []),
+    ...themeCss,
+    ...layoutCss,
+    ...extraCss,
+  ];
 
   return `<!doctype html>
 <html${lang ? ` lang="${escapeHtml(lang)}"` : ""}>

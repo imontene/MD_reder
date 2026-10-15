@@ -45,6 +45,8 @@ const DOCUMENT_FLAGS = [
   "header",
   "footer",
   "pageNumbers",
+  "density",
+  "fontSize",
   "css",
   "theme",
   "mermaidTheme",
@@ -80,6 +82,8 @@ function addDocumentOptions(command: Command): Command {
     .option("--header <text>", 'page header, e.g. "{title} | | {date}"')
     .option("--footer <text>", 'page footer (default: "{page} / {pages}")')
     .option("--no-page-numbers", "no default page-number footer")
+    .option("--density <density>", "normal or compact (tighter spacing) (default: normal)")
+    .option("--font-size <size>", "text size, e.g. 10pt or 11pt (default: 10.5pt)")
     .option("--theme <theme>", "light, dark, or a .css file replacing the theme (default: light)")
     .option("--css <file>", "extra stylesheet (repeatable)", collect)
     .option(

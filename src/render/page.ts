@@ -28,3 +28,14 @@ export function contentWidthPx(
   const paperPx = ((landscape ? height : width) * 96) / 25.4;
   return Math.round(paperPx - lengthToPx(margin.left) - lengthToPx(margin.right));
 }
+
+/** Height of the text area in CSS pixels: the paper minus the top and bottom margins. */
+export function contentHeightPx(
+  pageSize: PageSize,
+  landscape: boolean,
+  margin: { top: string; bottom: string },
+): number {
+  const [width, height] = PAPER_MM[pageSize];
+  const paperPx = ((landscape ? width : height) * 96) / 25.4;
+  return Math.round(paperPx - lengthToPx(margin.top) - lengthToPx(margin.bottom));
+}

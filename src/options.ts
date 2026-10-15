@@ -16,6 +16,9 @@ export type MermaidTheme = (typeof MERMAID_THEMES)[number];
 
 export const BUILTIN_THEMES = ["light", "dark"] as const;
 
+export const DENSITIES = ["normal", "compact"] as const;
+export type Density = (typeof DENSITIES)[number];
+
 /** Rendering options, merged from defaults < config file < front matter < command line. */
 export interface DocumentOptions {
   pageSize: PageSize;
@@ -37,6 +40,10 @@ export interface DocumentOptions {
   footer?: string;
   /** Mermaid theme; when unset, "neutral" for light pages and "dark" for the dark theme. */
   mermaidTheme?: MermaidTheme;
+  /** Vertical spacing: "compact" tightens line height, paragraph and heading spacing. */
+  density: Density;
+  /** Base font size of the text, e.g. "10pt"; when unset, the theme's (10.5pt). */
+  fontSize?: string;
   /** "light", "dark", or the absolute path of a stylesheet that replaces the built-in theme. */
   theme: string;
   /** Extra stylesheets (absolute paths), applied after the built-in theme. */
@@ -56,6 +63,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   toc: false,
   tocDepth: 3,
   pageNumbers: true,
+  density: "normal",
   theme: "light",
   css: [],
   lang: DEFAULT_LANG,
@@ -113,6 +121,31 @@ const length: Validator = (value, describe) => {
   throw new OptionsError(`${describe} must be a length in mm, cm, in or px, e.g. "10mm"`);
 };
 
+/** Text size of the built-in themes (theme.css), when --font-size is not given. */
+export const DEFAULT_FONT_SIZE = "10.5pt";
+
+/** Font sizes accepted by --font-size, in points or pixels. */
+const FONT_SIZE = /^(\d+(?:\.\d+)?)(pt|px)$/;
+const FONT_SIZE_PT = { min: 6, max: 24 };
+
+/** A font size in CSS pixels ("10.5pt" → 14). */
+export function fontSizePx(size: string): number {
+  const match = FONT_SIZE.exec(size);
+  if (!match) throw new Error(`invalid font size: ${size}`);
+  return match[2] === "pt" ? (Number(match[1]) * 4) / 3 : Number(match[1]);
+}
+
+const fontSize: Validator = (value, describe) => {
+  const size = (text(value, describe, "") as string).trim();
+  if (FONT_SIZE.test(size)) {
+    const pt = (fontSizePx(size) * 3) / 4;
+    if (pt >= FONT_SIZE_PT.min && pt <= FONT_SIZE_PT.max) return size;
+  }
+  throw new OptionsError(
+    `${describe} must be a size in pt or px from ${FONT_SIZE_PT.min}pt to ${FONT_SIZE_PT.max}pt, e.g. "10pt"`,
+  );
+};
+
 const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   pageSize: oneOf(PAGE_SIZES),
   margin: (value, describe) => {
@@ -139,6 +172,8 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   header: text,
   footer: text,
   mermaidTheme: oneOf(MERMAID_THEMES),
+  density: oneOf(DENSITIES),
+  fontSize,
   theme: (value, describe, baseDir) => {
     const theme = text(value, describe, baseDir) as string;
     const builtin = BUILTIN_THEMES.find((t) => t === theme.toLowerCase());

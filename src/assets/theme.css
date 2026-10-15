@@ -243,6 +243,14 @@ pre {
   background: var(--color-subtle-bg);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  /* Long listings may continue on the next page, keeping a few lines on each side. */
+  break-inside: auto;
+  orphans: 4;
+  widows: 4;
+}
+
+/* Short blocks (marked by mdrender) stay on one page. */
+pre.keep-together {
   break-inside: avoid;
 }
 
@@ -333,6 +341,17 @@ div.math-error {
 .mermaid-diagram svg {
   max-width: 100%;
   height: auto;
+}
+
+/*
+ * In the PDF, images and diagrams are scaled down to fit the page height (mdrender sets
+ * --page-content-height), so they are never cut across pages.
+ */
+@media print {
+  img,
+  .mermaid-diagram svg {
+    max-height: calc(var(--page-content-height) - 6mm);
+  }
 }
 
 /* Mermaid's HTML labels are <p>/<span> inside <foreignObject>: keep document styles out. */

@@ -1,0 +1,74 @@
+/* mdrender compact density (--density compact): loaded after the theme, tightens vertical spacing. */
+
+body {
+  line-height: 1.5;
+}
+
+p,
+ul,
+ol,
+blockquote,
+pre,
+table,
+dl {
+  margin-bottom: 0.8em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 1.3em 0 0.5em;
+}
+
+h1 {
+  font-size: 1.9em;
+}
+
+h2 {
+  font-size: 1.4em;
+}
+
+h3 {
+  font-size: 1.18em;
+}
+
+li + li {
+  margin-top: 0.15em;
+}
+
+pre {
+  padding: 0.7em 0.9em;
+}
+
+th,
+td {
+  padding: 0.35em 0.7em;
+}
+
+.math-display {
+  margin: 0.8em 0;
+}
+
+.mermaid-diagram {
+  margin: 0.9em 0;
+}
+
+.doc-header {
+  margin-bottom: 1.5em;
+}
+
+.toc {
+  margin-bottom: 1.5em;
+  padding: 0.8em 1.2em;
+}
+
+hr {
+  margin: 1.5em 0;
+}
+
+hr.footnotes-sep {
+  margin: 1.8em 0 0.8em;
+}

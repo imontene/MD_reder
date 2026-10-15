@@ -7,7 +7,7 @@ import { headerFooterTemplate } from "../src/render/header-footer.js";
 describe("syntax highlighting", () => {
   it("highlights known languages", () => {
     const { html } = renderMarkdown("```ts\nconst x = 1; // hola\n```");
-    expect(html).toContain('<pre class="hljs"><code class="language-ts">');
+    expect(html).toContain('<pre class="hljs keep-together"><code class="language-ts">');
     expect(html).toContain('<span class="hljs-keyword">const</span>');
     expect(html).toContain('<span class="hljs-comment">// hola</span>');
   });

@@ -7,7 +7,7 @@ import { cacheDir, installedBrowser } from "./browser/cache.js";
 import { findBrowser } from "./browser/detect.js";
 import { findConfigFile, readConfig } from "./config.js";
 import { BrowserPool, convertFile } from "./convert.js";
-import { mergeOptions, resolveMargins } from "./options.js";
+import { DEFAULT_FONT_SIZE, mergeOptions, resolveMargins } from "./options.js";
 import { version } from "./version.js";
 
 export type CheckStatus = "ok" | "warn" | "fail" | "info";
@@ -181,7 +181,8 @@ function settingsCheck(options: ReturnType<typeof mergeOptions>): Check {
     status: "info",
     detail:
       `${options.pageSize} ${options.orientation}, margins ${m.top} ${m.right} ${m.bottom} ` +
-      `${m.left} (top right bottom left), language ${options.lang}, theme ` +
+      `${m.left} (top right bottom left), ${options.density} density, ` +
+      `${options.fontSize ?? DEFAULT_FONT_SIZE} text, language ${options.lang}, theme ` +
       path.basename(options.theme),
   };
 }

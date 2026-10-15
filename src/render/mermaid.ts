@@ -12,6 +12,9 @@ export { MERMAID_THEMES, type MermaidTheme } from "../options.js";
 /** Width of the text column on A4 with 20 mm margins. */
 const DEFAULT_WIDTH_PX = 642;
 
+/** 10.5pt, the built-in themes' text size (Mermaid's own default is 16px). */
+const DEFAULT_FONT_PX = 14;
+
 type DiagramResult = { svg: string } | { error: string };
 
 let mermaidJs: string | undefined;
@@ -26,6 +29,8 @@ export async function renderMermaid(
   theme: MermaidTheme = "neutral",
   /** Width of the text column, so diagrams are laid out at their printed size. */
   widthPx = DEFAULT_WIDTH_PX,
+  /** Text size of the document in CSS pixels, so diagram labels match the body text. */
+  fontPx = DEFAULT_FONT_PX,
 ): Promise<DiagramResult[]> {
   mermaidJs ??= readTextAsset(MERMAID_JS);
 
@@ -38,7 +43,7 @@ body { margin: 0; width: ${widthPx}px; font-family: "Inter", sans-serif; }</styl
     );
     await page.evaluate(mermaidJs);
     return await page.evaluate(
-      async (sources: string[], theme: string) => {
+      async (sources: string[], theme: string, fontPx: number) => {
         // Runs in the browser. The project is compiled without DOM types, hence PageGlobals.
         const { document, mermaid } = globalThis as unknown as PageGlobals;
         // Load the font weights Mermaid uses before it measures any text.
@@ -49,8 +54,12 @@ body { margin: 0; width: ${widthPx}px; font-family: "Inter", sans-serif; }</styl
           securityLevel: "strict",
           theme,
           fontFamily: "Inter, sans-serif",
-          themeVariables: { fontFamily: "Inter, sans-serif" },
+          // Sequence diagrams take their text sizes from here, the others from themeVariables.
+          fontSize: fontPx,
+          themeVariables: { fontFamily: "Inter, sans-serif", fontSize: `${fontPx}px` },
           htmlLabels: true,
+          // Actors only at the top of sequence diagrams: repeating them below costs height.
+          sequence: { mirrorActors: false },
         });
 
         const results: DiagramResult[] = [];
@@ -66,6 +75,7 @@ body { margin: 0; width: ${widthPx}px; font-family: "Inter", sans-serif; }</styl
       },
       blocks.map((b) => b.source),
       theme,
+      fontPx,
     );
   } finally {
     await page.close();

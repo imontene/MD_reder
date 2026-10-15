@@ -5,6 +5,7 @@ import footnote from "markdown-it-footnote";
 import type { Diagnostic } from "../diagnostics.js";
 import { DEFAULT_LANG } from "../i18n.js";
 import { alerts } from "./alerts.js";
+import { codeBlocks } from "./code-blocks.js";
 import { inlineChildLines, type MermaidBlock, type RenderEnv } from "./env.js";
 import { highlightCode } from "./highlight.js";
 import { inlineLocalImages } from "./images.js";
@@ -50,6 +51,8 @@ export function createMarkdown(): MarkdownIt {
   md.use(tocMarker);
   md.use(inlineChildLines);
   md.use(inlineLocalImages);
+  // Before math and mermaid, which hand their non-code fences on to this renderer.
+  md.use(codeBlocks);
   md.use(math);
   md.use(mermaid);
   return md;

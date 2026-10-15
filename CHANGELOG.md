@@ -6,6 +6,15 @@
   arranque y versión, sandbox), una conversión real de prueba, el `mdrender.config.json`
   aplicado (errores, opciones mal escritas, valores efectivos), la caché de `setup` y el proxy.
   `--quick`, `--json`; código 1 si encuentra un problema.
+- Mejor uso de la página:
+  - Los bloques de código largos se parten entre páginas (al menos 4 líneas a cada lado) en
+    vez de saltar enteros y dejar hasta media página en blanco; los de hasta 12 líneas siguen
+    juntos.
+  - `--density compact` (o `density: compact`): interlineado y espacios más ajustados.
+  - `--font-size <tamaño>` (o `fontSize`): tamaño del texto, por defecto 10.5pt.
+  - Mermaid usa el tamaño de letra del documento (antes 16 px) y los diagramas de secuencia no
+    repiten los actores al pie.
+  - Imágenes y diagramas más altos que la página se reducen para caber en una sola.
 
 ## 2.0.0 — 2026-10-13
 

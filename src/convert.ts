@@ -9,6 +9,8 @@ import { strings } from "./i18n.js";
 import { renderMarkdown } from "./markdown/index.js";
 import { buildToc, tocPlaceholder } from "./markdown/toc.js";
 import {
+  DEFAULT_FONT_SIZE,
+  fontSizePx,
   mergeOptions,
   normalizeOptions,
   OptionsError,
@@ -21,8 +23,8 @@ import type { OutputFormat } from "./paths.js";
 import { BrowserSession } from "./render/browser.js";
 import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js";
 import { fillMermaid, renderMermaid } from "./render/mermaid.js";
-import { contentWidthPx, lengthToPx } from "./render/page.js";
-import { buildHtmlDocument, builtinThemeCss } from "./render/template.js";
+import { contentHeightPx, contentWidthPx, lengthToPx } from "./render/page.js";
+import { buildHtmlDocument, builtinThemeCss, densityCss } from "./render/template.js";
 import { writeFileAtomic } from "./write.js";
 
 /** Settings shared by every file of a run (batch, watch or preview). */
@@ -144,6 +146,14 @@ export function headerFooterSpaceWarnings(
   return warnings;
 }
 
+/** Font size, if set, and the page's text height (used to fit images and diagrams). */
+function layoutCss(options: DocumentOptions, margin: Margins): string {
+  const height = contentHeightPx(options.pageSize, options.orientation === "landscape", margin);
+  const rules = [`:root { --page-content-height: ${height}px; }`];
+  if (options.fontSize) rules.push(`html { font-size: ${options.fontSize}; }`);
+  return rules.join("\n");
+}
+
 /** Mermaid theme: explicit choice, else dark diagrams for the dark page theme. */
 export function effectiveMermaidTheme(options: DocumentOptions): MermaidTheme {
   return options.mermaidTheme ?? (options.theme === "dark" ? "dark" : "neutral");
@@ -201,7 +211,8 @@ export async function renderDocument(
     const session = await browsers.get();
     const width = contentWidthPx(options.pageSize, options.orientation === "landscape", margin);
     const theme = effectiveMermaidTheme(options);
-    const results = await renderMermaid(session, md.mermaid, theme, width);
+    const fontPx = fontSizePx(options.fontSize ?? DEFAULT_FONT_SIZE);
+    const results = await renderMermaid(session, md.mermaid, theme, width, fontPx);
     const filled = fillMermaid(body, md.nonce, md.mermaid, results);
     body = filled.html;
     diagnostics.push(...filled.diagnostics);
@@ -217,6 +228,7 @@ export async function renderDocument(
     date: options.date,
     showTitle: options.title !== undefined,
     themeCss,
+    layoutCss: [...densityCss(options.density), layoutCss(options, margin)],
     extraCss,
   });
 
