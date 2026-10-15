@@ -1,6 +1,7 @@
 import { Command, CommanderError, Option } from "commander";
 import type { RenderSettings } from "./convert.js";
 import { setup } from "./browser/setup.js";
+import { formatReport, runDoctor } from "./doctor.js";
 import { MdRenderError } from "./errors.js";
 import { ExitCode } from "./exit-codes.js";
 import { expandInputs, planOutputs } from "./inputs.js";
@@ -116,6 +117,7 @@ function buildRenderProgram(io: Io): Command {
 Commands:
   mdrender preview <file>  live HTML preview in the browser (see: mdrender preview --help)
   mdrender setup           download a headless Chrome if no browser is installed
+  mdrender doctor          check the installation, browser and configuration
 
 Header/footer placeholders: {page} {pages} {title} {author} {date}; "|" separates
 left | center | right columns.
@@ -196,6 +198,40 @@ async function runSetup(argv: string[], io: Io): Promise<number> {
   return setup({ io, force: Boolean(program.opts<{ force?: boolean }>().force) });
 }
 
+function buildDoctorProgram(io: Io): Command {
+  const program = new Command()
+    .name("mdrender doctor")
+    .description(
+      "Check the installation, browser and configuration, and try a real conversion.\n" +
+        "Exits with 1 when a problem is found.",
+    )
+    .option("--browser <path>", "check this browser instead of the detected one")
+    .option("--config <file>", "check this config file (default: nearest mdrender.config.json)")
+    .option("--no-config", "ignore mdrender.config.json files")
+    .option("--quick", "skip starting the browser and the test conversion")
+    .option("--json", "print the report as JSON");
+  return configure(program, io);
+}
+
+async function runDoctorCommand(argv: string[], io: Io): Promise<number> {
+  const program = buildDoctorProgram(io);
+  const parsed = await parse(program, argv);
+  if (parsed !== undefined) return parsed;
+  const options = program.opts<{
+    browser?: string;
+    config?: string | false;
+    quick?: boolean;
+    json?: boolean;
+  }>();
+  const report = await runDoctor({
+    browser: options.browser,
+    config: options.config,
+    render: !options.quick,
+  });
+  io.out(options.json ? `${JSON.stringify(report, null, 2)}\n` : formatReport(report));
+  return report.ok ? ExitCode.Ok : ExitCode.Usage;
+}
+
 async function runPreview(argv: string[], io: Io, signal: AbortSignal): Promise<number> {
   const program = buildPreviewProgram(io);
   const parsed = await parse(program, argv);
@@ -248,6 +284,7 @@ export async function main(
   try {
     if (argv[0] === "preview") return await runPreview(argv.slice(1), io, signal);
     if (argv[0] === "setup") return await runSetup(argv.slice(1), io);
+    if (argv[0] === "doctor") return await runDoctorCommand(argv.slice(1), io);
     return await runRender(argv, io, signal);
   } catch (error) {
     if (error instanceof MdRenderError) {

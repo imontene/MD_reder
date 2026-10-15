@@ -153,6 +153,11 @@ export class BrowserSession {
     }
   }
 
+  /** Browser name and version, e.g. "HeadlessChrome/141.0.7390.37". */
+  version(): Promise<string> {
+    return this.browser.version();
+  }
+
   async close(): Promise<void> {
     await this.browser.close();
   }

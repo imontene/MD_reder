@@ -95,7 +95,29 @@ mdrender documento.md --theme mi-tema.css
 
 # Descargar un navegador si no tienes Chrome, Edge ni Chromium
 mdrender setup
+
+# Diagnóstico: instalación, navegador, configuración y una conversión de prueba
+mdrender doctor
 ```
+
+### Si algo no funciona: `mdrender doctor`
+
+Revisa la versión y el Node.js, si `mdrender` está en el `PATH`, qué navegador se usa (y por
+qué), lo arranca y convierte un documento de prueba con una ecuación y un diagrama, e indica
+qué `mdrender.config.json` se aplica, con sus opciones mal escritas y los valores efectivos.
+Cada problema viene con su solución sugerida; termina con código 1 si encuentra alguno.
+
+```text
+[ok]   mdrender         2.0.0, npm package (/usr/lib/node_modules/@imontene/mdrender)
+[ok]   Node.js          22.23.3
+[warn] PATH             the mdrender command is not in any PATH folder
+                        -> add its folder to PATH (for npm: the output of `npm prefix -g`…)
+[ok]   Browser          C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+[ok]   Test conversion  PDF with an equation and a Mermaid diagram in 1840 ms
+```
+
+`--quick` omite el arranque del navegador y la conversión; `--json` produce el informe en JSON
+para compartirlo.
 
 En Windows (PowerShell o CMD) los comandos son idénticos:
 

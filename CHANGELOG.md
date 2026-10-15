@@ -1,5 +1,12 @@
 # Cambios
 
+## Sin publicar
+
+- `mdrender doctor`: revisa instalación (versión, Node.js, `PATH`), navegador (cuál y por qué,
+  arranque y versión, sandbox), una conversión real de prueba, el `mdrender.config.json`
+  aplicado (errores, opciones mal escritas, valores efectivos), la caché de `setup` y el proxy.
+  `--quick`, `--json`; código 1 si encuentra un problema.
+
 ## 2.0.0 — 2026-10-13
 
 - Márgenes por lado: `--margin-top`, `--margin-right`, `--margin-bottom`, `--margin-left`
