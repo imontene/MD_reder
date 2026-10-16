@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.3.0 — 2026-10-16
 
 - **Manrope es la nueva tipografía por defecto** del texto, el encabezado, el pie y los
   diagramas Mermaid. `--font inter` (o `font: inter`) conserva Inter, la de versiones
