@@ -2,7 +2,7 @@
 
 **Convierte archivos Markdown (`.md`) en PDF y HTML desde la línea de comandos, en Windows y
 Linux**, con ecuaciones LaTeX, diagramas Mermaid y la tipografía
-[Inter](https://fonts.google.com/specimen/Inter).
+[Manrope](https://fonts.google.com/specimen/Manrope) (o [Inter](https://fonts.google.com/specimen/Inter)).
 
 ```bash
 mdrender informe.md            # → informe.pdf
@@ -15,7 +15,8 @@ Ejemplo: [`examples/ejemplo.md`](examples/ejemplo.md) → [`examples/ejemplo.pdf
 - 📄 **Markdown → PDF o HTML autocontenido** (fuentes, imágenes y diagramas incluidos).
 - ➗ **Ecuaciones** `$…$` y `$$…$$` con KaTeX, dibujadas al convertir (sin JavaScript en la salida).
 - 📊 **Diagramas Mermaid**: flujo, secuencia, clases, estados, ER, Gantt, torta, mapa mental…
-- 🔤 **Inter** para el texto y **JetBrains Mono** para el código, incrustadas en el PDF.
+- 🔤 **Manrope** para el texto (o **Inter** con `--font inter`) y **JetBrains Mono** para el
+  código, incrustadas en el PDF.
 - 🧩 **GFM**: tablas, listas de tareas, tachado, notas al pie, alertas `> [!NOTE]`,
   resaltado de código para ~35 lenguajes.
 - 🖨️ Tamaño de página, márgenes, orientación, encabezado/pie con números de página,
@@ -151,6 +152,7 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 | `--header <texto>`             | Encabezado de página (ver abajo)                                     | —                  |
 | `--footer <texto>`             | Pie de página (ver abajo)                                            | `{page} / {pages}` |
 | `--no-page-numbers`            | Sin el pie con números de página                                     | —                  |
+| `--font <manrope\|inter>`      | Tipografía del texto (ver abajo)                                     | `manrope`          |
 | `--density <densidad>`         | `normal` o `compact` (menos espacio entre líneas y bloques)          | `normal`           |
 | `--font-size <tamaño>`         | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt`         | `10.5pt`           |
 | `--theme <light\|dark\|css>`   | `light`, `dark` o un `.css` que reemplaza el tema                    | `light`            |
@@ -174,6 +176,13 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 `--margin`. Ejemplo: `--page-size A4 --orientation landscape --margin 15mm --margin-left 25mm`.
 El encabezado y el pie se dibujan dentro de las márgenes superior e inferior: con menos de
 10 mm pueden tocar el texto y mdrender lo advierte.
+
+**Tipografía**: el texto usa [Manrope](https://fonts.google.com/specimen/Manrope);
+`--font inter` (o `font: inter` en el front matter o en `mdrender.config.json`) vuelve a
+[Inter](https://fonts.google.com/specimen/Inter), la tipografía de las versiones anteriores.
+Ambas van incrustadas en el PDF, también en el encabezado, el pie y los diagramas. Manrope no
+tiene cursivas (el navegador inclina la normal) ni algunos símbolos como `→`, `✓` o `≤`, que
+se toman de Inter.
 
 **Aprovechar la página**: `--density compact` reduce interlineado, espacios entre párrafos y
 títulos, y `--font-size 10pt` achica el texto (los diagramas Mermaid siguen el mismo tamaño).
@@ -318,6 +327,6 @@ cambios: [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
-[MIT](LICENSE). Inter y JetBrains Mono se distribuyen bajo la
+[MIT](LICENSE). Manrope, Inter y JetBrains Mono se distribuyen bajo la
 [SIL Open Font License 1.1](https://openfontlicense.org); los ejecutables incluyen
 `THIRD-PARTY-NOTICES.txt` con las licencias de todos los componentes.

@@ -1,6 +1,6 @@
 ---
 title: Ejemplo de mdrender
-subtitle: Markdown, ecuaciones y diagramas en un PDF con Inter
+subtitle: Markdown, ecuaciones y diagramas en un PDF con Manrope
 author: imontene
 date: 2026-10-04
 toc: true
@@ -46,7 +46,7 @@ flowchart LR
     A[documento.md] --> B[Markdown + KaTeX]
     B --> C{¿Diagramas?}
     C -->|Sí| D[Mermaid → SVG]
-    C -->|No| E[HTML con Inter]
+    C -->|No| E[HTML con Manrope]
     D --> E --> F[PDF]
 ```
 

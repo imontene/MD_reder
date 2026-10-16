@@ -1,7 +1,8 @@
-/* mdrender light theme — Inter for text, JetBrains Mono for code. */
+/* mdrender light theme — Manrope (or Inter) for text, JetBrains Mono for code. */
 
 :root {
-  --font-text: "Inter", system-ui, sans-serif;
+  /* mdrender sets both after the theme for the chosen --font (render/fonts.ts). */
+  --font-text: "Manrope", "Inter", system-ui, sans-serif;
   /* Inter after the mono font covers symbols (arrows, math) missing from the code font. */
   --font-code: "JetBrains Mono", "Inter", ui-monospace, monospace;
   --color-text: #1f2328;

@@ -1,6 +1,7 @@
 import { readTextAsset } from "../assets.js";
 import { escapeHtml } from "../html.js";
 import { fontFaceCss } from "./fonts.js";
+import type { TextFont } from "../options.js";
 import { katexCss } from "./katex.js";
 import { version } from "../version.js";
 
@@ -40,6 +41,8 @@ export interface DocumentParts {
   showTitle?: boolean;
   /** Theme stylesheet contents. Defaults to the built-in light theme. */
   themeCss?: string[];
+  /** Text font to embed. Defaults to Manrope. */
+  font?: TextFont;
   /** Layout stylesheets (density, font size, page height), applied after the theme. */
   layoutCss?: string[];
   /** Extra stylesheet contents, applied after the theme and layout. */
@@ -64,7 +67,7 @@ export function buildHtmlDocument(parts: DocumentParts): string {
   const { title, body, math = false, lang, author, layoutCss = [], extraCss = [] } = parts;
   const themeCss = parts.themeCss ?? builtinThemeCss("light");
   const styles = [
-    fontFaceCss(),
+    fontFaceCss(parts.font),
     ...(math ? [katexCss()] : []),
     ...themeCss,
     ...layoutCss,

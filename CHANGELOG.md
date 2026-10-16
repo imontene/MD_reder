@@ -1,5 +1,12 @@
 # Cambios
 
+## Sin publicar
+
+- **Manrope es la nueva tipografía por defecto** del texto, el encabezado, el pie y los
+  diagramas Mermaid. `--font inter` (o `font: inter`) conserva Inter, la de versiones
+  anteriores. Manrope no tiene cursivas (el navegador inclina la normal) y toma de Inter los
+  símbolos que le faltan (`→`, `✓`, `≤`…).
+
 ## 2.2.0 — 2026-10-15
 
 - **Autoajuste de diagramas de flujo Mermaid** (`flowchart`/`graph`): cada diagrama se dibuja

@@ -181,8 +181,9 @@ function settingsCheck(options: ReturnType<typeof mergeOptions>): Check {
     status: "info",
     detail:
       `${options.pageSize} ${options.orientation}, margins ${m.top} ${m.right} ${m.bottom} ` +
-      `${m.left} (top right bottom left), ${options.density} density, ` +
-      `${options.fontSize ?? DEFAULT_FONT_SIZE} text, language ${options.lang}, theme ` +
+      `${m.left} (top right bottom left), ${options.font} ` +
+      `${options.fontSize ?? DEFAULT_FONT_SIZE}, ${options.density} density, ` +
+      `language ${options.lang}, theme ` +
       path.basename(options.theme),
   };
 }

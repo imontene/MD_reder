@@ -85,6 +85,12 @@ export const INTER_FACES = [
   { weight: 700, style: "normal", file: "Inter-Bold.woff2" },
   { weight: 700, style: "italic", file: "Inter-BoldItalic.woff2" },
 ] as const;
+/** Manrope faces in use (Fontsource, split into unicode-range subsets); it has no italics. */
+export const MANROPE_STYLESHEETS = [
+  "@fontsource/manrope/400.css",
+  "@fontsource/manrope/600.css",
+  "@fontsource/manrope/700.css",
+];
 export const MONO_STYLESHEETS = [
   "@fontsource/jetbrains-mono/400.css",
   "@fontsource/jetbrains-mono/400-italic.css",
@@ -113,7 +119,7 @@ export function woff2References(cssKey: string, css: string): string[] {
 export function assetManifest(): Record<string, string> {
   const keys = new Set<string>([PACKAGE_JSON, ...THEMES, MERMAID_JS]);
   for (const { file } of INTER_FACES) keys.add(`${INTER_DIR}/${file}`);
-  for (const cssKey of [...MONO_STYLESHEETS, KATEX_CSS]) {
+  for (const cssKey of [...MANROPE_STYLESHEETS, ...MONO_STYLESHEETS, KATEX_CSS]) {
     keys.add(cssKey);
     for (const font of woff2References(cssKey, readTextAsset(cssKey))) keys.add(font);
   }

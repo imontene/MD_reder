@@ -7,6 +7,9 @@ import { browserRequired, fixture, tempDir, testBrowser } from "./helpers.js";
 
 const browser = testBrowser();
 
+/** Fonts Chrome falls back to on Linux, Windows and macOS: none should reach the PDF. */
+const SYSTEM_FONT = /\/BaseFont \/[A-Z]{6}\+(DejaVu|Liberation|Noto|Arial|SegoeUI|Helvetica|Times)/;
+
 async function openPdf(file: string) {
   const task = getDocument({ data: new Uint8Array(readFileSync(file)) });
   return { doc: await task.promise, close: () => task.destroy() };
@@ -63,7 +66,7 @@ describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
     expect(browser, "no Chromium-based browser found; set MDRENDER_BROWSER").toBeDefined();
   });
 
-  it("renders headings, tables, task lists, code and images to PDF with Inter", async () => {
+  it("renders headings, tables, task lists, code and images to PDF with Manrope", async () => {
     const output = path.join(tempDir(), "sample.pdf");
     const result = await convertFile({ input: fixture("sample.md"), output, format: "pdf" });
     expect(result.diagnostics).toEqual([]);
@@ -72,8 +75,9 @@ describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
     expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
 
     const raw = bytes.toString("latin1");
-    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-Regular/);
-    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-SemiBold/);
+    // Fontsource's static Manrope keeps the variable font's family name ("ManropeExtraLight").
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Manrope\w*-Regular/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Manrope\w*-SemiBold/);
     expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+JetBrainsMono-Regular/);
     // Static fonts must be embedded as TrueType, not as Type 3 glyph procedures.
     expect(raw).not.toMatch(/\/Subtype\s*\/Type3/);
@@ -86,6 +90,22 @@ describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
     expect(text).toContain("ñandú");
     expect(text).toContain("Ecuaciones y diagramas");
     expect(text).toContain("saludar");
+  });
+
+  it("sets the text in Inter with --font inter, header and footer included", async () => {
+    const output = path.join(tempDir(), "inter.pdf");
+    const result = await convertFile({
+      input: fixture("document.md"),
+      output,
+      format: "pdf",
+      overrides: { font: "inter" },
+    });
+    expect(result.diagnostics).toEqual([]);
+    const raw = readFileSync(output).toString("latin1");
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-Regular/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-SemiBold/);
+    expect(raw).not.toContain("Manrope");
+    expect(raw).not.toMatch(SYSTEM_FONT);
   });
 
   it("writes the document title into the PDF metadata", async () => {
@@ -184,6 +204,8 @@ describe.skipIf(!browser && !browserRequired)("document layout", () => {
 
     const raw = readFileSync(output).toString("latin1");
     expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+JetBrainsMono-Italic/); // highlighted comments
+    // The header and footer carry their own copy of the text font.
+    expect(raw).not.toMatch(SYSTEM_FONT);
   });
 
   it("honours page size, orientation and the page-numbers switch", async () => {

@@ -1,5 +1,6 @@
 import { escapeHtml } from "../html.js";
-import { interRegularFontFace } from "./fonts.js";
+import type { TextFont } from "../options.js";
+import { fontStack, regularFontFace } from "./fonts.js";
 
 /**
  * Header/footer text with placeholders, in up to three columns separated by `|`:
@@ -36,18 +37,19 @@ function columns(spec: string): [string, string, string] {
 
 /**
  * Chrome header/footer template. Chrome renders it apart from the page, so it carries its own
- * styles and its own copy of Inter.
+ * styles and its own copy of the text font.
  */
 export function headerFooterTemplate(
   spec: string | undefined,
   values: HeaderFooterValues,
   horizontalMargin: { left: string; right: string },
+  font: TextFont = "manrope",
 ): string {
   if (!spec) return "<span></span>";
   const [left, center, right] = columns(spec).map((c) => renderText(c, values));
-  return `<style>${interRegularFontFace()}</style>
+  return `<style>${regularFontFace(font)}</style>
 <div style="box-sizing: border-box; width: 100%; display: flex; padding: 0 ${horizontalMargin.right} 0 ${horizontalMargin.left};
-  font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 8pt; color: #59636e;">
+  font-family: ${fontStack(font).replaceAll('"', "'")}; font-size: 8pt; color: #59636e;">
   <span style="flex: 1; text-align: left;">${left}</span>
   <span style="flex: 1; text-align: center;">${center}</span>
   <span style="flex: 1; text-align: right;">${right}</span>

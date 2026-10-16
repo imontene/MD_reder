@@ -1,17 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { fontFaceCss } from "../src/render/fonts.js";
+import { fontFaceCss, fontStack } from "../src/render/fonts.js";
 import { buildHtmlDocument, escapeHtml } from "../src/render/template.js";
 
 describe("fontFaceCss", () => {
   const css = fontFaceCss();
 
-  it("embeds Inter in the weights the theme uses", () => {
+  it("embeds Manrope by default, with Inter for the glyphs it lacks", () => {
     for (const weight of [400, 600, 700]) {
       expect(css).toMatch(
+        new RegExp(
+          `font-family: 'Manrope';\\s+font-style: normal;\\s+font-display: block;\\s+font-weight: ${weight};`,
+        ),
+      );
+    }
+    expect(css).toMatch(/font-family: "Inter";\s+font-style: normal;\s+font-weight: 400;/);
+    expect(css).toMatch(/font-family: "Inter";\s+font-style: normal;\s+font-weight: 700;/);
+    expect(css).not.toMatch(/font-family: "Inter";\s+font-style: italic;/);
+  });
+
+  it("embeds Inter in the weights the theme uses with --font inter", () => {
+    const inter = fontFaceCss("inter");
+    for (const weight of [400, 600, 700]) {
+      expect(inter).toMatch(
         new RegExp(`font-family: "Inter";\\s+font-style: normal;\\s+font-weight: ${weight};`),
       );
     }
-    expect(css).toMatch(/font-family: "Inter";\s+font-style: italic;/);
+    expect(inter).toMatch(/font-family: "Inter";\s+font-style: italic;/);
+    expect(inter).not.toContain("Manrope");
+  });
+
+  it("gives each font its stack, Inter first falling back to the system", () => {
+    expect(fontStack("manrope")).toBe(`"Manrope", "Inter", system-ui, sans-serif`);
+    expect(fontStack("inter")).toBe(`"Inter", system-ui, sans-serif`);
   });
 
   it("embeds JetBrains Mono for code", () => {
@@ -32,7 +52,7 @@ describe("buildHtmlDocument", () => {
     expect(html).toMatch(/^<!doctype html>/);
     expect(html).toContain("<title>A &amp; &lt;B&gt;</title>");
     expect(html).toContain('<main class="markdown-body">\n<p>hola</p>');
-    expect(html).toContain('--font-text: "Inter"');
+    expect(html).toContain('--font-text: "Manrope", "Inter"');
   });
 
   it("escapes HTML special characters", () => {

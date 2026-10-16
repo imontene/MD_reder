@@ -1,10 +1,10 @@
 import { MERMAID_JS, readTextAsset } from "../assets.js";
 import type { Diagnostic } from "../diagnostics.js";
 import type { MermaidBlock } from "../markdown/env.js";
-import type { MermaidFlip, MermaidTheme } from "../options.js";
+import type { MermaidFlip, MermaidTheme, TextFont } from "../options.js";
 import { mermaidPlaceholder } from "../markdown/mermaid.js";
 import type { BrowserSession } from "./browser.js";
-import { fontFaceCss } from "./fonts.js";
+import { FONT_FAMILIES, fontFaceCss, fontStack } from "./fonts.js";
 import { escapeHtml } from "../html.js";
 import {
   authorConfigured,
@@ -64,6 +64,8 @@ export interface MermaidRenderOptions {
   /** Search label wrapping widths (and, with `flip`, the other axis) for each flowchart. */
   autofit?: boolean;
   flip?: MermaidFlip;
+  /** Text font of the document, used for diagram labels too. */
+  font?: TextFont;
 }
 
 /**
@@ -74,15 +76,21 @@ export const HEADING_ALLOWANCE_EM = 5;
 
 let mermaidJs: string | undefined;
 
-function mermaidConfig(theme: MermaidTheme, fontPx: number, wrap: number | undefined) {
+function mermaidConfig(
+  theme: MermaidTheme,
+  font: TextFont,
+  fontPx: number,
+  wrap: number | undefined,
+) {
+  const fontFamily = fontStack(font);
   return {
     startOnLoad: false,
     securityLevel: "strict",
     theme,
-    fontFamily: "Inter, sans-serif",
+    fontFamily,
     // Sequence diagrams take their text sizes from here, the others from themeVariables.
     fontSize: fontPx,
-    themeVariables: { fontFamily: "Inter, sans-serif", fontSize: `${fontPx}px` },
+    themeVariables: { fontFamily, fontSize: `${fontPx}px` },
     htmlLabels: true,
     // Actors only at the top of sequence diagrams: repeating them below costs height.
     sequence: { mirrorActors: false },
@@ -107,23 +115,27 @@ export async function renderMermaid(
     pageHeightPx = Infinity,
     autofit = true,
     flip = "auto",
+    font = "manrope",
   } = options;
+  const family = FONT_FAMILIES[font];
   mermaidJs ??= readTextAsset(MERMAID_JS);
 
   const page = await session.newPage();
   try {
     await page.setContent(
-      `<!doctype html><html><head><meta charset="utf-8"><style>${fontFaceCss()}
-body { margin: 0; width: ${widthPx}px; font-family: "Inter", sans-serif; }</style>
+      `<!doctype html><html><head><meta charset="utf-8"><style>${fontFaceCss(font)}
+body { margin: 0; width: ${widthPx}px; font-family: ${fontStack(font)}; }</style>
 </head><body></body></html>`,
     );
     await page.evaluate(mermaidJs);
-    await page.evaluate(async () => {
+    await page.evaluate(async (family: string) => {
       // Runs in the browser. The project is compiled without DOM types, hence PageGlobals.
       const { document } = globalThis as unknown as PageGlobals;
       // Load the font weights Mermaid uses before it measures any text.
-      await Promise.all(["400", "600", "700"].map((w) => document.fonts.load(`${w} 16px Inter`)));
-    });
+      await Promise.all(
+        ["400", "600", "700"].map((w) => document.fonts.load(`${w} 16px "${family}"`)),
+      );
+    }, family);
 
     const render = (source: string, id: string, wrap: number | undefined) =>
       page.evaluate(
@@ -139,7 +151,7 @@ body { margin: 0; width: ${widthPx}px; font-family: "Inter", sans-serif; }</styl
         },
         source,
         id,
-        mermaidConfig(theme, fontPx, wrap),
+        mermaidConfig(theme, font, fontPx, wrap),
       ) as Promise<{ svg: string } | { error: string }>;
 
     const results: DiagramResult[] = [];

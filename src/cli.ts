@@ -45,6 +45,7 @@ const DOCUMENT_FLAGS = [
   "header",
   "footer",
   "pageNumbers",
+  "font",
   "density",
   "fontSize",
   "css",
@@ -84,6 +85,7 @@ function addDocumentOptions(command: Command): Command {
     .option("--header <text>", 'page header, e.g. "{title} | | {date}"')
     .option("--footer <text>", 'page footer (default: "{page} / {pages}")')
     .option("--no-page-numbers", "no default page-number footer")
+    .option("--font <font>", "text typeface: manrope or inter (default: manrope)")
     .option("--density <density>", "normal or compact (tighter spacing) (default: normal)")
     .option("--font-size <size>", "text size, e.g. 10pt or 11pt (default: 10.5pt)")
     .option("--theme <theme>", "light, dark, or a .css file replacing the theme (default: light)")
@@ -112,7 +114,7 @@ function configure(command: Command, io: Io): Command {
 function buildRenderProgram(io: Io): Command {
   const program = new Command()
     .name("mdrender")
-    .description("Render Markdown files to PDF (or self-contained HTML) using the Inter typeface.")
+    .description("Render Markdown files to PDF (or self-contained HTML) set in Manrope (or Inter).")
     .version(version, "-V, --version")
     .argument("<inputs...>", "Markdown files, folders or glob patterns (e.g. docs/**/*.md)")
     .option("-o, --output <path>", "output file, or folder for several inputs")

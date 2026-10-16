@@ -1,7 +1,7 @@
 {
   "name": "@imontene/mdrender",
   "version": "2.2.0",
-  "description": "Command-line app for Windows and Linux that renders Markdown — with LaTeX equations and Mermaid diagrams — to PDF and HTML using the Inter typeface",
+  "description": "Command-line app for Windows and Linux that renders Markdown — with LaTeX equations and Mermaid diagrams — to PDF and HTML set in Manrope or Inter",
   "keywords": [
     "markdown",
     "pdf",
@@ -11,6 +11,7 @@
     "latex",
     "cli",
     "inter",
+    "manrope",
     "converter"
   ],
   "homepage": "https://github.com/imontene/MD_reder#readme",
@@ -65,6 +66,7 @@
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
     "@puppeteer/browsers": "^3.2.3",
     "chokidar": "^5.0.0",
     "commander": "^15.0.0",

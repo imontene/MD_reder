@@ -149,7 +149,7 @@ withBrowser("PDF hardening", () => {
     const sections: string[] = ["# Documento grande\n"];
     for (let i = 1; i <= 50; i++) {
       sections.push(`## Sección ${i}\n`);
-      for (let p = 0; p < 18; p++) {
+      for (let p = 0; p < 22; p++) {
         sections.push(
           `Párrafo ${p + 1} de la sección ${i}. ` +
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, con $x_" +

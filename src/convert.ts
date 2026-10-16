@@ -24,6 +24,7 @@ import { BrowserSession } from "./render/browser.js";
 import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js";
 import { fillMermaid, renderMermaid, type DiagramLayout } from "./render/mermaid.js";
 import { SMALL_SCALE } from "./render/mermaid-fit.js";
+import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
 import { contentHeightPx, contentWidthPx, lengthToPx } from "./render/page.js";
 import { buildHtmlDocument, builtinThemeCss, densityCss } from "./render/template.js";
 import { writeFileAtomic } from "./write.js";
@@ -152,7 +153,15 @@ export function headerFooterSpaceWarnings(
 /** Font size, if set, and the page's text height (used to fit images and diagrams). */
 function layoutCss(options: DocumentOptions, margin: Margins): string {
   const height = contentHeightPx(options.pageSize, options.orientation === "landscape", margin);
-  const rules = [`:root { --page-content-height: ${height}px; }`];
+  const family = FONT_FAMILIES[options.font];
+  const rules = [
+    `:root { --page-content-height: ${height}px; }`,
+    `:root { --font-text: ${fontStack(options.font)}; ` +
+      `--font-code: "JetBrains Mono", "${family}", "Inter", ui-monospace, monospace; }`,
+  ];
+  // Manrope's glyphs are taller than the headings' 1.25 line height (about 1.37 em). When a
+  // heading is pushed to the next page, Chrome then repeats its text in the PDF bookmark.
+  if (options.font === "manrope") rules.push("h1, h2, h3, h4, h5, h6 { line-height: 1.4; }");
   if (options.fontSize) rules.push(`html { font-size: ${options.fontSize}; }`);
   return rules.join("\n");
 }
@@ -249,6 +258,7 @@ export async function renderDocument(
         : Infinity,
       autofit: options.mermaidAutofit,
       flip: options.mermaidFlip,
+      font: options.font,
     });
     const filled = fillMermaid(body, md.nonce, md.mermaid, results);
     body = filled.html;
@@ -279,6 +289,7 @@ export async function renderDocument(
     date: options.date,
     showTitle: options.title !== undefined,
     themeCss,
+    font: options.font,
     layoutCss: [...densityCss(options.density), layoutCss(options, margin)],
     extraCss,
   });
@@ -315,9 +326,11 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
         landscape: options.orientation === "landscape",
         margin,
         headerTemplate: hasHeaderFooter
-          ? headerFooterTemplate(options.header, values, margin)
+          ? headerFooterTemplate(options.header, values, margin, options.font)
           : undefined,
-        footerTemplate: hasHeaderFooter ? headerFooterTemplate(footer, values, margin) : undefined,
+        footerTemplate: hasHeaderFooter
+          ? headerFooterTemplate(footer, values, margin, options.font)
+          : undefined,
         allowRemote: convert.allowRemote,
       });
       for (const url of blocked) {

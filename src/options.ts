@@ -19,6 +19,9 @@ export type MermaidFlip = (typeof MERMAID_FLIPS)[number];
 
 export const BUILTIN_THEMES = ["light", "dark"] as const;
 
+export const TEXT_FONTS = ["manrope", "inter"] as const;
+export type TextFont = (typeof TEXT_FONTS)[number];
+
 export const DENSITIES = ["normal", "compact"] as const;
 export type Density = (typeof DENSITIES)[number];
 
@@ -47,6 +50,8 @@ export interface DocumentOptions {
   mermaidAutofit: boolean;
   /** Whether autofit may turn a flowchart to the other axis (LR ↔ TB) when it reads far better. */
   mermaidFlip: MermaidFlip;
+  /** Typeface of the text: Manrope or Inter (code is always JetBrains Mono). */
+  font: TextFont;
   /** Vertical spacing: "compact" tightens line height, paragraph and heading spacing. */
   density: Density;
   /** Base font size of the text, e.g. "10pt"; when unset, the theme's (10.5pt). */
@@ -72,6 +77,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   pageNumbers: true,
   mermaidAutofit: true,
   mermaidFlip: "auto",
+  font: "manrope",
   density: "normal",
   theme: "light",
   css: [],
@@ -183,6 +189,7 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   mermaidTheme: oneOf(MERMAID_THEMES),
   mermaidAutofit: bool,
   mermaidFlip: oneOf(MERMAID_FLIPS),
+  font: oneOf(TEXT_FONTS),
   density: oneOf(DENSITIES),
   fontSize,
   theme: (value, describe, baseDir) => {
