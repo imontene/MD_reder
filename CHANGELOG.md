@@ -1,5 +1,11 @@
 # Cambios
 
+## Sin publicar
+
+- `--watermark-field` pone ahora dos campos de luz en cada página: arriba a la izquierda (antes
+  arriba a la derecha) y uno nuevo abajo a la derecha. El campo junto al título de la primera
+  página no cambia.
+
 ## 2.6.1 — 2026-10-22
 
 - **PDF mucho más livianos con los campos de luz.** Chrome convertía los degradados CSS del

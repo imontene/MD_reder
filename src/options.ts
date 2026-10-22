@@ -60,7 +60,7 @@ export interface DocumentOptions {
   mermaidFlip: MermaidFlip;
   /** Text set diagonally across every page of the PDF, in the Anti-Gravity gradient. */
   watermark?: string;
-  /** A soft field of light (the Anti-Gravity gradient) in the corner of every PDF page. */
+  /** Soft fields of light (the Anti-Gravity gradient) in two corners of every PDF page. */
   watermarkField: boolean;
   /** Justify paragraphs in the PDF (body, quotes, alerts), breaking long words with hyphens. */
   justify: boolean;

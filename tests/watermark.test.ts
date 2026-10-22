@@ -34,7 +34,14 @@ describe("watermark HTML", () => {
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain("BORRADOR &lt;B&gt;1&lt;/B&gt;");
     expect(html).not.toContain("<b>");
-    expect(html).toContain('class="mdr-watermark-field"');
+    // Fields in the top-left and bottom-right corners, both with the field image.
+    expect(
+      html.match(
+        /class="mdr-watermark-field mdr-field-(top-left|bottom-right)" style="background-image: url\('data:image\/svg\+xml,/g,
+      ),
+    ).toHaveLength(2);
+    expect(html).toContain("mdr-field-top-left");
+    expect(html).toContain("mdr-field-bottom-right");
     expect(watermarkHtml({ ...page, field: true })).not.toContain("mdr-watermark-text");
   });
 

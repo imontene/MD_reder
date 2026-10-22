@@ -3,8 +3,8 @@ import { FIELD_COLORS, fieldImage } from "./field.js";
 
 /**
  * Watermarks in the Anti-Gravity gradient (field-blue → field-cyan → field-violet), PDF only:
- * a text set diagonally across every page, and a soft field of light in the top-right corner of
- * every page. Both sit behind the content. Chrome repeats a `position: fixed` element on every
+ * a text set diagonally across every page, and soft fields of light in the top-left and
+ * bottom-right corners of every page. Both sit behind the content. Chrome repeats a `position: fixed` element on every
  * printed page, at the same place in the text area, so pagination is left alone.
  */
 
@@ -13,7 +13,7 @@ const FIELD = FIELD_COLORS;
 export interface WatermarkOptions {
   /** Text set across every page; undefined or blank for none. */
   text?: string;
-  /** A field of light in the corner of every page. */
+  /** Fields of light in the top-left and bottom-right corners of every page. */
   field: boolean;
   /** Size of the text area in CSS px (the text runs along its diagonal). */
   widthPx: number;
@@ -40,8 +40,13 @@ function textMark(text: string, widthPx: number, heightPx: number, dark: boolean
 }
 
 function fieldMark(dark: boolean): string {
-  // The same field as the title block's (render/field.ts), as a vector SVG image.
-  return `<div class="mdr-watermark-field" style="background-image: ${fieldImage(dark)}"></div>`;
+  // The same field as the title block's (render/field.ts), as a vector SVG image, in the
+  // top-left and bottom-right corners of every page.
+  const style = `style="background-image: ${fieldImage(dark)}"`;
+  return [
+    `<div class="mdr-watermark-field mdr-field-top-left" ${style}></div>`,
+    `<div class="mdr-watermark-field mdr-field-bottom-right" ${style}></div>`,
+  ].join("\n");
 }
 
 /** HTML of the requested marks, to go before the document body; "" when none is requested. */
@@ -90,13 +95,14 @@ export const WATERMARK_CSS = `.mdr-watermark { display: none; }
   }
   .mdr-watermark-field {
     position: absolute;
-    top: 0;
-    right: 0;
     width: 40%;
     height: 230px;
     background-position: center;
     background-size: 100% 100%;
     background-repeat: no-repeat;
   }
+  /* The lights gather towards the right of the field's box: mirror it so they sit in its corner. */
+  .mdr-field-top-left { top: 0; left: 0; transform: scaleX(-1); }
+  .mdr-field-bottom-right { bottom: 0; right: 0; transform: scaleY(-1); }
   .mdr-watermark:has(.mdr-watermark-field) ~ .markdown-body .doc-header::before { display: none; }
 }`;
