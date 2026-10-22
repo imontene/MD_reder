@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.6.0 — 2026-10-22
 
 - **Marcas de agua** con el degradado Anti-Gravity, solo en el PDF y desactivadas por defecto:
   - `--watermark <texto>` (o `watermark:`): texto en diagonal en cada página, ajustado al
