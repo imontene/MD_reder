@@ -7,7 +7,7 @@
     tamaño y la orientación de la hoja;
   - `--watermark-field` (o `watermarkField: true`): campo de luz en la esquina de cada página.
 
-  Van detrás del contenido, no entran en el texto del PDF y funcionan con cualquier tema.
+  Van detrás del contenido y funcionan con cualquier tema.
 
 ## 2.5.0 — 2026-10-22
 

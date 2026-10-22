@@ -207,9 +207,9 @@ mdrender informe.md --watermark-field          # campo de luz en la esquina de c
 
 También como `watermark: Borrador` y `watermarkField: true` en el front matter o en
 `mdrender.config.json`. Van muy tenues y detrás del contenido: no tapan el texto, y las
-imágenes, tablas y tarjetas quedan por encima. El texto de la marca no entra en el texto del
-PDF, así que no aparece al copiar ni al buscar. Funcionan con cualquier tema y son algo más
-intensas en los oscuros.
+imágenes, tablas y tarjetas quedan por encima. Según la versión de Chrome, el texto de la marca
+puede formar parte del texto del PDF (aparecer al copiar o buscar). Funcionan con cualquier tema
+y son algo más intensas en los oscuros.
 
 **Tipografía**: el texto usa [Manrope](https://fonts.google.com/specimen/Manrope);
 `--font inter` (o `font: inter` en el front matter o en `mdrender.config.json`) vuelve a
