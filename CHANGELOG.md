@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.5.0 — 2026-10-22
 
 - **Nuevo estilo por defecto: Anti-Gravity**, tomado del design system del mismo nombre y
   llevado a páginas. Incluye:
