@@ -28,6 +28,7 @@ import { fillMermaid, renderMermaid, type DiagramLayout } from "./render/mermaid
 import { SMALL_SCALE } from "./render/mermaid-fit.js";
 import { headerFooterStyle, mermaidThemeVariables } from "./render/antigravity.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
+import { WATERMARK_CSS, watermarkHtml } from "./render/watermark.js";
 import { contentHeightPx, contentWidthPx, lengthToPx, textWidthPx } from "./render/page.js";
 import { buildHtmlDocument, builtinThemeCss, densityCss } from "./render/template.js";
 import { writeFileAtomic } from "./write.js";
@@ -184,6 +185,18 @@ function layoutCss(options: DocumentOptions, margin: Margins): string {
   return rules.join("\n");
 }
 
+/** The watermarks asked for (PDF only), sized to the page's text area. */
+function watermarks(options: DocumentOptions, margin: Margins): string {
+  const landscape = options.orientation === "landscape";
+  return watermarkHtml({
+    text: options.watermark,
+    field: options.watermarkField,
+    widthPx: textWidthPx(options.pageSize, landscape, margin),
+    heightPx: contentHeightPx(options.pageSize, landscape, margin),
+    dark: isDarkTheme(options.theme),
+  });
+}
+
 export interface Note {
   line?: number;
   message: string;
@@ -305,6 +318,7 @@ export async function renderDocument(
     });
   }
 
+  const watermark = paged ? watermarks(options, margin) : "";
   const html = buildHtmlDocument({
     title,
     body,
@@ -316,7 +330,12 @@ export async function renderDocument(
     showTitle: options.title !== undefined,
     themeCss,
     font: options.font,
-    layoutCss: [...densityCss(options.density), layoutCss(options, margin)],
+    beforeBody: watermark || undefined,
+    layoutCss: [
+      ...densityCss(options.density),
+      layoutCss(options, margin),
+      ...(watermark ? [WATERMARK_CSS] : []),
+    ],
     extraCss,
   });
 

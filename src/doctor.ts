@@ -184,6 +184,8 @@ function settingsCheck(options: ReturnType<typeof mergeOptions>): Check {
       `${m.left} (top right bottom left), ${options.font} ` +
       `${options.fontSize ?? DEFAULT_FONT_SIZE}, ${options.density} density, ` +
       `${options.justify ? "justified" : "ragged"} paragraphs, ` +
+      (options.watermark?.trim() ? `watermark "${options.watermark.trim()}", ` : "") +
+      (options.watermarkField ? "watermark field, " : "") +
       `language ${options.lang}, theme ` +
       path.basename(options.theme),
   };

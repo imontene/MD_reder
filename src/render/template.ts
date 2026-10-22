@@ -51,6 +51,8 @@ export interface DocumentParts {
   themeCss?: string[];
   /** Text font to embed. Defaults to Manrope. */
   font?: TextFont;
+  /** HTML placed before the document body (the watermarks). */
+  beforeBody?: string;
   /** Layout stylesheets (density, font size, page height), applied after the theme. */
   layoutCss?: string[];
   /** Extra stylesheet contents, applied after the theme and layout. */
@@ -92,7 +94,7 @@ ${author ? `<meta name="author" content="${escapeHtml(author)}">\n` : ""}<title>
 ${styles.map((css) => `<style>\n${css}\n</style>`).join("\n")}
 </head>
 <body>
-<main class="markdown-body">
+${parts.beforeBody ? parts.beforeBody + "\n" : ""}<main class="markdown-body">
 ${parts.showTitle ? titleBlock(parts) + "\n" : ""}${body}
 </main>
 </body>

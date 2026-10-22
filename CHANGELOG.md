@@ -1,5 +1,14 @@
 # Cambios
 
+## Sin publicar
+
+- **Marcas de agua** con el degradado Anti-Gravity, solo en el PDF y desactivadas por defecto:
+  - `--watermark <texto>` (o `watermark:`): texto en diagonal en cada página, ajustado al
+    tamaño y la orientación de la hoja;
+  - `--watermark-field` (o `watermarkField: true`): campo de luz en la esquina de cada página.
+
+  Van detrás del contenido, no entran en el texto del PDF y funcionan con cualquier tema.
+
 ## 2.5.0 — 2026-10-22
 
 - **Nuevo estilo por defecto: Anti-Gravity**, tomado del design system del mismo nombre y

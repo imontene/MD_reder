@@ -58,6 +58,10 @@ export interface DocumentOptions {
   mermaidAutofit: boolean;
   /** Whether autofit may turn a flowchart to the other axis (LR ↔ TB) when it reads far better. */
   mermaidFlip: MermaidFlip;
+  /** Text set diagonally across every page of the PDF, in the Anti-Gravity gradient. */
+  watermark?: string;
+  /** A soft field of light (the Anti-Gravity gradient) in the corner of every PDF page. */
+  watermarkField: boolean;
   /** Justify paragraphs in the PDF (body, quotes, alerts), breaking long words with hyphens. */
   justify: boolean;
   /** Typeface of the text: Manrope or Inter (code is always JetBrains Mono). */
@@ -89,6 +93,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   mermaidFlip: "auto",
   font: "manrope",
   justify: true,
+  watermarkField: false,
   density: "normal",
   theme: "antigravity",
   css: [],
@@ -202,6 +207,8 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   mermaidFlip: oneOf(MERMAID_FLIPS),
   font: oneOf(TEXT_FONTS),
   justify: bool,
+  watermark: text,
+  watermarkField: bool,
   density: oneOf(DENSITIES),
   fontSize,
   theme: (value, describe, baseDir) => {

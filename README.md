@@ -156,6 +156,8 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 | `--no-page-numbers`            | Sin el pie con números de página                                                                 | —                     |
 | `--font <manrope\|inter>`      | Tipografía del texto (ver abajo)                                                                 | `manrope`             |
 | `--no-justify`                 | Párrafos alineados a la izquierda en el PDF (ver abajo)                                          | justificado           |
+| `--watermark <texto>`          | Marca de agua en diagonal en cada página del PDF, con el degradado Anti-Gravity                  | —                     |
+| `--watermark-field`            | Campo de luz con el degradado en la esquina de cada página del PDF                               | —                     |
 | `--density <densidad>`         | `normal` o `compact` (menos espacio entre líneas y bloques)                                      | `normal`              |
 | `--font-size <tamaño>`         | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt`                                     | `10.5pt`              |
 | `--theme <tema\|css>`          | `antigravity`, `antigravity-dark`, `light`, `dark` o un `.css` que reemplaza el tema (ver abajo) | `antigravity`         |
@@ -194,6 +196,20 @@ del mismo nombre y llevado de diapositivas a páginas:
 `--theme antigravity-dark` es su versión oscura. `--theme light` conserva el estilo de las
 versiones anteriores y `--theme dark` su variante oscura. El design system pide texto alineado
 a la izquierda: con este tema, usa `--no-justify` si quieres seguirlo al pie de la letra.
+
+**Marca de agua**: dos marcas con el degradado azul → cian → violeta del design system
+Anti-Gravity, cada una por separado y solo en el PDF:
+
+```bash
+mdrender informe.md --watermark "Borrador"     # texto en diagonal en cada página
+mdrender informe.md --watermark-field          # campo de luz en la esquina de cada página
+```
+
+También como `watermark: Borrador` y `watermarkField: true` en el front matter o en
+`mdrender.config.json`. Van muy tenues y detrás del contenido: no tapan el texto, y las
+imágenes, tablas y tarjetas quedan por encima. El texto de la marca no entra en el texto del
+PDF, así que no aparece al copiar ni al buscar. Funcionan con cualquier tema y son algo más
+intensas en los oscuros.
 
 **Tipografía**: el texto usa [Manrope](https://fonts.google.com/specimen/Manrope);
 `--font inter` (o `font: inter` en el front matter o en `mdrender.config.json`) vuelve a

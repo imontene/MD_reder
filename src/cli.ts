@@ -47,6 +47,8 @@ const DOCUMENT_FLAGS = [
   "pageNumbers",
   "font",
   "justify",
+  "watermark",
+  "watermarkField",
   "density",
   "fontSize",
   "css",
@@ -91,6 +93,8 @@ function addDocumentOptions(command: Command): Command {
     .option("--no-page-numbers", "no default page-number footer")
     .option("--font <font>", "text typeface: manrope or inter (default: manrope)")
     .option("--no-justify", "align paragraphs left in the PDF instead of justifying them")
+    .option("--watermark <text>", "text across every PDF page, in the Anti-Gravity gradient")
+    .option("--watermark-field", "a soft field of light in the corner of every PDF page")
     .option("--density <density>", "normal or compact (tighter spacing) (default: normal)")
     .option("--font-size <size>", "text size, e.g. 10pt or 11pt (default: 10.5pt)")
     .option(
