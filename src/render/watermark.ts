@@ -1,4 +1,5 @@
 import { escapeHtml } from "../html.js";
+import { FIELD_COLORS, fieldImage } from "./field.js";
 
 /**
  * Watermarks in the Anti-Gravity gradient (field-blue → field-cyan → field-violet), PDF only:
@@ -7,7 +8,7 @@ import { escapeHtml } from "../html.js";
  * printed page, at the same place in the text area, so pagination is left alone.
  */
 
-const FIELD = { blue: "#4f7cff", cyan: "#22c3e6", violet: "#8c6cf0" };
+const FIELD = FIELD_COLORS;
 
 export interface WatermarkOptions {
   /** Text set across every page; undefined or blank for none. */
@@ -39,9 +40,8 @@ function textMark(text: string, widthPx: number, heightPx: number, dark: boolean
 }
 
 function fieldMark(dark: boolean): string {
-  // The same three lights as the title block's field (theme-antigravity.css), each fading out
-  // inside the box so no edge shows.
-  return `<div class="mdr-watermark-field" style="opacity: ${dark ? 0.22 : 0.16}"></div>`;
+  // The same field as the title block's (render/field.ts), as a vector SVG image.
+  return `<div class="mdr-watermark-field" style="background-image: ${fieldImage(dark)}"></div>`;
 }
 
 /** HTML of the requested marks, to go before the document body; "" when none is requested. */
@@ -94,10 +94,9 @@ export const WATERMARK_CSS = `.mdr-watermark { display: none; }
     right: 0;
     width: 40%;
     height: 230px;
-    background:
-      radial-gradient(28% 38% at 58% 45%, ${FIELD.blue}, transparent),
-      radial-gradient(16% 26% at 78% 58%, ${FIELD.cyan}, transparent),
-      radial-gradient(25% 30% at 40% 32%, ${FIELD.violet}, transparent);
+    background-position: center;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
   }
   .mdr-watermark:has(.mdr-watermark-field) ~ .markdown-body .doc-header::before { display: none; }
 }`;

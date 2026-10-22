@@ -26,7 +26,12 @@ import { BrowserSession } from "./render/browser.js";
 import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js";
 import { fillMermaid, renderMermaid, type DiagramLayout } from "./render/mermaid.js";
 import { SMALL_SCALE } from "./render/mermaid-fit.js";
-import { headerFooterStyle, mermaidThemeVariables } from "./render/antigravity.js";
+import {
+  headerFooterStyle,
+  isAntigravityTheme,
+  mermaidThemeVariables,
+} from "./render/antigravity.js";
+import { fieldImage } from "./render/field.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
 import { WATERMARK_CSS, watermarkHtml } from "./render/watermark.js";
 import { contentHeightPx, contentWidthPx, lengthToPx, textWidthPx } from "./render/page.js";
@@ -181,6 +186,9 @@ function layoutCss(options: DocumentOptions, margin: Margins): string {
   // heading is pushed to the next page, Chrome then repeats its text in the PDF bookmark.
   if (options.font === "manrope") rules.push("h1, h2, h3, h4, h5, h6 { line-height: 1.4; }");
   if (options.justify) rules.push(JUSTIFY_CSS);
+  if (isAntigravityTheme(options.theme)) {
+    rules.push(`:root { --ag-field-image: ${fieldImage(isDarkTheme(options.theme))}; }`);
+  }
   if (options.fontSize) rules.push(`html { font-size: ${options.fontSize}; }`);
   return rules.join("\n");
 }

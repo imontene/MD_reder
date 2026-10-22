@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- **PDF mucho más livianos con los campos de luz.** Chrome convertía los degradados CSS del
+  campo en varias imágenes por página. Ahora el campo es un SVG que queda en el PDF como
+  sombreado vectorial, con el mismo aspecto:
+  - con `--watermark-field`, el README pasa de 3,0 MB a 0,41 MB (antes unos 290 KB más por
+    página, ahora unos 7 KB en total);
+  - con el tema Anti-Gravity, el campo junto al título ya no añade ~140 KB a cada documento
+    con título (el ejemplo pasa de 332 KB a 195 KB).
+
 ## 2.6.0 — 2026-10-22
 
 - **Marcas de agua** con el degradado Anti-Gravity, solo en el PDF y desactivadas por defecto:
