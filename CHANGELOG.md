@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.6.1 — 2026-10-22
 
 - **PDF mucho más livianos con los campos de luz.** Chrome convertía los degradados CSS del
   campo en varias imágenes por página. Ahora el campo es un SVG que queda en el PDF como
