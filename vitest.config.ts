@@ -6,6 +6,9 @@ export default defineConfig({
     // PDF tests start a browser each; on busy Windows runners that alone can take 10+ seconds.
     testTimeout: 60_000,
     hookTimeout: 60_000,
+    // Each test file starts its own browser. On the 4-core Windows CI runners, several Chrome
+    // instances starting at once can stall past the timeout: run at most two files at a time.
+    maxWorkers: process.platform === "win32" && process.env.CI === "true" ? 2 : undefined,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
