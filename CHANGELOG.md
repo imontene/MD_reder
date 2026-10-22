@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.4.0 — 2026-10-22
 
 - **Párrafos justificados en el PDF**: los del texto, las citas y las alertas, con partición de
   palabras según el idioma del documento (español, inglés, portugués, francés, alemán e
