@@ -1,5 +1,19 @@
 # Cambios
 
+## Sin publicar
+
+- **Nuevo estilo por defecto: Anti-Gravity**, tomado del design system del mismo nombre y
+  llevado a páginas. Incluye:
+  - colores del sistema y títulos en Manrope 600 con interletrado negativo;
+  - etiquetas en JetBrains Mono, en mayúsculas: autor y fecha sobre el título, índice,
+    encabezado y pie;
+  - código, tablas, citas y alertas como superficies suaves;
+  - diagramas Mermaid con los mismos colores;
+  - un campo de luz tenue junto al título de la primera página.
+- `--theme antigravity-dark` es su versión oscura. **Para conservar el aspecto anterior:**
+  `--theme light` (o `theme: light` en `mdrender.config.json`); `--theme dark` sigue
+  disponible.
+
 ## 2.4.0 — 2026-10-22
 
 - **Párrafos justificados en el PDF**: los del texto, las citas y las alertas, con partición de

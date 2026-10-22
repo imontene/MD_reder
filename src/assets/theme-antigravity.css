@@ -1,0 +1,239 @@
+/*
+ * mdrender Anti-Gravity theme (the default): loaded after theme.css. Colours, type and surfaces
+ * follow the Anti-Gravity design system (tokens.json), drawn for 1920 × 1080 slides and scaled
+ * here to a printed page. theme-antigravity-dark.css swaps the colours for its dark stage.
+ */
+
+:root {
+  /* Design system tokens */
+  --ag-canvas: #ffffff;
+  --ag-surface-subtle: #f6f8fb;
+  --ag-surface-raised: #ffffff;
+  --ag-ink: #0f1419;
+  --ag-ink-secondary: #454e5c;
+  --ag-ink-muted: #636c7a;
+  --ag-hairline: #e6e9ef;
+  --ag-hairline-strong: #c9d0db;
+  --ag-accent: #2456d3;
+  --ag-accent-soft: #ecf1fd;
+  --ag-field-blue: #4f7cff;
+  --ag-field-cyan: #22c3e6;
+  --ag-field-violet: #8c6cf0;
+  --ag-opacity-field: 0.16;
+  --ag-shadow-card: 0 1px 2px rgba(15, 20, 25, 0.04), 0 12px 32px rgba(15, 20, 25, 0.06);
+
+  /* The variables theme.css is written with */
+  --color-text: var(--ag-ink);
+  --color-muted: var(--ag-ink-muted);
+  --color-heading: var(--ag-ink);
+  --color-link: var(--ag-accent);
+  --color-border: var(--ag-hairline);
+  --color-subtle-bg: var(--ag-surface-subtle);
+  --color-accent: var(--ag-accent);
+  --color-bg: var(--ag-canvas);
+  --color-stripe: var(--ag-canvas);
+  /* Notes, tips and important points in the one accent. Warnings and cautions keep amber and
+     red: they carry risk, a deliberate exception to the system's single blue. */
+  --alert-note: var(--ag-accent);
+  --alert-tip: var(--ag-accent);
+  --alert-important: var(--ag-accent);
+  --alert-warning: #8a5d00;
+  --alert-caution: #c0262d;
+
+  /* Syntax highlighting: restrained, from the accent and the field hues (4.5:1 or better on
+     surface-subtle). */
+  --code-keyword: var(--ag-accent);
+  --code-title: #5b3fc4;
+  --code-constant: #5b3fc4;
+  --code-string: #0a6580;
+  --code-builtin: #0a6580;
+  --code-comment: var(--ag-ink-muted);
+  --code-tag: var(--ag-accent);
+  --code-text: var(--ag-ink);
+  --code-added: #116329;
+  --code-added-bg: #e6f6ea;
+  --code-removed: #a40e26;
+  --code-removed-bg: #fdecee;
+}
+
+/* Headings: Manrope 600, negative tracking, separated by white space rather than rules. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 2.1em;
+  letter-spacing: -0.025em;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+h2 {
+  font-size: 1.55em;
+  letter-spacing: -0.02em;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+h3 {
+  font-size: 1.15em;
+  letter-spacing: -0.01em;
+}
+
+h4,
+h5,
+h6 {
+  font-size: 1em;
+  letter-spacing: 0;
+}
+
+h6 {
+  color: var(--ag-ink-secondary);
+}
+
+/* Title block as the system's TitleBlock: eyebrow (author · date), display title, lead. */
+.doc-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2.4em;
+}
+
+.doc-header .doc-meta {
+  order: -1;
+  margin: 0 0 1em;
+  padding-bottom: 0;
+  border-bottom: 0;
+  font-family: var(--font-code);
+  font-size: 0.78em;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ag-accent);
+}
+
+.doc-header .doc-title {
+  margin: 0 0 0.35em;
+  font-size: 2.6em;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+.doc-subtitle {
+  margin: 0;
+  font-size: 1.23em;
+  line-height: 1.4;
+  color: var(--ag-ink-secondary);
+}
+
+/*
+ * The gradient field: soft light in the top-right corner of the title block (so only on the
+ * first page, and only when there is one), never under text: the title block's text keeps to
+ * the left 64%, the system's text measure. Each light fades out inside the box, so no edge shows.
+ */
+.doc-header {
+  position: relative;
+  z-index: 0;
+}
+
+.doc-header > * {
+  max-width: 64%;
+}
+
+.doc-header::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 36%;
+  opacity: var(--ag-opacity-field);
+  pointer-events: none;
+  background:
+    radial-gradient(28% 38% at 58% 45%, var(--ag-field-blue), transparent),
+    radial-gradient(16% 26% at 78% 58%, var(--ag-field-cyan), transparent),
+    radial-gradient(25% 30% at 40% 32%, var(--ag-field-violet), transparent);
+}
+
+/* Text */
+li::marker {
+  color: var(--ag-ink-muted);
+}
+
+blockquote {
+  padding: 0.8em 1.1em;
+  color: var(--ag-ink-secondary);
+  border-left: 0;
+  border-radius: 8px;
+  background: var(--ag-surface-subtle);
+}
+
+hr {
+  background: var(--ag-hairline);
+}
+
+/* Code */
+code {
+  border-radius: 4px;
+  background: var(--ag-accent-soft);
+}
+
+pre {
+  border: 1px solid var(--ag-hairline);
+  border-radius: 8px;
+  background: var(--ag-surface-subtle);
+}
+
+/* Tables: header on surface-subtle, hairline rules, no stripes. */
+th,
+td {
+  border-color: var(--ag-hairline);
+}
+
+th {
+  background: var(--ag-surface-subtle);
+}
+
+/* Alerts as raised cards with a mono label; no left-border accents. */
+.markdown-alert {
+  padding: 0.8em 1.1em;
+  color: var(--ag-ink);
+  border: 1px solid var(--ag-hairline);
+  border-radius: 12px;
+  background: var(--ag-surface-raised);
+  box-shadow: var(--ag-shadow-card);
+}
+
+.markdown-alert-title {
+  font-family: var(--font-code);
+  font-size: 0.78em;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Table of contents as a quiet panel with a mono label. */
+.toc {
+  border-color: var(--ag-hairline);
+  border-radius: 12px;
+  background: var(--ag-surface-subtle);
+}
+
+.toc-title {
+  font-family: var(--font-code);
+  font-size: 0.78em;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ag-accent);
+}
+
+/* Footnotes */
+.footnotes {
+  color: var(--ag-ink-muted);
+}

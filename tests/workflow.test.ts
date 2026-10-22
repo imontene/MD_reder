@@ -109,7 +109,9 @@ describe("themes", () => {
     const { io, sink } = capture();
     const args = [path.join(root, "docs", "uno.md"), "-f", "html", "--theme", "sepia"];
     expect(await main(args, sink)).toBe(ExitCode.Usage);
-    expect(io.err).toContain("--theme must be light, dark or a .css file");
+    expect(io.err).toContain(
+      "--theme must be antigravity, antigravity-dark, light, dark or a .css file",
+    );
   });
 });
 

@@ -101,6 +101,8 @@ export const MERMAID_JS = "mermaid/dist/mermaid.min.js";
 export const THEMES = [
   "mdrender/assets/theme.css",
   "mdrender/assets/theme-dark.css",
+  "mdrender/assets/theme-antigravity.css",
+  "mdrender/assets/theme-antigravity-dark.css",
   "mdrender/assets/density-compact.css",
 ];
 export const PACKAGE_JSON = "mdrender/package.json";

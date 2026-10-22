@@ -182,7 +182,14 @@ describe.skipIf(!browser && !browserRequired)("math and diagrams", () => {
 describe.skipIf(!browser && !browserRequired)("document layout", () => {
   it("prints header, page-number footer, bookmarks and highlighted code", async () => {
     const output = path.join(tempDir(), "document.pdf");
-    const result = await convertFile({ input: fixture("document.md"), output, format: "pdf" });
+    // The classic theme: Anti-Gravity's tracked uppercase labels read letter by letter in pdf.js
+    // (tests/antigravity.test.ts covers them).
+    const result = await convertFile({
+      input: fixture("document.md"),
+      output,
+      format: "pdf",
+      overrides: { theme: "light" },
+    });
     expect(result.diagnostics).toEqual([]);
 
     const { pages, text } = await pdfText(output);

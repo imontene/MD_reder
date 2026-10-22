@@ -104,7 +104,10 @@ describe("contentWidthPx", () => {
 
 describe("effectiveMermaidTheme", () => {
   it("follows the page theme unless set explicitly", () => {
-    expect(effectiveMermaidTheme(mergeOptions())).toBe("neutral");
+    // Anti-Gravity (the default) colours "base" with its tokens.
+    expect(effectiveMermaidTheme(mergeOptions())).toBe("base");
+    expect(effectiveMermaidTheme(mergeOptions({ theme: "antigravity-dark" }))).toBe("base");
+    expect(effectiveMermaidTheme(mergeOptions({ theme: "light" }))).toBe("neutral");
     expect(effectiveMermaidTheme(mergeOptions({ theme: "dark" }))).toBe("dark");
     expect(effectiveMermaidTheme(mergeOptions({ theme: "dark", mermaidTheme: "forest" }))).toBe(
       "forest",

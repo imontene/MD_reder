@@ -17,7 +17,12 @@ export type MermaidTheme = (typeof MERMAID_THEMES)[number];
 export const MERMAID_FLIPS = ["auto", "never"] as const;
 export type MermaidFlip = (typeof MERMAID_FLIPS)[number];
 
-export const BUILTIN_THEMES = ["light", "dark"] as const;
+export const BUILTIN_THEMES = ["antigravity", "antigravity-dark", "light", "dark"] as const;
+export type BuiltinTheme = (typeof BUILTIN_THEMES)[number];
+
+/** Built-in themes with a dark page. */
+export const isDarkTheme = (theme: string): boolean =>
+  theme === "dark" || theme === "antigravity-dark";
 
 export const TEXT_FONTS = ["manrope", "inter"] as const;
 export type TextFont = (typeof TEXT_FONTS)[number];
@@ -44,7 +49,10 @@ export interface DocumentOptions {
   /** Header/footer text; see render/header-footer.ts for placeholders and `|` columns. */
   header?: string;
   footer?: string;
-  /** Mermaid theme; when unset, "neutral" for light pages and "dark" for the dark theme. */
+  /**
+   * Mermaid theme; when unset, the page theme's: "base" coloured from the Anti-Gravity tokens,
+   * else "neutral" for light pages and "dark" for dark ones.
+   */
   mermaidTheme?: MermaidTheme;
   /** Try several layouts of each flowchart and keep the one whose text prints largest. */
   mermaidAutofit: boolean;
@@ -58,7 +66,7 @@ export interface DocumentOptions {
   density: Density;
   /** Base font size of the text, e.g. "10pt"; when unset, the theme's (10.5pt). */
   fontSize?: string;
-  /** "light", "dark", or the absolute path of a stylesheet that replaces the built-in theme. */
+  /** A built-in theme (BUILTIN_THEMES), or the absolute path of a stylesheet replacing it. */
   theme: string;
   /** Extra stylesheets (absolute paths), applied after the built-in theme. */
   css: string[];
@@ -82,7 +90,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   font: "manrope",
   justify: true,
   density: "normal",
-  theme: "light",
+  theme: "antigravity",
   css: [],
   lang: DEFAULT_LANG,
 };
@@ -201,7 +209,7 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
     const builtin = BUILTIN_THEMES.find((t) => t === theme.toLowerCase());
     if (builtin) return builtin;
     if (/\.css$/i.test(theme)) return path.resolve(baseDir, theme);
-    throw new OptionsError(`${describe} must be light, dark or a .css file`);
+    throw new OptionsError(`${describe} must be ${BUILTIN_THEMES.join(", ")} or a .css file`);
   },
   css: (value, describe, baseDir) => {
     const list = Array.isArray(value) ? value : [value];

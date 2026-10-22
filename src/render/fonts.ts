@@ -84,6 +84,14 @@ export function fontFaceCss(font: TextFont = "manrope"): string {
   return css;
 }
 
+let monoRegular: string | undefined;
+
+/** JetBrains Mono Regular alone, for page headers/footers set in the mono family. */
+export function monoRegularFontFace(): string {
+  monoRegular ??= inlineFontStylesheet(MONO_STYLESHEETS[0]!);
+  return monoRegular;
+}
+
 const regularFaces = new Map<TextFont, string>();
 
 /** The text font's regular weight alone, for page headers/footers (rendered apart from the page). */

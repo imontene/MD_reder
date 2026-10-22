@@ -66,6 +66,8 @@ export interface MermaidRenderOptions {
   flip?: MermaidFlip;
   /** Text font of the document, used for diagram labels too. */
   font?: TextFont;
+  /** Extra Mermaid theme variables (the Anti-Gravity colours for the "base" theme). */
+  themeVariables?: Record<string, string | boolean>;
 }
 
 /**
@@ -81,6 +83,7 @@ function mermaidConfig(
   font: TextFont,
   fontPx: number,
   wrap: number | undefined,
+  themeVariables: Record<string, string | boolean> = {},
 ) {
   const fontFamily = fontStack(font);
   return {
@@ -90,7 +93,7 @@ function mermaidConfig(
     fontFamily,
     // Sequence diagrams take their text sizes from here, the others from themeVariables.
     fontSize: fontPx,
-    themeVariables: { fontFamily, fontSize: `${fontPx}px` },
+    themeVariables: { ...themeVariables, fontFamily, fontSize: `${fontPx}px` },
     htmlLabels: true,
     // Actors only at the top of sequence diagrams: repeating them below costs height.
     sequence: { mirrorActors: false },
@@ -151,7 +154,7 @@ body { margin: 0; width: ${widthPx}px; font-family: ${fontStack(font)}; }</style
         },
         source,
         id,
-        mermaidConfig(theme, font, fontPx, wrap),
+        mermaidConfig(theme, font, fontPx, wrap, options.themeVariables),
       ) as Promise<{ svg: string } | { error: string }>;
 
     const results: DiagramResult[] = [];

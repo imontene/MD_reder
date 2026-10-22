@@ -93,11 +93,16 @@ function addDocumentOptions(command: Command): Command {
     .option("--no-justify", "align paragraphs left in the PDF instead of justifying them")
     .option("--density <density>", "normal or compact (tighter spacing) (default: normal)")
     .option("--font-size <size>", "text size, e.g. 10pt or 11pt (default: 10.5pt)")
-    .option("--theme <theme>", "light, dark, or a .css file replacing the theme (default: light)")
+    .option(
+      "--theme <theme>",
+      "antigravity, antigravity-dark, light, dark, or a .css file replacing the theme " +
+        "(default: antigravity)",
+    )
     .option("--css <file>", "extra stylesheet (repeatable)", collect)
     .option(
       "--mermaid-theme <theme>",
-      `Mermaid theme: ${MERMAID_THEMES.join(", ")} (default: neutral; dark with --theme dark)`,
+      `Mermaid theme: ${MERMAID_THEMES.join(", ")} ` +
+        "(default: the page theme's — base in Anti-Gravity colours, neutral for light, dark for dark)",
     )
     .option("--no-mermaid-autofit", "draw flowcharts exactly as written (no layout search)")
     .option(

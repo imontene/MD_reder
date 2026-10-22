@@ -9,8 +9,10 @@ import { strings } from "./i18n.js";
 import { renderMarkdown } from "./markdown/index.js";
 import { buildToc, tocPlaceholder } from "./markdown/toc.js";
 import {
+  BUILTIN_THEMES,
   DEFAULT_FONT_SIZE,
   fontSizePx,
+  isDarkTheme,
   mergeOptions,
   normalizeOptions,
   OptionsError,
@@ -24,6 +26,7 @@ import { BrowserSession } from "./render/browser.js";
 import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js";
 import { fillMermaid, renderMermaid, type DiagramLayout } from "./render/mermaid.js";
 import { SMALL_SCALE } from "./render/mermaid-fit.js";
+import { headerFooterStyle, mermaidThemeVariables } from "./render/antigravity.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
 import { contentHeightPx, contentWidthPx, lengthToPx, textWidthPx } from "./render/page.js";
 import { buildHtmlDocument, builtinThemeCss, densityCss } from "./render/template.js";
@@ -113,7 +116,8 @@ function readStylesheet(file: string): string {
 }
 
 function themeStylesheets(theme: string): string[] {
-  return theme === "light" || theme === "dark" ? builtinThemeCss(theme) : [readStylesheet(theme)];
+  const builtin = BUILTIN_THEMES.find((name) => name === theme);
+  return builtin ? builtinThemeCss(builtin) : [readStylesheet(theme)];
 }
 
 /**
@@ -202,7 +206,9 @@ export function describeLayout(layout: DiagramLayout): string {
 
 /** Mermaid theme: explicit choice, else dark diagrams for the dark page theme. */
 export function effectiveMermaidTheme(options: DocumentOptions): MermaidTheme {
-  return options.mermaidTheme ?? (options.theme === "dark" ? "dark" : "neutral");
+  if (options.mermaidTheme) return options.mermaidTheme;
+  if (options.theme.startsWith("antigravity")) return "base";
+  return isDarkTheme(options.theme) ? "dark" : "neutral";
 }
 
 /**
@@ -278,6 +284,7 @@ export async function renderDocument(
       autofit: options.mermaidAutofit,
       flip: options.mermaidFlip,
       font: options.font,
+      themeVariables: theme === "base" ? mermaidThemeVariables(options.theme) : undefined,
     });
     const filled = fillMermaid(body, md.nonce, md.mermaid, results);
     body = filled.html;
@@ -339,16 +346,17 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
       doc.diagnostics.push(
         ...headerFooterSpaceWarnings(margin, options.header !== undefined, footer !== undefined),
       );
+      const pageLook = headerFooterStyle(options.theme);
       const session = await browsers.get();
       const { pdf, blocked } = await session.printPdf(doc.html, {
         format: options.pageSize,
         landscape: options.orientation === "landscape",
         margin,
         headerTemplate: hasHeaderFooter
-          ? headerFooterTemplate(options.header, values, margin, options.font)
+          ? headerFooterTemplate(options.header, values, margin, options.font, pageLook)
           : undefined,
         footerTemplate: hasHeaderFooter
-          ? headerFooterTemplate(footer, values, margin, options.font)
+          ? headerFooterTemplate(footer, values, margin, options.font, pageLook)
           : undefined,
         allowRemote: convert.allowRemote,
         softHyphensWidthPx: options.justify

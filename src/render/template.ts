@@ -1,7 +1,7 @@
 import { readTextAsset } from "../assets.js";
 import { escapeHtml } from "../html.js";
 import { fontFaceCss } from "./fonts.js";
-import type { TextFont } from "../options.js";
+import type { BuiltinTheme, TextFont } from "../options.js";
 import { katexCss } from "./katex.js";
 import { version } from "../version.js";
 
@@ -18,9 +18,17 @@ function asset(name: string): string {
   return css;
 }
 
-/** Stylesheets of a built-in theme ("light" or "dark"). */
-export function builtinThemeCss(theme: "light" | "dark"): string[] {
-  return theme === "dark" ? [asset("theme.css"), asset("theme-dark.css")] : [asset("theme.css")];
+/** Stylesheets of each built-in theme, applied in order. */
+const THEME_FILES: Record<BuiltinTheme, string[]> = {
+  antigravity: ["theme.css", "theme-antigravity.css"],
+  "antigravity-dark": ["theme.css", "theme-antigravity.css", "theme-antigravity-dark.css"],
+  light: ["theme.css"],
+  dark: ["theme.css", "theme-dark.css"],
+};
+
+/** Stylesheets of a built-in theme. */
+export function builtinThemeCss(theme: BuiltinTheme): string[] {
+  return THEME_FILES[theme].map(asset);
 }
 
 /** Stylesheet for a density other than "normal", applied after the theme. */

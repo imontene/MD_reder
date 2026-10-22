@@ -1,6 +1,7 @@
 import { escapeHtml } from "../html.js";
 import type { TextFont } from "../options.js";
-import { fontStack, regularFontFace } from "./fonts.js";
+import type { HeaderFooterStyle } from "./antigravity.js";
+import { fontStack, monoRegularFontFace, regularFontFace } from "./fonts.js";
 
 /**
  * Header/footer text with placeholders, in up to three columns separated by `|`:
@@ -44,12 +45,18 @@ export function headerFooterTemplate(
   values: HeaderFooterValues,
   horizontalMargin: { left: string; right: string },
   font: TextFont = "manrope",
+  style: HeaderFooterStyle = { color: "#59636e", mono: false },
 ): string {
   if (!spec) return "<span></span>";
   const [left, center, right] = columns(spec).map((c) => renderText(c, values));
-  return `<style>${regularFontFace(font)}</style>
+  // The font list sits in a style="…" attribute: single quotes only.
+  const look = style.mono
+    ? `font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 7pt; ` +
+      `letter-spacing: 0.14em; text-transform: uppercase;`
+    : `font-family: ${fontStack(font).replaceAll('"', "'")}; font-size: 8pt;`;
+  return `<style>${style.mono ? monoRegularFontFace() : regularFontFace(font)}</style>
 <div style="box-sizing: border-box; width: 100%; display: flex; padding: 0 ${horizontalMargin.right} 0 ${horizontalMargin.left};
-  font-family: ${fontStack(font).replaceAll('"', "'")}; font-size: 8pt; color: #59636e;">
+  ${look} color: ${style.color};">
   <span style="flex: 1; text-align: left;">${left}</span>
   <span style="flex: 1; text-align: center;">${center}</span>
   <span style="flex: 1; text-align: right;">${right}</span>
