@@ -153,6 +153,7 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 | `--footer <texto>`             | Pie de página (ver abajo)                                            | `{page} / {pages}` |
 | `--no-page-numbers`            | Sin el pie con números de página                                     | —                  |
 | `--font <manrope\|inter>`      | Tipografía del texto (ver abajo)                                     | `manrope`          |
+| `--no-justify`                 | Párrafos alineados a la izquierda en el PDF (ver abajo)              | justificado        |
 | `--density <densidad>`         | `normal` o `compact` (menos espacio entre líneas y bloques)          | `normal`           |
 | `--font-size <tamaño>`         | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt`         | `10.5pt`           |
 | `--theme <light\|dark\|css>`   | `light`, `dark` o un `.css` que reemplaza el tema                    | `light`            |
@@ -183,6 +184,14 @@ El encabezado y el pie se dibujan dentro de las márgenes superior e inferior: c
 Ambas van incrustadas en el PDF, también en el encabezado, el pie y los diagramas. Manrope no
 tiene cursivas (el navegador inclina la normal) ni algunos símbolos como `→`, `✓` o `≤`, que
 se toman de Inter.
+
+**Párrafos justificados**: en el PDF, los párrafos del texto, de las citas y de las alertas
+se justifican, y las palabras largas se parten con guion al final de la línea según el idioma
+del documento (`lang`: español, inglés, portugués, francés, alemán o italiano; en otros idiomas
+se justifica sin partir palabras). Listas, tablas, notas al pie, el índice y los diagramas
+quedan alineados a la izquierda, igual que el HTML. El texto del PDF solo lleva el guion donde
+la palabra se corta, así que copiar y buscar funcionan con las palabras completas.
+`--no-justify` (o `justify: false`) vuelve a alinear a la izquierda.
 
 **Aprovechar la página**: `--density compact` reduce interlineado, espacios entre párrafos y
 títulos, y `--font-size 10pt` achica el texto (los diagramas Mermaid siguen el mismo tamaño).

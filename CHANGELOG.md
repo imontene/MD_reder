@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- **Párrafos justificados en el PDF**: los del texto, las citas y las alertas, con partición de
+  palabras según el idioma del documento (español, inglés, portugués, francés, alemán e
+  italiano). Listas, tablas, notas al pie, índice y diagramas siguen alineados a la izquierda,
+  y el HTML no cambia. `--no-justify` (o `justify: false`) lo desactiva. El texto del PDF solo
+  lleva el guion donde una palabra se corta: copiar y buscar siguen funcionando.
+
 ## 2.3.0 — 2026-10-16
 
 - **Manrope es la nueva tipografía por defecto** del texto, el encabezado, el pie y los

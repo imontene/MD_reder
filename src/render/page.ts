@@ -18,15 +18,24 @@ export function lengthToPx(length: string): number {
   return Number(match[1]) * PX_PER_UNIT[match[2]!]!;
 }
 
-/** Width of the text column in CSS pixels, so diagrams are laid out at their printed size. */
-export function contentWidthPx(
+/** Exact width of the text column in CSS pixels, as Chrome prints it. */
+export function textWidthPx(
   pageSize: PageSize,
   landscape: boolean,
   margin: { left: string; right: string },
 ): number {
   const [width, height] = PAPER_MM[pageSize];
   const paperPx = ((landscape ? height : width) * 96) / 25.4;
-  return Math.round(paperPx - lengthToPx(margin.left) - lengthToPx(margin.right));
+  return paperPx - lengthToPx(margin.left) - lengthToPx(margin.right);
+}
+
+/** Width of the text column in whole CSS pixels, so diagrams are laid out at their printed size. */
+export function contentWidthPx(
+  pageSize: PageSize,
+  landscape: boolean,
+  margin: { left: string; right: string },
+): number {
+  return Math.round(textWidthPx(pageSize, landscape, margin));
 }
 
 /** Height of the text area in CSS pixels: the paper minus the top and bottom margins. */

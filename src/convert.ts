@@ -25,7 +25,7 @@ import { DEFAULT_FOOTER, headerFooterTemplate } from "./render/header-footer.js"
 import { fillMermaid, renderMermaid, type DiagramLayout } from "./render/mermaid.js";
 import { SMALL_SCALE } from "./render/mermaid-fit.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
-import { contentHeightPx, contentWidthPx, lengthToPx } from "./render/page.js";
+import { contentHeightPx, contentWidthPx, lengthToPx, textWidthPx } from "./render/page.js";
 import { buildHtmlDocument, builtinThemeCss, densityCss } from "./render/template.js";
 import { writeFileAtomic } from "./write.js";
 
@@ -150,6 +150,19 @@ export function headerFooterSpaceWarnings(
   return warnings;
 }
 
+/**
+ * Justified paragraphs in the PDF: the body's, and those directly inside a quote or an alert
+ * (the same ones markdown/hyphenate.ts gives soft hyphens). Lists, tables, footnotes, the title
+ * block, the table of contents and diagram labels stay aligned left. Print only: on screen the
+ * HTML keeps ragged lines.
+ */
+const JUSTIFY_CSS = `@media print {
+  .markdown-body > p,
+  .markdown-body > blockquote > p:not(.markdown-alert-title) {
+    text-align: justify;
+  }
+}`;
+
 /** Font size, if set, and the page's text height (used to fit images and diagrams). */
 function layoutCss(options: DocumentOptions, margin: Margins): string {
   const height = contentHeightPx(options.pageSize, options.orientation === "landscape", margin);
@@ -162,6 +175,7 @@ function layoutCss(options: DocumentOptions, margin: Margins): string {
   // Manrope's glyphs are taller than the headings' 1.25 line height (about 1.37 em). When a
   // heading is pushed to the next page, Chrome then repeats its text in the PDF bookmark.
   if (options.font === "manrope") rules.push("h1, h2, h3, h4, h5, h6 { line-height: 1.4; }");
+  if (options.justify) rules.push(JUSTIFY_CSS);
   if (options.fontSize) rules.push(`html { font-size: ${options.fontSize}; }`);
   return rules.join("\n");
 }
@@ -224,7 +238,12 @@ export async function renderDocument(
   const themeCss = themeStylesheets(options.theme);
   const extraCss = options.css.map(readStylesheet);
 
-  const md = renderMarkdown(frontMatter.body, { baseDir, lang: options.lang });
+  const md = renderMarkdown(frontMatter.body, {
+    baseDir,
+    lang: options.lang,
+    // Soft hyphens only where paragraphs are justified: in the PDF.
+    hyphenate: paged && options.justify ? options.lang : undefined,
+  });
   const diagnostics: Diagnostic[] = [
     ...config.warnings.map((message) => ({ severity: "warning" as const, message })),
     ...md.diagnostics,
@@ -332,6 +351,9 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
           ? headerFooterTemplate(footer, values, margin, options.font)
           : undefined,
         allowRemote: convert.allowRemote,
+        softHyphensWidthPx: options.justify
+          ? textWidthPx(options.pageSize, options.orientation === "landscape", margin)
+          : undefined,
       });
       for (const url of blocked) {
         const hint = /^https?:/i.test(url) ? " (use --allow-remote to download it)" : "";

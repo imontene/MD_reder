@@ -50,6 +50,8 @@ export interface DocumentOptions {
   mermaidAutofit: boolean;
   /** Whether autofit may turn a flowchart to the other axis (LR ↔ TB) when it reads far better. */
   mermaidFlip: MermaidFlip;
+  /** Justify paragraphs in the PDF (body, quotes, alerts), breaking long words with hyphens. */
+  justify: boolean;
   /** Typeface of the text: Manrope or Inter (code is always JetBrains Mono). */
   font: TextFont;
   /** Vertical spacing: "compact" tightens line height, paragraph and heading spacing. */
@@ -78,6 +80,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   mermaidAutofit: true,
   mermaidFlip: "auto",
   font: "manrope",
+  justify: true,
   density: "normal",
   theme: "light",
   css: [],
@@ -190,6 +193,7 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   mermaidAutofit: bool,
   mermaidFlip: oneOf(MERMAID_FLIPS),
   font: oneOf(TEXT_FONTS),
+  justify: bool,
   density: oneOf(DENSITIES),
   fontSize,
   theme: (value, describe, baseDir) => {

@@ -46,6 +46,7 @@ const DOCUMENT_FLAGS = [
   "footer",
   "pageNumbers",
   "font",
+  "justify",
   "density",
   "fontSize",
   "css",
@@ -56,6 +57,9 @@ const DOCUMENT_FLAGS = [
   "lang",
   "title",
 ] as const;
+
+/** Options set on the command line only through their --no-… form. */
+const NEGATED_FLAGS = new Set(["pageNumbers", "mermaidAutofit", "justify"]);
 
 const toFlag = (key: string) => "--" + key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
 
@@ -86,6 +90,7 @@ function addDocumentOptions(command: Command): Command {
     .option("--footer <text>", 'page footer (default: "{page} / {pages}")')
     .option("--no-page-numbers", "no default page-number footer")
     .option("--font <font>", "text typeface: manrope or inter (default: manrope)")
+    .option("--no-justify", "align paragraphs left in the PDF instead of justifying them")
     .option("--density <density>", "normal or compact (tighter spacing) (default: normal)")
     .option("--font-size <size>", "text size, e.g. 10pt or 11pt (default: 10.5pt)")
     .option("--theme <theme>", "light, dark, or a .css file replacing the theme (default: light)")
@@ -159,11 +164,7 @@ function cliOverrides(program: Command): Partial<DocumentOptions> {
     if (program.getOptionValueSource(key) === "cli") raw[key] = program.getOptionValue(key);
   }
   return normalizeOptions(raw, "command line", process.cwd(), (key) =>
-    key === "pageNumbers"
-      ? "--no-page-numbers"
-      : key === "mermaidAutofit"
-        ? "--no-mermaid-autofit"
-        : toFlag(key),
+    NEGATED_FLAGS.has(key) ? `--no-${toFlag(key).slice(2)}` : toFlag(key),
   );
 }
 

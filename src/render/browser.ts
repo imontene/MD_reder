@@ -41,7 +41,58 @@ export interface PrintOptions {
   footerTemplate?: string;
   /** Let the page load http(s) resources (remote images, stylesheets). Off by default. */
   allowRemote?: boolean;
+  /**
+   * Width of the text column in CSS px. When set, the soft hyphens that do not fall at the end of
+   * a line are removed before printing (see SOFT_HYPHEN_CLEANUP).
+   */
+  softHyphensWidthPx?: number;
 }
+
+/**
+ * Keep only the soft hyphens (U+00AD) where a line actually breaks. Chrome copies every soft
+ * hyphen into the PDF's text, which splits words for copy, search and text extraction; only the
+ * ones that print as "-" belong there. The page is laid out at the printed column width with
+ * print styles; Chrome breaks lines greedily, so removing break points it did not use leaves
+ * every line as it was. Runs as our own code in the print page, whose scripts are disabled.
+ */
+export const SOFT_HYPHEN_CLEANUP = `(width) => {
+  const root = document.documentElement;
+  root.style.width = width + "px";
+  try {
+    const range = document.createRange();
+    // The character right after a used soft hyphen also reports the "-" drawn at the end of the
+    // previous line: take its last rectangle, and the first one for the character before.
+    const top = (node, i, last) => {
+      range.setStart(node, i);
+      range.setEnd(node, i + 1);
+      const rects = [...range.getClientRects()].filter((r) => r.width > 0);
+      const rect = last ? rects[rects.length - 1] : rects[0];
+      return rect ? rect.top : NaN;
+    };
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node.data.includes("\u00AD")) nodes.push(node);
+    }
+    let kept = 0;
+    for (const node of nodes) {
+      const text = node.data;
+      let result = "";
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] !== "\u00AD") {
+          result += text[i];
+        } else if (i > 0 && i < text.length - 1 && top(node, i + 1, true) > top(node, i - 1) + 1) {
+          result += text[i];
+          kept++;
+        }
+      }
+      node.data = result;
+    }
+    return kept;
+  } finally {
+    root.style.width = "";
+  }
+}`;
 
 /**
  * Only allow requests the document needs: inline data, plus http(s) when `allowRemote`.
@@ -132,6 +183,11 @@ export class BrowserSession {
       await page.setContent(html, { waitUntil: "load" });
       // Make sure every embedded font has loaded before printing.
       await page.evaluate("document.fonts.ready.then(() => undefined)");
+      if (options.softHyphensWidthPx !== undefined) {
+        await page.emulateMediaType("print");
+        await page.setViewport({ width: Math.ceil(options.softHyphensWidthPx), height: 1000 });
+        await page.evaluate(`(${SOFT_HYPHEN_CLEANUP})(${options.softHyphensWidthPx})`);
+      }
       const pdf = await page.pdf({
         format: options.format ?? "A4",
         landscape: options.landscape ?? false,

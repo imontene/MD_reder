@@ -8,6 +8,7 @@ import { alerts } from "./alerts.js";
 import { codeBlocks } from "./code-blocks.js";
 import { inlineChildLines, type MermaidBlock, type RenderEnv } from "./env.js";
 import { highlightCode } from "./highlight.js";
+import { hyphenation } from "./hyphenate.js";
 import { inlineLocalImages } from "./images.js";
 import { keepWithHeading } from "./keep-with-heading.js";
 import { math } from "./math.js";
@@ -36,6 +37,8 @@ export interface MarkdownOptions {
   baseDir?: string;
   /** Document language for translated labels. Defaults to Spanish. */
   lang?: string;
+  /** Insert soft hyphens in justified paragraphs, with this language's patterns. */
+  hyphenate?: string;
 }
 
 export function createMarkdown(): MarkdownIt {
@@ -57,6 +60,7 @@ export function createMarkdown(): MarkdownIt {
   md.use(codeBlocks);
   md.use(math);
   md.use(mermaid);
+  md.use(hyphenation);
   return md;
 }
 
@@ -73,6 +77,7 @@ export function renderMarkdown(source: string, options: MarkdownOptions = {}): M
     hasMath: false,
     lang: options.lang ?? DEFAULT_LANG,
     hasTocMarker: false,
+    hyphenate: options.hyphenate,
   };
   const tokens = md.parse(source, env);
 

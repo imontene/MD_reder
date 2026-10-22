@@ -183,6 +183,7 @@ function settingsCheck(options: ReturnType<typeof mergeOptions>): Check {
       `${options.pageSize} ${options.orientation}, margins ${m.top} ${m.right} ${m.bottom} ` +
       `${m.left} (top right bottom left), ${options.font} ` +
       `${options.fontSize ?? DEFAULT_FONT_SIZE}, ${options.density} density, ` +
+      `${options.justify ? "justified" : "ragged"} paragraphs, ` +
       `language ${options.lang}, theme ` +
       path.basename(options.theme),
   };
