@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.7.0 — 2026-10-23
 
 - `--watermark-field` pone ahora dos campos de luz en cada página: arriba a la izquierda (antes
   arriba a la derecha) y uno nuevo abajo a la derecha. El campo junto al título de la primera
