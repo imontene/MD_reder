@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.8.0 — 2026-10-28
 
 - **Tema académico** `--theme academic_basic` (o `theme: academic_basic`), con el aspecto de
   un artículo de revista científica:
