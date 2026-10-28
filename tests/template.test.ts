@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { fontFaceCss, fontStack } from "../src/render/fonts.js";
-import { buildHtmlDocument, escapeHtml } from "../src/render/template.js";
+import { fontFaceCss, fontStack, serifFontFaceCss } from "../src/render/fonts.js";
+import {
+  buildHtmlDocument,
+  builtinThemeCss,
+  escapeHtml,
+  plainAuthor,
+} from "../src/render/template.js";
 
 describe("fontFaceCss", () => {
   const css = fontFaceCss();
@@ -59,5 +64,61 @@ describe("buildHtmlDocument", () => {
     expect(escapeHtml(`<a href="x">'&'</a>`)).toBe(
       "&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;",
     );
+  });
+});
+
+describe("academic_basic theme", () => {
+  it("embeds STIX Two Text in regular and bold, each with its italic", () => {
+    const css = serifFontFaceCss();
+    for (const weight of [400, 700]) {
+      for (const style of ["normal", "italic"]) {
+        expect(css).toMatch(
+          new RegExp(
+            `font-family: 'STIX Two Text';\\s+font-style: ${style};\\s+font-display: block;\\s+font-weight: ${weight};`,
+          ),
+        );
+      }
+    }
+    expect(css).not.toMatch(/url\((?!data:font\/woff2)/);
+    const theme = builtinThemeCss("academic_basic");
+    expect(theme[0]).toBe(css);
+    expect(theme.join("\n")).toContain("columns: 2;");
+    expect(builtinThemeCss("light").join("\n")).not.toContain("STIX Two Text");
+  });
+});
+
+describe("title block", () => {
+  const html = buildHtmlDocument({
+    title: "Cinética",
+    body: "",
+    lang: "en",
+    showTitle: true,
+    kicker: "Research article",
+    author: "Ana Pérez^1^, Luis <Gómez>^1,2^",
+    date: "2026",
+    affiliations: ["Uno", "Dos"],
+    abstract: "Primero.\n\nSegundo.",
+    keywords: ["a", "b"],
+  });
+
+  it("shows kicker, authors with superscripts, affiliations, abstract and keywords", () => {
+    expect(html).toContain('<p class="doc-kicker">Research article</p>\n<h1 class="doc-title">');
+    expect(html).toContain(
+      '<p class="doc-meta">Ana Pérez<sup>1</sup>, Luis &lt;Gómez&gt;<sup>1,2</sup> · 2026</p>',
+    );
+    expect(html).toContain(
+      '<ol class="doc-affiliations"><li><sup>1</sup>Uno</li><li><sup>2</sup>Dos</li></ol>',
+    );
+    expect(html).toContain(
+      '<section class="doc-abstract">\n<p class="doc-abstract-title">Abstract</p>\n<p>Primero.</p>\n<p>Segundo.</p>\n</section>',
+    );
+    expect(html).toContain(
+      '<p class="doc-keywords"><span class="doc-keywords-label">Keywords:</span> a, b</p>',
+    );
+  });
+
+  it("keeps the affiliation marks out of the metadata", () => {
+    expect(html).toContain('<meta name="author" content="Ana Pérez, Luis &lt;Gómez&gt;">');
+    expect(plainAuthor("Ana^1^ y Luis^2,3^")).toBe("Ana y Luis");
   });
 });

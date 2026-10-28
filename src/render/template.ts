@@ -1,6 +1,7 @@
 import { readTextAsset } from "../assets.js";
 import { escapeHtml } from "../html.js";
-import { fontFaceCss } from "./fonts.js";
+import { DEFAULT_LANG, strings } from "../i18n.js";
+import { fontFaceCss, serifFontFaceCss } from "./fonts.js";
 import type { BuiltinTheme, TextFont } from "../options.js";
 import { katexCss } from "./katex.js";
 import { version } from "../version.js";
@@ -24,11 +25,13 @@ const THEME_FILES: Record<BuiltinTheme, string[]> = {
   "antigravity-dark": ["theme.css", "theme-antigravity.css", "theme-antigravity-dark.css"],
   light: ["theme.css"],
   dark: ["theme.css", "theme-dark.css"],
+  academic_basic: ["theme.css", "theme-academic-basic.css"],
 };
 
-/** Stylesheets of a built-in theme. */
+/** Stylesheets of a built-in theme, with the fonts it adds to the text and code ones. */
 export function builtinThemeCss(theme: BuiltinTheme): string[] {
-  return THEME_FILES[theme].map(asset);
+  const css = THEME_FILES[theme].map(asset);
+  return theme === "academic_basic" ? [serifFontFaceCss(), ...css] : css;
 }
 
 /** Stylesheet for a density other than "normal", applied after the theme. */
@@ -44,8 +47,13 @@ export interface DocumentParts {
   lang?: string;
   /** Front matter metadata. With `showTitle`, rendered as a title block before the body. */
   subtitle?: string;
+  /** Authors; `^1,2^` marks affiliation numbers (superscripts in the title block). */
   author?: string;
   date?: string;
+  kicker?: string;
+  affiliations?: string[];
+  abstract?: string;
+  keywords?: string[];
   showTitle?: boolean;
   /** Theme stylesheet contents. Defaults to the built-in light theme. */
   themeCss?: string[];
@@ -59,13 +67,57 @@ export interface DocumentParts {
   extraCss?: string[];
 }
 
-function titleBlock({ title, subtitle, author, date }: DocumentParts): string {
-  const meta = [author, date].filter(Boolean).map((part) => escapeHtml(part!));
+/** The authors without their `^1,2^` affiliation marks, for metadata and page headers. */
+export const plainAuthor = (author: string): string =>
+  author.replace(/\^[^^\s][^^]*\^/g, "").trim();
+
+/** Escaped text with `^…^` turned into superscripts. */
+const withSuperscripts = (value: string): string =>
+  escapeHtml(value).replace(/\^([^^\s][^^]*)\^/g, "<sup>$1</sup>");
+
+/** Paragraphs of a text, separated by blank lines. */
+const paragraphs = (value: string): string[] =>
+  value
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${escapeHtml(p)}</p>`);
+
+function titleBlock(parts: DocumentParts): string {
+  const {
+    title,
+    subtitle,
+    author,
+    date,
+    kicker,
+    affiliations = [],
+    abstract,
+    keywords = [],
+  } = parts;
+  const labels = strings(parts.lang ?? DEFAULT_LANG);
+  const meta = [author ? withSuperscripts(author) : undefined, date ? escapeHtml(date) : undefined];
+  const metaText = meta.filter(Boolean).join(" · ");
   return [
     `<header class="doc-header">`,
+    kicker ? `<p class="doc-kicker">${escapeHtml(kicker)}</p>` : "",
     `<h1 class="doc-title">${escapeHtml(title)}</h1>`,
     subtitle ? `<p class="doc-subtitle">${escapeHtml(subtitle)}</p>` : "",
-    meta.length ? `<p class="doc-meta">${meta.join(" · ")}</p>` : "",
+    metaText ? `<p class="doc-meta">${metaText}</p>` : "",
+    affiliations.length
+      ? `<ol class="doc-affiliations">` +
+        affiliations.map((a, i) => `<li><sup>${i + 1}</sup>${escapeHtml(a)}</li>`).join("") +
+        `</ol>`
+      : "",
+    abstract
+      ? `<section class="doc-abstract">\n<p class="doc-abstract-title">${labels.abstract}</p>\n` +
+        paragraphs(abstract).join("\n") +
+        `\n</section>`
+      : "",
+    keywords.length
+      ? `<p class="doc-keywords"><span class="doc-keywords-label">${labels.keywords}:</span> ` +
+        keywords.map(escapeHtml).join(", ") +
+        `</p>`
+      : "",
     `</header>`,
   ]
     .filter(Boolean)
@@ -90,7 +142,7 @@ export function buildHtmlDocument(parts: DocumentParts): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="mdrender ${escapeHtml(version)}">
-${author ? `<meta name="author" content="${escapeHtml(author)}">\n` : ""}<title>${escapeHtml(title)}</title>
+${author ? `<meta name="author" content="${escapeHtml(plainAuthor(author))}">\n` : ""}<title>${escapeHtml(title)}</title>
 ${styles.map((css) => `<style>\n${css}\n</style>`).join("\n")}
 </head>
 <body>

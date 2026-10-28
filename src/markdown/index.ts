@@ -7,6 +7,7 @@ import { DEFAULT_LANG } from "../i18n.js";
 import { alerts } from "./alerts.js";
 import { codeBlocks } from "./code-blocks.js";
 import { inlineChildLines, type MermaidBlock, type RenderEnv } from "./env.js";
+import { figures } from "./figures.js";
 import { highlightCode } from "./highlight.js";
 import { hyphenation } from "./hyphenate.js";
 import { inlineLocalImages } from "./images.js";
@@ -39,6 +40,8 @@ export interface MarkdownOptions {
   lang?: string;
   /** Insert soft hyphens in justified paragraphs, with this language's patterns. */
   hyphenate?: string;
+  /** Render lone images as numbered figures, captioned with their alt text. */
+  figures?: boolean;
 }
 
 export function createMarkdown(): MarkdownIt {
@@ -55,6 +58,8 @@ export function createMarkdown(): MarkdownIt {
   md.use(tocMarker);
   md.use(keepWithHeading);
   md.use(inlineChildLines);
+  // Before images are embedded: it takes the #wide mark off their src.
+  md.use(figures);
   md.use(inlineLocalImages);
   // Before math and mermaid, which hand their non-code fences on to this renderer.
   md.use(codeBlocks);
@@ -78,6 +83,7 @@ export function renderMarkdown(source: string, options: MarkdownOptions = {}): M
     lang: options.lang ?? DEFAULT_LANG,
     hasTocMarker: false,
     hyphenate: options.hyphenate,
+    figures: options.figures,
   };
   const tokens = md.parse(source, env);
 

@@ -1,0 +1,378 @@
+/*
+ * mdrender academic theme (academic_basic): loaded after theme.css. A research-journal page:
+ * STIX Two Text for the text, Inter for titles, captions and labels, two justified columns in
+ * the PDF with the title block, wide figures, tables and diagrams across both, and tables with
+ * three rules only. On screen (HTML) the same type in a single column.
+ */
+
+:root {
+  --font-serif: "STIX Two Text", "Inter", Georgia, serif;
+  --ac-ink: #141414;
+  --ac-ink-secondary: #3d3d3d;
+  --ac-ink-muted: #5c5c5c;
+  --ac-rule: #141414;
+  --ac-hairline: #c4c4c4;
+  --ac-surface: #f6f6f4;
+  --ac-accent: #9b1b1f;
+  --ac-link: #1d4e89;
+  --ac-column-gap: 6.5mm;
+
+  /* The variables theme.css is written with */
+  --color-text: var(--ac-ink);
+  --color-muted: var(--ac-ink-muted);
+  --color-heading: var(--ac-ink);
+  --color-link: var(--ac-link);
+  --color-border: var(--ac-hairline);
+  --color-subtle-bg: var(--ac-surface);
+  --color-accent: var(--ac-accent);
+  --color-bg: #ffffff;
+  --color-stripe: #ffffff;
+  --alert-note: var(--ac-ink-secondary);
+  --alert-tip: var(--ac-ink-secondary);
+  --alert-important: var(--ac-accent);
+  --alert-warning: #8a5d00;
+  --alert-caution: var(--ac-accent);
+}
+
+body {
+  font-family: var(--font-serif);
+  font-feature-settings: "kern", "liga";
+  line-height: 1.38;
+  counter-reset: figure;
+}
+
+.markdown-body {
+  max-width: 720px;
+}
+
+/* Titles, captions and labels: the sans (--font-text, Inter by default). */
+h1,
+h2,
+h3,
+.doc-kicker,
+.doc-title,
+.doc-meta,
+.doc-abstract-title,
+.doc-keywords,
+.figure figcaption,
+table,
+.toc,
+.markdown-alert-title {
+  font-family: var(--font-text);
+}
+
+/* Headings: small and bold, set apart by space rather than rules. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: 0;
+  line-height: 1.25;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+h1 {
+  margin: 0 0 0.6em;
+  font-size: 2.1em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+}
+
+h2 {
+  margin: 1.3em 0 0.35em;
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+h3 {
+  margin: 1.1em 0 0.3em;
+  font-size: 1em;
+  font-weight: 600;
+  font-style: italic;
+}
+
+h4,
+h5,
+h6 {
+  margin: 1em 0 0.2em;
+  font-size: 1em;
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Paragraphs: no space between them, the first line of the next one indented. */
+.markdown-body > p {
+  margin: 0;
+}
+
+.markdown-body > p + p {
+  text-indent: 1.2em;
+}
+
+ul,
+ol,
+blockquote,
+pre,
+table,
+dl,
+.math-display {
+  margin: 0.6em 0;
+}
+
+ul,
+ol {
+  padding-left: 1.4em;
+}
+
+li + li {
+  margin-top: 0.15em;
+}
+
+strong {
+  font-weight: 700;
+}
+
+a {
+  color: var(--ac-link);
+}
+
+hr {
+  margin: 1.2em 0;
+  background: var(--ac-hairline);
+}
+
+blockquote {
+  padding: 0 0 0 0.9em;
+  color: var(--ac-ink-secondary);
+  border-left: 1.5px solid var(--ac-hairline);
+}
+
+/* Title block: kicker over a rule in the accent, title, authors, affiliations, abstract. */
+.doc-header {
+  margin-bottom: 1.4em;
+  padding-bottom: 1em;
+  border-bottom: 0.75pt solid var(--ac-rule);
+}
+
+.doc-kicker {
+  margin: 0 0 0.9em;
+  padding-top: 0.45em;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  border-top: 2.5pt solid var(--ac-accent);
+}
+
+.doc-header .doc-title {
+  margin: 0 0 0.3em;
+  font-size: 2.3em;
+}
+
+.doc-subtitle {
+  margin: 0 0 0.7em;
+  font-size: 1.2em;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--ac-ink-secondary);
+}
+
+.doc-meta {
+  margin: 0.7em 0 0;
+  padding-bottom: 0;
+  font-size: 1.02em;
+  font-weight: 600;
+  color: var(--ac-ink);
+  border-bottom: 0;
+}
+
+.doc-meta sup,
+.doc-affiliations sup {
+  font-weight: 400;
+  font-size: 0.7em;
+}
+
+.doc-affiliations {
+  margin-top: 0.5em;
+  font-size: 0.82em;
+  line-height: 1.35;
+  color: var(--ac-ink-secondary);
+}
+
+.doc-abstract {
+  margin-top: 1.1em;
+}
+
+.doc-abstract-title {
+  margin-bottom: 0.35em;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ac-accent);
+}
+
+.doc-abstract p:not(.doc-abstract-title) {
+  margin: 0;
+  font-size: 1.08em;
+  font-weight: 700;
+  line-height: 1.38;
+}
+
+.doc-abstract p:not(.doc-abstract-title) + p {
+  margin-top: 0.4em;
+}
+
+.doc-keywords {
+  margin-top: 0.8em;
+  font-size: 0.8em;
+  color: var(--ac-ink-secondary);
+}
+
+.doc-keywords-label {
+  font-weight: 700;
+}
+
+/* Figures: "Fig. 1." in bold, the caption in the sans, aligned left. */
+.figure {
+  counter-increment: figure;
+  margin: 0.9em 0 1.1em;
+}
+
+.figure img {
+  width: auto;
+  max-width: 100%;
+}
+
+.figure figcaption {
+  margin-top: 0.55em;
+  font-size: 0.8em;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--ac-ink);
+}
+
+.figure figcaption::before {
+  content: "Fig. " counter(figure) ". ";
+  font-weight: 700;
+}
+
+/* Tables: three rules (top, under the header, bottom), no grid and no stripes. */
+table {
+  width: 100%;
+  font-size: 0.82em;
+  line-height: 1.35;
+  border-top: 1.2pt solid var(--ac-rule);
+  border-bottom: 1.2pt solid var(--ac-rule);
+}
+
+th,
+td {
+  padding: 0.35em 0.6em;
+  border: 0;
+  text-align: left;
+}
+
+th {
+  font-weight: 700;
+  background: none;
+  border-bottom: 0.6pt solid var(--ac-rule);
+}
+
+tbody tr:nth-child(2n) {
+  background: none;
+}
+
+/* Code: quiet, no boxes around inline code. */
+code {
+  padding: 0;
+  font-size: 0.84em;
+  background: none;
+}
+
+pre {
+  font-size: 0.78em;
+  border: 0;
+  border-left: 1.5px solid var(--ac-hairline);
+  border-radius: 0;
+  background: var(--ac-surface);
+}
+
+/* Alerts: a rule and a small label, no cards. */
+.markdown-alert {
+  margin: 0.8em 0;
+  padding: 0.1em 0 0.1em 0.9em;
+  border-left-width: 1.5px;
+}
+
+.markdown-alert-title {
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.markdown-alert > p {
+  margin: 0 0 0.4em;
+}
+
+.toc {
+  padding: 0.8em 1em;
+  border: 0;
+  border-top: 0.75pt solid var(--ac-rule);
+  border-bottom: 0.75pt solid var(--ac-rule);
+  border-radius: 0;
+  background: none;
+  font-size: 0.9em;
+}
+
+/* Footnotes and references: small, after a short rule. */
+hr.footnotes-sep {
+  width: 30%;
+  margin: 1.6em 0 0.6em;
+  background: var(--ac-rule);
+}
+
+.footnotes {
+  font-size: 0.82em;
+  line-height: 1.35;
+  color: var(--ac-ink-secondary);
+}
+
+.footnotes-list {
+  padding-left: 1.6em;
+}
+
+.katex {
+  font-size: 1.05em;
+}
+
+/* The PDF: two columns. Spanning elements break the flow and balance the columns above them. */
+@media print {
+  .markdown-body {
+    columns: 2;
+    column-gap: var(--ac-column-gap);
+  }
+
+  .doc-header,
+  .markdown-body > h1,
+  .toc,
+  table,
+  .mermaid-diagram,
+  .figure-wide,
+  .keep-with-heading:has(.mermaid-diagram, .figure-wide) {
+    column-span: all;
+  }
+
+  /* Text-wide items keep some air from the columns around them. */
+  .markdown-body > h1,
+  .markdown-body > table,
+  .markdown-body > .mermaid-diagram,
+  .markdown-body > .figure-wide {
+    margin-top: 0.8em;
+    margin-bottom: 1.1em;
+  }
+}

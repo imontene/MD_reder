@@ -102,8 +102,8 @@ function addDocumentOptions(command: Command): Command {
     .option("--font-size <size>", "text size, e.g. 10pt or 11pt (default: 10.5pt)")
     .option(
       "--theme <theme>",
-      "antigravity, antigravity-dark, light, dark, or a .css file replacing the theme " +
-        "(default: antigravity)",
+      "antigravity, antigravity-dark, light, dark, academic_basic, or a .css file replacing " +
+        "the theme (default: antigravity)",
     )
     .option("--css <file>", "extra stylesheet (repeatable)", collect)
     .option(

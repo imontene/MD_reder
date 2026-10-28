@@ -96,6 +96,13 @@ export const MONO_STYLESHEETS = [
   "@fontsource/jetbrains-mono/400-italic.css",
   "@fontsource/jetbrains-mono/700.css",
 ];
+/** STIX Two Text, the serif text of the academic theme: regular and bold, each with its italic. */
+export const SERIF_STYLESHEETS = [
+  "@fontsource/stix-two-text/400.css",
+  "@fontsource/stix-two-text/400-italic.css",
+  "@fontsource/stix-two-text/700.css",
+  "@fontsource/stix-two-text/700-italic.css",
+];
 export const KATEX_CSS = "katex/dist/katex.min.css";
 export const MERMAID_JS = "mermaid/dist/mermaid.min.js";
 export const THEMES = [
@@ -103,6 +110,7 @@ export const THEMES = [
   "mdrender/assets/theme-dark.css",
   "mdrender/assets/theme-antigravity.css",
   "mdrender/assets/theme-antigravity-dark.css",
+  "mdrender/assets/theme-academic-basic.css",
   "mdrender/assets/density-compact.css",
 ];
 export const PACKAGE_JSON = "mdrender/package.json";
@@ -121,7 +129,12 @@ export function woff2References(cssKey: string, css: string): string[] {
 export function assetManifest(): Record<string, string> {
   const keys = new Set<string>([PACKAGE_JSON, ...THEMES, MERMAID_JS]);
   for (const { file } of INTER_FACES) keys.add(`${INTER_DIR}/${file}`);
-  for (const cssKey of [...MANROPE_STYLESHEETS, ...MONO_STYLESHEETS, KATEX_CSS]) {
+  for (const cssKey of [
+    ...MANROPE_STYLESHEETS,
+    ...MONO_STYLESHEETS,
+    ...SERIF_STYLESHEETS,
+    KATEX_CSS,
+  ]) {
     keys.add(cssKey);
     for (const font of woff2References(cssKey, readTextAsset(cssKey))) keys.add(font);
   }

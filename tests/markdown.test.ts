@@ -65,6 +65,29 @@ describe("renderMarkdown", () => {
   });
 });
 
+describe("figures", () => {
+  it("renders lone images as figures captioned with their alt text", () => {
+    const md = "![Curva *medida*](img/gradiente.png)\n\n![](img/gradiente.png#wide)";
+    const { html, diagnostics } = renderMarkdown(md, { baseDir: fixturesDir, figures: true });
+    expect(diagnostics).toEqual([]);
+    expect(html).toMatch(
+      /^<figure class="figure">\n<img src="data:image\/png;base64,[^"]+" alt="Curva medida">\n<figcaption>Curva <em>medida<\/em><\/figcaption>\n<\/figure>/,
+    );
+    // #wide spans both columns and is not part of the embedded image; no alt, no caption.
+    expect(html).toMatch(
+      /<figure class="figure figure-wide">\n<img src="data:image\/png;[^"]+" alt="">\n<\/figure>/,
+    );
+  });
+
+  it("leaves images alone without the option or next to text", () => {
+    const md = "![a](img/gradiente.png)\n\nTexto ![b](img/gradiente.png)";
+    expect(renderMarkdown(md, { baseDir: fixturesDir }).html).not.toContain("<figure");
+    const html = renderMarkdown(md, { baseDir: fixturesDir, figures: true }).html;
+    expect(html.match(/<figure/g)).toHaveLength(1);
+    expect(html).toContain("<p>Texto <img");
+  });
+});
+
 describe("localImagePath", () => {
   const base = path.resolve("/docs");
 

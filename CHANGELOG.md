@@ -1,5 +1,20 @@
 # Cambios
 
+## Sin publicar
+
+- **Tema académico** `--theme academic_basic` (o `theme: academic_basic`), con el aspecto de
+  un artículo de revista científica:
+  - texto en STIX Two Text (incrustada en el PDF) y títulos, leyendas y tablas en Inter;
+  - en el PDF, dos columnas justificadas con sangría de párrafo; el bloque de título, las
+    tablas, los diagramas y las figuras anchas ocupan las dos;
+  - imágenes solas como figuras numeradas («Fig. 1.») con el texto alternativo como leyenda,
+    y `#wide` al final de la ruta para que ocupen las dos columnas;
+  - tablas con tres líneas, sin rejilla;
+  - márgenes de 18 × 16 mm, texto de 9,5 pt e Inter por defecto.
+- **Bloque de título para artículos**, con cualquier tema: `kicker` (etiqueta sobre el título),
+  `affiliations` (numeradas), `abstract` y `keywords` en el front matter, y `^1,2^` en
+  `author` para las afiliaciones en superíndice.
+
 ## 2.7.0 — 2026-10-23
 
 - `--watermark-field` pone ahora dos campos de luz en cada página: arriba a la izquierda (antes

@@ -112,6 +112,14 @@ h6 {
   color: var(--ag-accent);
 }
 
+.doc-header .doc-kicker {
+  order: -2;
+  font-family: var(--font-code);
+  font-size: 0.78em;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+}
+
 .doc-header .doc-title {
   margin: 0 0 0.35em;
   font-size: 2.6em;

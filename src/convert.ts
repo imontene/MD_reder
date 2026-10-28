@@ -35,7 +35,7 @@ import { fieldImage } from "./render/field.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
 import { WATERMARK_CSS, watermarkHtml } from "./render/watermark.js";
 import { contentHeightPx, contentWidthPx, lengthToPx, textWidthPx } from "./render/page.js";
-import { buildHtmlDocument, builtinThemeCss, densityCss } from "./render/template.js";
+import { buildHtmlDocument, builtinThemeCss, densityCss, plainAuthor } from "./render/template.js";
 import { writeFileAtomic } from "./write.js";
 
 /** Settings shared by every file of a run (batch, watch or preview). */
@@ -270,6 +270,7 @@ export async function renderDocument(
     lang: options.lang,
     // Soft hyphens only where paragraphs are justified: in the PDF.
     hyphenate: paged && options.justify ? options.lang : undefined,
+    figures: options.theme === "academic_basic",
   });
   const diagnostics: Diagnostic[] = [
     ...config.warnings.map((message) => ({ severity: "warning" as const, message })),
@@ -335,6 +336,10 @@ export async function renderDocument(
     subtitle: options.subtitle,
     author: options.author,
     date: options.date,
+    kicker: options.kicker,
+    affiliations: options.affiliations,
+    abstract: options.abstract,
+    keywords: options.keywords,
     showTitle: options.title !== undefined,
     themeCss,
     font: options.font,
@@ -367,7 +372,8 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
 
     if (convert.format === "pdf") {
       const margin = resolveMargins(options);
-      const values = { title: doc.title, author: options.author, date: options.date };
+      const author = options.author === undefined ? undefined : plainAuthor(options.author);
+      const values = { title: doc.title, author, date: options.date };
       const footer = options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined);
       const hasHeaderFooter = options.header !== undefined || footer !== undefined;
       doc.diagnostics.push(
