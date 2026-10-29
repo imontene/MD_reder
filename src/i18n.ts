@@ -2,12 +2,17 @@ export type AlertType = "note" | "tip" | "important" | "warning" | "caution";
 
 export interface Strings {
   toc: string;
+  /** Title-block labels (front matter `abstract` and `keywords`). */
+  abstract: string;
+  keywords: string;
   alerts: Record<AlertType, string>;
 }
 
 const STRINGS: Record<string, Strings> = {
   en: {
     toc: "Contents",
+    abstract: "Abstract",
+    keywords: "Keywords",
     alerts: {
       note: "Note",
       tip: "Tip",
@@ -18,6 +23,8 @@ const STRINGS: Record<string, Strings> = {
   },
   es: {
     toc: "Contenido",
+    abstract: "Resumen",
+    keywords: "Palabras clave",
     alerts: {
       note: "Nota",
       tip: "Consejo",
@@ -28,6 +35,8 @@ const STRINGS: Record<string, Strings> = {
   },
   pt: {
     toc: "Sumário",
+    abstract: "Resumo",
+    keywords: "Palavras-chave",
     alerts: {
       note: "Nota",
       tip: "Dica",
@@ -38,6 +47,8 @@ const STRINGS: Record<string, Strings> = {
   },
   fr: {
     toc: "Sommaire",
+    abstract: "Résumé",
+    keywords: "Mots-clés",
     alerts: {
       note: "Remarque",
       tip: "Astuce",
@@ -48,6 +59,8 @@ const STRINGS: Record<string, Strings> = {
   },
   de: {
     toc: "Inhalt",
+    abstract: "Zusammenfassung",
+    keywords: "Schlüsselwörter",
     alerts: {
       note: "Hinweis",
       tip: "Tipp",

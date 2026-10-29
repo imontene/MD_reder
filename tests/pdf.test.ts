@@ -108,6 +108,28 @@ describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
     expect(raw).not.toMatch(SYSTEM_FONT);
   });
 
+  it("sets the academic theme in STIX Two Text and Inter, with its title block", async () => {
+    const output = path.join(tempDir(), "academic.pdf");
+    const result = await convertFile({ input: fixture("academic.md"), output, format: "pdf" });
+    expect(result.diagnostics).toEqual([]);
+    const raw = readFileSync(output).toString("latin1");
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+STIXTwoText-Regular/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+STIXTwoText-Bold/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+STIXTwoText-Italic/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-Bold/);
+    expect(raw).not.toContain("Manrope");
+    expect(raw).not.toMatch(/\/Subtype\s*\/Type3/);
+    expect(raw).not.toMatch(SYSTEM_FONT);
+
+    const { pages, text } = await pdfText(output);
+    expect(pages).toBe(1);
+    // The kicker is uppercase and tracked: its letters come out one by one.
+    expect(text.replaceAll(" ", "")).toContain("RESEARCHARTICLEKineticsatlowtemperature");
+    expect(text).toContain("We measured the conversion");
+    expect(text).toContain("Fig. 1. Conversion over time.");
+    expect(text).toContain("Keywords: catalysis, kinetics");
+  });
+
   it("writes the document title into the PDF metadata", async () => {
     const output = path.join(tempDir(), "basic.pdf");
     await convertFile({ input: fixture("basic.md"), output, format: "pdf" });

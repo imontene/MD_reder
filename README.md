@@ -24,7 +24,7 @@ Ejemplo: [`examples/ejemplo.md`](examples/ejemplo.md) → [`examples/ejemplo.pdf
 - 🗂️ **Lotes**: varios archivos, carpetas completas o patrones `docs/**/*.md`.
 - 🔁 **`--watch`** y **vista previa en vivo** en el navegador.
 - 🎨 Estilo **Anti-Gravity** por defecto (con variante oscura), los temas clásicos **claro** y
-  **oscuro**, o tu propio CSS.
+  **oscuro**, el tema **académico** a dos columnas (`academic_basic`), o tu propio CSS.
 - 🔌 **Sin conexión**: todo va empaquetado; por defecto no descarga nada de internet.
 - 💻 **Windows 10/11 y Linux** (x64; arm64 en Linux), probado en ambos en cada cambio.
 
@@ -160,7 +160,7 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 | `--watermark-field`            | Campos de luz con el degradado arriba a la izquierda y abajo a la derecha de cada página del PDF | —                     |
 | `--density <densidad>`         | `normal` o `compact` (menos espacio entre líneas y bloques)                                      | `normal`              |
 | `--font-size <tamaño>`         | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt`                                     | `10.5pt`              |
-| `--theme <tema\|css>`          | `antigravity`, `antigravity-dark`, `light`, `dark` o un `.css` que reemplaza el tema (ver abajo) | `antigravity`         |
+| `--theme <tema\|css>`          | `antigravity`, `antigravity-dark`, `light`, `dark`, `academic_basic` o un `.css` (ver abajo)     | `antigravity`         |
 | `--css <archivo.css>`          | CSS adicional (se puede repetir)                                                                 | —                     |
 | `--mermaid-theme <tema>`       | `default`, `neutral`, `dark`, `forest`, `base`                                                   | el del tema de página |
 | `--mermaid-flip <auto\|never>` | Si el autoajuste puede girar un diagrama de flujo de eje (ver abajo)                             | `auto`                |
@@ -196,6 +196,28 @@ del mismo nombre y llevado de diapositivas a páginas:
 `--theme antigravity-dark` es su versión oscura. `--theme light` conserva el estilo de las
 versiones anteriores y `--theme dark` su variante oscura. El design system pide texto alineado
 a la izquierda: con este tema, usa `--no-justify` si quieres seguirlo al pie de la letra.
+
+**Tema académico** (`--theme academic_basic`): el aspecto de un artículo de revista
+científica. Ejemplo: [`examples/articulo-academico.md`](examples/articulo-academico.md) →
+[`examples/articulo-academico.pdf`](examples/articulo-academico.pdf).
+
+- Texto en [STIX Two Text](https://www.stixfonts.org), la serifa de las fuentes STIX hechas
+  para publicaciones científicas; títulos, leyendas, tablas y etiquetas en Inter.
+- En el PDF, **dos columnas** justificadas, con sangría en lugar de espacio entre párrafos. El
+  bloque de título, las tablas, los diagramas Mermaid y las figuras anchas ocupan las dos.
+- Bloque de título con etiqueta sobre una línea de color (`kicker`), autores con afiliaciones
+  numeradas (`author` y `affiliations`), resumen en negrita (`abstract`) y palabras clave
+  (`keywords`); ver [Front matter](#front-matter-y-configuración).
+- Cada imagen sola en su párrafo es una **figura numerada**: el texto alternativo es la
+  leyenda, que se imprime como «**Fig. 1.** …». Termina la ruta en `#wide` para que ocupe las
+  dos columnas: `![Leyenda.](grafico.png#wide)`.
+- Tablas con tres líneas (arriba, bajo el encabezado y abajo), sin rejilla.
+- Por defecto: márgenes de 18 mm arriba y abajo y 8 mm a los lados, texto de 9,5 pt y
+  `font: inter`; cualquier opción los cambia.
+
+En el HTML se ve a una sola columna. Chrome no ubica las figuras arriba o abajo de la página
+como en LaTeX: quedan donde aparecen en el texto, y las que ocupan las dos columnas pueden
+dejar algo de espacio libre antes de ellas.
 
 **Marca de agua**: dos marcas con el degradado azul → cian → violeta del design system
 Anti-Gravity, cada una por separado y solo en el PDF:
@@ -275,6 +297,28 @@ header: "{title} | | {date}"
 
 Con `title` en el front matter se muestra un bloque de título (título, subtítulo, autor y
 fecha). Las rutas de `css` y `theme` son relativas al archivo donde aparecen.
+
+Para artículos, el bloque de título admite además estos campos (con cualquier tema; el tema
+académico es el que les da forma de revista):
+
+```markdown
+---
+theme: academic_basic
+kicker: Artículo de investigación
+title: Cinética de conversión catalítica a baja temperatura
+author: Ana Pérez^1^, Luis Gómez^1,2^
+affiliations:
+  - Departamento de Química, Universidad de Ejemplo.
+  - Instituto de Materiales Avanzados.
+abstract: >
+  Medimos la conversión de un sustrato modelo con dos catalizadores…
+keywords: [catálisis, cinética]
+---
+```
+
+`^1,2^` en `author` marca las afiliaciones en superíndice; el encabezado y el pie
+(`{author}`) y los metadatos del PDF muestran los nombres sin esas marcas. Los párrafos del
+resumen se separan con una línea en blanco.
 
 ## Ecuaciones y diagramas
 
@@ -370,6 +414,6 @@ cambios: [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
-[MIT](LICENSE). Manrope, Inter y JetBrains Mono se distribuyen bajo la
+[MIT](LICENSE). Manrope, Inter, JetBrains Mono y STIX Two Text se distribuyen bajo la
 [SIL Open Font License 1.1](https://openfontlicense.org); los ejecutables incluyen
 `THIRD-PARTY-NOTICES.txt` con las licencias de todos los componentes.

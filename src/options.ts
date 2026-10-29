@@ -17,7 +17,13 @@ export type MermaidTheme = (typeof MERMAID_THEMES)[number];
 export const MERMAID_FLIPS = ["auto", "never"] as const;
 export type MermaidFlip = (typeof MERMAID_FLIPS)[number];
 
-export const BUILTIN_THEMES = ["antigravity", "antigravity-dark", "light", "dark"] as const;
+export const BUILTIN_THEMES = [
+  "antigravity",
+  "antigravity-dark",
+  "light",
+  "dark",
+  "academic_basic",
+] as const;
 export type BuiltinTheme = (typeof BUILTIN_THEMES)[number];
 
 /** Built-in themes with a dark page. */
@@ -78,8 +84,16 @@ export interface DocumentOptions {
   lang: string;
   title?: string;
   subtitle?: string;
+  /** Authors; `^1,2^` marks affiliation numbers as superscripts. */
   author?: string;
   date?: string;
+  /** Label above the title, e.g. "Research article". */
+  kicker?: string;
+  /** Affiliations, numbered 1, 2… under the authors. */
+  affiliations?: string[];
+  /** Summary shown under the title block (paragraphs separated by blank lines). */
+  abstract?: string;
+  keywords?: string[];
 }
 
 export const DEFAULT_OPTIONS: DocumentOptions = {
@@ -98,6 +112,14 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   theme: "antigravity",
   css: [],
   lang: DEFAULT_LANG,
+};
+
+/**
+ * Defaults of a built-in theme, applied under every other layer: the academic theme sets its
+ * two columns in smaller type on wider margins, with Inter for titles, captions and labels.
+ */
+export const THEME_DEFAULTS: Partial<Record<BuiltinTheme, Partial<DocumentOptions>>> = {
+  academic_basic: { margin: "18mm 8mm", fontSize: "9.5pt", font: "inter" },
 };
 
 export class OptionsError extends MdRenderError {
@@ -144,6 +166,12 @@ const oneOf =
     if (match) return match;
     throw new OptionsError(`${describe} must be one of: ${choices.join(", ")}`);
   };
+
+/** Text, or a list of texts (`keywords: [a, b]`). */
+const textList: Validator = (value, describe, baseDir) => {
+  const list = Array.isArray(value) ? value : [value];
+  return list.map((item) => text(item, describe, baseDir) as string);
+};
 
 const length: Validator = (value, describe) => {
   const raw = text(value, describe, "") as string;
@@ -228,6 +256,10 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   subtitle: text,
   author: text,
   date: text,
+  kicker: text,
+  affiliations: textList,
+  abstract: text,
+  keywords: textList,
 };
 
 /**
@@ -266,10 +298,13 @@ const SIDES = ["marginTop", "marginRight", "marginBottom", "marginLeft"] as cons
  * Merge option layers, later ones winning. CSS lists accumulate instead of replacing. A layer
  * that sets the `margin` shorthand also replaces single-side margins from earlier layers, so
  * `--margin 15mm` on the command line is not partly undone by `marginLeft` in a config file.
+ * The defaults of the chosen built-in theme (THEME_DEFAULTS) go under every layer.
  */
 export function mergeOptions(...layers: Partial<DocumentOptions>[]): DocumentOptions {
+  const theme = layers.reduce<string>((t, layer) => layer.theme ?? t, DEFAULT_OPTIONS.theme);
+  const themeDefaults = THEME_DEFAULTS[theme as BuiltinTheme];
   const merged: DocumentOptions = { ...DEFAULT_OPTIONS, css: [] };
-  for (const layer of layers) {
+  for (const layer of themeDefaults ? [themeDefaults, ...layers] : layers) {
     const { css, ...rest } = layer;
     if (rest.margin !== undefined) for (const side of SIDES) delete merged[side];
     Object.assign(merged, rest);

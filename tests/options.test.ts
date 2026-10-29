@@ -73,6 +73,29 @@ describe("normalizeOptions", () => {
   });
 });
 
+describe("title block options", () => {
+  it("accepts affiliations and keywords as text or a list", () => {
+    const options = normalizeOptions(
+      {
+        theme: "Academic_Basic",
+        kicker: "Artículo",
+        affiliations: "Universidad de Ejemplo",
+        keywords: ["a", 2],
+        abstract: "Resumen.",
+      },
+      "front matter",
+      process.cwd(),
+    );
+    expect(options).toEqual({
+      theme: "academic_basic",
+      kicker: "Artículo",
+      affiliations: ["Universidad de Ejemplo"],
+      keywords: ["a", "2"],
+      abstract: "Resumen.",
+    });
+  });
+});
+
 describe("mergeOptions", () => {
   it("applies layers in order over the defaults", () => {
     const merged = mergeOptions(
@@ -86,6 +109,15 @@ describe("mergeOptions", () => {
       toc: true,
       orientation: "landscape",
     });
+  });
+
+  it("puts the academic theme's defaults under every layer", () => {
+    const academic = mergeOptions({ theme: "academic_basic" });
+    expect(academic).toMatchObject({ margin: "18mm 8mm", fontSize: "9.5pt", font: "inter" });
+    // The theme may come from a later layer, and any layer still wins over its defaults.
+    const merged = mergeOptions({ fontSize: "10pt" }, { theme: "academic_basic", font: "manrope" });
+    expect(merged).toMatchObject({ margin: "18mm 8mm", fontSize: "10pt", font: "manrope" });
+    expect(mergeOptions({ theme: "light" }).margin).toBe(DEFAULT_OPTIONS.margin);
   });
 
   it("accumulates stylesheets and never mutates the defaults", () => {

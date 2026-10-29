@@ -26,6 +26,8 @@ export interface RenderEnv extends Env {
   lang: string;
   /** Language whose hyphenation patterns break justified paragraphs (PDF only); see hyphenate.ts. */
   hyphenate?: string;
+  /** Render lone images as numbered figures captioned with their alt text (see figures.ts). */
+  figures?: boolean;
   /** Set when the document places its table of contents with a `[[toc]]` marker. */
   hasTocMarker: boolean;
 }

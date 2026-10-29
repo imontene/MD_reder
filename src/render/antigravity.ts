@@ -86,5 +86,6 @@ export interface HeaderFooterStyle {
 /** How page headers and footers look for a page theme. */
 export function headerFooterStyle(theme: string): HeaderFooterStyle {
   if (isAntigravityTheme(theme)) return { color: tokensFor(theme).inkMuted, mono: true };
+  if (theme === "academic_basic") return { color: "#4a4a4a", mono: false };
   return { color: "#59636e", mono: false };
 }

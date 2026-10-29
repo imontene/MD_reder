@@ -4,6 +4,7 @@ import {
   MANROPE_STYLESHEETS,
   MONO_STYLESHEETS,
   readAsset,
+  SERIF_STYLESHEETS,
   readTextAsset,
   woff2References,
 } from "../assets.js";
@@ -18,6 +19,8 @@ import type { TextFont } from "../options.js";
  * slants it) nor arrows and math symbols such as → ✓ ≤: those fall back to Inter, which is
  * embedded too in its regular and bold weights.
  * Code: JetBrains Mono from Fontsource (split into unicode-range subsets).
+ * Serif (academic theme only): STIX Two Text from Fontsource, the text face of the STIX fonts
+ * made for scientific publishing.
  */
 
 export const FONT_FAMILIES: Record<TextFont, string> = { manrope: "Manrope", inter: "Inter" };
@@ -82,6 +85,14 @@ export function fontFaceCss(font: TextFont = "manrope"): string {
     cached.set(font, css);
   }
   return css;
+}
+
+let serif: string | undefined;
+
+/** @font-face rules for STIX Two Text, the academic theme's serif, with the files embedded. */
+export function serifFontFaceCss(): string {
+  serif ??= SERIF_STYLESHEETS.map(inlineFontStylesheet).join("\n");
+  return serif;
 }
 
 let monoRegular: string | undefined;
