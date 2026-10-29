@@ -119,7 +119,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
  * two columns in smaller type on wider margins, with Inter for titles, captions and labels.
  */
 export const THEME_DEFAULTS: Partial<Record<BuiltinTheme, Partial<DocumentOptions>>> = {
-  academic_basic: { margin: "18mm 16mm", fontSize: "9.5pt", font: "inter" },
+  academic_basic: { margin: "18mm 8mm", fontSize: "9.5pt", font: "inter" },
 };
 
 export class OptionsError extends MdRenderError {

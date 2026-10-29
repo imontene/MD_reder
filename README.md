@@ -212,8 +212,8 @@ científica. Ejemplo: [`examples/articulo-academico.md`](examples/articulo-acade
   leyenda, que se imprime como «**Fig. 1.** …». Termina la ruta en `#wide` para que ocupe las
   dos columnas: `![Leyenda.](grafico.png#wide)`.
 - Tablas con tres líneas (arriba, bajo el encabezado y abajo), sin rejilla.
-- Por defecto: márgenes de 18 × 16 mm, texto de 9,5 pt y `font: inter`; cualquier opción los
-  cambia.
+- Por defecto: márgenes de 18 mm arriba y abajo y 8 mm a los lados, texto de 9,5 pt y
+  `font: inter`; cualquier opción los cambia.
 
 En el HTML se ve a una sola columna. Chrome no ubica las figuras arriba o abajo de la página
 como en LaTeX: quedan donde aparecen en el texto, y las que ocupan las dos columnas pueden

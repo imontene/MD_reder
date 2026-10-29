@@ -113,10 +113,10 @@ describe("mergeOptions", () => {
 
   it("puts the academic theme's defaults under every layer", () => {
     const academic = mergeOptions({ theme: "academic_basic" });
-    expect(academic).toMatchObject({ margin: "18mm 16mm", fontSize: "9.5pt", font: "inter" });
+    expect(academic).toMatchObject({ margin: "18mm 8mm", fontSize: "9.5pt", font: "inter" });
     // The theme may come from a later layer, and any layer still wins over its defaults.
     const merged = mergeOptions({ fontSize: "10pt" }, { theme: "academic_basic", font: "manrope" });
-    expect(merged).toMatchObject({ margin: "18mm 16mm", fontSize: "10pt", font: "manrope" });
+    expect(merged).toMatchObject({ margin: "18mm 8mm", fontSize: "10pt", font: "manrope" });
     expect(mergeOptions({ theme: "light" }).margin).toBe(DEFAULT_OPTIONS.margin);
   });
 
