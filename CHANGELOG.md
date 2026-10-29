@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.8.1 — 2026-10-29
 
 - Tema `academic_basic`: márgenes laterales de 8 mm (antes 16 mm), con más ancho para las dos
   columnas. Los márgenes superior e inferior siguen en 18 mm.
