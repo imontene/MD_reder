@@ -1,6 +1,6 @@
 {
   "name": "@imontene/mdrender",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "description": "Command-line app for Windows and Linux that renders Markdown — with LaTeX equations and Mermaid diagrams — to PDF and HTML set in Manrope or Inter",
   "keywords": [
     "markdown",

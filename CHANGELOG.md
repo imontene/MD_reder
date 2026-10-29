@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.9.0 — 2026-10-29
 
 - Los elementos de listas con viñetas y numeradas (también anidadas o dentro de citas y
   alertas) se justifican en el PDF como los demás párrafos, con partición de palabras. El
