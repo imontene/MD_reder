@@ -161,15 +161,21 @@ export function headerFooterSpaceWarnings(
 }
 
 /**
- * Justified paragraphs in the PDF: the body's, and those directly inside a quote or an alert
- * (the same ones markdown/hyphenate.ts gives soft hyphens). Lists, tables, footnotes, the title
- * block, the table of contents and diagram labels stay aligned left. Print only: on screen the
- * HTML keeps ragged lines.
+ * Justified text in the PDF: the body's paragraphs, those directly inside a quote or an alert,
+ * and bulleted and numbered list items (the same ones markdown/hyphenate.ts gives soft hyphens).
+ * Tables, footnotes, the title block, the table of contents and diagram labels stay aligned
+ * left, as does code inside a list item. Print only: on screen the HTML keeps ragged lines.
  */
 const JUSTIFY_CSS = `@media print {
   .markdown-body > p,
-  .markdown-body > blockquote > p:not(.markdown-alert-title) {
+  .markdown-body > blockquote > p:not(.markdown-alert-title),
+  .markdown-body > :is(ul, ol) li,
+  .markdown-body > blockquote > :is(ul, ol) li {
     text-align: justify;
+  }
+  /* What list items may hold besides text keeps its own alignment. */
+  .markdown-body li :is(pre, table) {
+    text-align: start;
   }
 }`;
 

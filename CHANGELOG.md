@@ -1,5 +1,11 @@
 # Cambios
 
+## Sin publicar
+
+- Los elementos de listas con viñetas y numeradas (también anidadas o dentro de citas y
+  alertas) se justifican en el PDF como los demás párrafos, con partición de palabras. El
+  código y las tablas dentro de una lista siguen alineados a la izquierda.
+
 ## 2.7.0 — 2026-10-23
 
 - `--watermark-field` pone ahora dos campos de luz en cada página: arriba a la izquierda (antes

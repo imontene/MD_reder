@@ -218,11 +218,12 @@ Ambas van incrustadas en el PDF, también en el encabezado, el pie y los diagram
 tiene cursivas (el navegador inclina la normal) ni algunos símbolos como `→`, `✓` o `≤`, que
 se toman de Inter.
 
-**Párrafos justificados**: en el PDF, los párrafos del texto, de las citas y de las alertas
-se justifican, y las palabras largas se parten con guion al final de la línea según el idioma
-del documento (`lang`: español, inglés, portugués, francés, alemán o italiano; en otros idiomas
-se justifica sin partir palabras). Listas, tablas, notas al pie, el índice y los diagramas
-quedan alineados a la izquierda, igual que el HTML. El texto del PDF solo lleva el guion donde
+**Párrafos justificados**: en el PDF, los párrafos del texto, de las citas y de las alertas, y
+los elementos de listas con viñetas o numeradas (también anidadas) se justifican, y las palabras
+largas se parten con guion al final de la línea según el idioma del documento (`lang`: español,
+inglés, portugués, francés, alemán o italiano; en otros idiomas se justifica sin partir
+palabras). Tablas, notas al pie, el índice, los diagramas y el código dentro de una lista quedan
+alineados a la izquierda, y el HTML no cambia. El texto del PDF solo lleva el guion donde
 la palabra se corta, así que copiar y buscar funcionan con las palabras completas.
 `--no-justify` (o `justify: false`) vuelve a alinear a la izquierda.
 

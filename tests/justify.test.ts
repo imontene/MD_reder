@@ -58,6 +58,9 @@ describe("soft hyphens in justified paragraphs", () => {
     "> Alerta internacionalización",
     "",
     "- Lista internacionalización",
+    "  1. Anidada numerada internacionalización",
+    "",
+    "1. Numerada internacionalización",
     "",
     "| Tabla |",
     "| --- |",
@@ -69,7 +72,7 @@ describe("soft hyphens in justified paragraphs", () => {
     "",
   ].join("\n");
 
-  it("go only into body, quote and alert paragraphs, outside code and URLs", () => {
+  it("go into body, quote, alert and list paragraphs, outside code and URLs", () => {
     const { html } = renderMarkdown(source, { hyphenate: "es" });
     const hyphenated = html
       .split("\n")
@@ -79,6 +82,9 @@ describe("soft hyphens in justified paragraphs", () => {
       expect.stringContaining("<p>Cuerpo internacionalización con <code>"),
       "<p>Cita internacionalización</p>",
       "<p>Alerta internacionalización</p>",
+      "<li>Lista internacionalización",
+      "<li>Anidada numerada internacionalización</li>",
+      "<li>Numerada internacionalización</li>",
     ]);
     const body = html.split("\n").find((line) => line.replace(SHY, "").startsWith("<p>Cuerpo"))!;
     expect(body).toContain("<code>internacionalización</code>");
@@ -99,6 +105,9 @@ describe("soft hyphens in justified paragraphs", () => {
       const pdf = await renderDocument(input, { config: false }, pool, true);
       expect(pdf.html).toContain(SOFT_HYPHEN);
       expect(pdf.html).toMatch(/@media print \{\s*\.markdown-body > p,[^}]*text-align: justify;/);
+      // List items too, but not code or tables inside them.
+      expect(pdf.html).toContain(".markdown-body > :is(ul, ol) li");
+      expect(pdf.html).toMatch(/\.markdown-body li :is\(pre, table\) \{\s*text-align: start;/);
 
       const html = await renderDocument(input, { config: false }, pool, false);
       expect(html.html).not.toContain(SOFT_HYPHEN);
@@ -166,21 +175,30 @@ describe.skipIf(!browser && !browserRequired)("justified PDF", () => {
 
   it("fills the paragraph lines to the right margin, breaking words with hyphens", async () => {
     const paragraph = [LONG, LONG, LONG, LONG].join(" ");
-    const result = await render(`${paragraph}\n\n- ${paragraph}\n`);
+    const result = await render(`${paragraph}\n`);
     const body = bodyLines(result);
-    const list = listLines(result);
     expect(body.length).toBeGreaterThan(3);
-    expect(list.length).toBeGreaterThan(3);
 
-    // Every line but the last ends at the margin; the list's do not.
+    // Every line but the last ends at the margin.
     for (const line of body.slice(0, -1)) {
       expect(Math.abs(line.right - RIGHT_EDGE), line.text).toBeLessThan(1.5);
     }
-    expect(list.some((line) => RIGHT_EDGE - line.right > 5)).toBe(true);
 
     // Some line ends in a hyphen.
     expect(body.some((line) => BROKEN.test(line.text))).toBe(true);
     expect(body.map((line) => line.text).join(" ")).toContain("internacionalización");
+  });
+
+  it.each([
+    ["bulleted", "- "],
+    ["numbered", "1. "],
+  ])("justifies %s list items too", async (_, marker) => {
+    const paragraph = [LONG, LONG, LONG].join(" ");
+    const list = listLines(await render(`${marker}${paragraph}\n${marker}${LONG} ${LONG}\n`));
+    expect(list.length).toBeGreaterThan(4);
+    // Each item's lines end at the margin, except its last one.
+    const atMargin = list.filter((line) => Math.abs(line.right - RIGHT_EDGE) < 1.5);
+    expect(atMargin.length).toBe(list.length - 2);
   });
 
   it("keeps only the soft hyphens where a line breaks", async () => {

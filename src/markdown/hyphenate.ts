@@ -52,14 +52,17 @@ export function hyphenatorFor(lang: string): ((text: string) => string) | undefi
 }
 
 /**
- * Whether a paragraph is justified: top-level, or directly inside a blockquote or alert (the
- * same paragraphs as the print stylesheet in convert.ts). Lists, footnotes and tables are not.
+ * Whether a paragraph is justified (the same paragraphs as the print stylesheet in convert.ts):
+ * top-level, directly inside a blockquote or alert, or in a bulleted or numbered list item
+ * (nested lists too). Footnotes and tables are not.
  */
 function justified(containers: string[]): boolean {
-  return (
-    containers.length === 0 || (containers.length === 1 && containers[0] === "blockquote_open")
-  );
+  // Bulleted and numbered lists (nested too) are justified like the text around them.
+  const blocks = containers.filter((c) => !LIST_CONTAINERS.has(c));
+  return blocks.length === 0 || (blocks.length === 1 && blocks[0] === "blockquote_open");
 }
+
+const LIST_CONTAINERS = new Set(["bullet_list_open", "ordered_list_open", "list_item_open"]);
 
 function hyphenateInline(inline: Token, hyphenate: (text: string) => string): void {
   let inAutolink = 0;
