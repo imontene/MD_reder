@@ -13,6 +13,7 @@ import {
   DEFAULT_FONT_SIZE,
   fontSizePx,
   isDarkTheme,
+  isMagazineTheme,
   mergeOptions,
   normalizeOptions,
   OptionsError,
@@ -32,6 +33,7 @@ import {
   mermaidThemeVariables,
 } from "./render/antigravity.js";
 import { fieldImage } from "./render/field.js";
+import { magazinePage } from "./render/magazine.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
 import { WATERMARK_CSS, watermarkHtml } from "./render/watermark.js";
 import { contentHeightPx, contentWidthPx, lengthToPx, textWidthPx } from "./render/page.js";
@@ -276,7 +278,7 @@ export async function renderDocument(
     lang: options.lang,
     // Soft hyphens only where paragraphs are justified: in the PDF.
     hyphenate: paged && options.justify ? options.lang : undefined,
-    figures: options.theme === "academic_basic",
+    figures: options.theme === "academic_basic" || isMagazineTheme(options.theme),
   });
   const diagnostics: Diagnostic[] = [
     ...config.warnings.map((message) => ({ severity: "warning" as const, message })),
@@ -334,6 +336,26 @@ export async function renderDocument(
   }
 
   const watermark = paged ? watermarks(options, margin) : "";
+  const showTitle = options.title !== undefined;
+  const magazine = isMagazineTheme(options.theme)
+    ? magazinePage({
+        options,
+        margin,
+        baseDir,
+        hasCover: showTitle,
+        values: {
+          title,
+          author: options.author === undefined ? undefined : plainAuthor(options.author),
+          date: options.date,
+        },
+      })
+    : undefined;
+  if (magazine) {
+    diagnostics.push(...magazine.diagnostics);
+    if (magazine.coverNumber !== undefined) {
+      notes.push({ message: `cover: picture ${magazine.coverNumber}` });
+    }
+  }
   const html = buildHtmlDocument({
     title,
     body,
@@ -346,7 +368,8 @@ export async function renderDocument(
     affiliations: options.affiliations,
     abstract: options.abstract,
     keywords: options.keywords,
-    showTitle: options.title !== undefined,
+    showTitle,
+    headerClass: magazine?.headerClass,
     themeCss,
     font: options.font,
     beforeBody: watermark || undefined,
@@ -354,6 +377,7 @@ export async function renderDocument(
       ...densityCss(options.density),
       layoutCss(options, margin),
       ...(watermark ? [WATERMARK_CSS] : []),
+      ...(magazine ? [magazine.css] : []),
     ],
     extraCss,
   });
@@ -380,19 +404,24 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
       const margin = resolveMargins(options);
       const author = options.author === undefined ? undefined : plainAuthor(options.author);
       const values = { title: doc.title, author, date: options.date };
-      const footer = options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined);
-      const hasHeaderFooter = options.header !== undefined || footer !== undefined;
+      // The magazine themes draw margins, header and footer in their stylesheet (magazine.ts).
+      const magazine = isMagazineTheme(options.theme);
+      const footer = magazine
+        ? undefined
+        : (options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined));
+      const header = magazine ? undefined : options.header;
+      const hasHeaderFooter = header !== undefined || footer !== undefined;
       doc.diagnostics.push(
-        ...headerFooterSpaceWarnings(margin, options.header !== undefined, footer !== undefined),
+        ...headerFooterSpaceWarnings(margin, header !== undefined, footer !== undefined),
       );
       const pageLook = headerFooterStyle(options.theme);
       const session = await browsers.get();
       const { pdf, blocked } = await session.printPdf(doc.html, {
         format: options.pageSize,
         landscape: options.orientation === "landscape",
-        margin,
+        margin: magazine ? { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" } : margin,
         headerTemplate: hasHeaderFooter
-          ? headerFooterTemplate(options.header, values, margin, options.font, pageLook)
+          ? headerFooterTemplate(header, values, margin, options.font, pageLook)
           : undefined,
         footerTemplate: hasHeaderFooter
           ? headerFooterTemplate(footer, values, margin, options.font, pageLook)

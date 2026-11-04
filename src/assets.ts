@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -85,6 +85,17 @@ export const INTER_FACES = [
   { weight: 700, style: "normal", file: "Inter-Bold.woff2" },
   { weight: 700, style: "italic", file: "Inter-BoldItalic.woff2" },
 ] as const;
+/** Extra Inter weights of the magazine themes: light standfirsts and extra-bold titles. */
+export const INTER_MAGAZINE_FACES = [
+  { weight: 300, style: "normal", file: "Inter-Light.woff2" },
+  { weight: 800, style: "normal", file: "Inter-ExtraBold.woff2" },
+] as const;
+/** Newsreader, the serif of the magazine themes: drop caps, pull quotes and the standfirst. */
+export const NEWSREADER_STYLESHEETS = [
+  "@fontsource/newsreader/400.css",
+  "@fontsource/newsreader/400-italic.css",
+  "@fontsource/newsreader/600.css",
+];
 /** Manrope faces in use (Fontsource, split into unicode-range subsets); it has no italics. */
 export const MANROPE_STYLESHEETS = [
   "@fontsource/manrope/400.css",
@@ -111,9 +122,40 @@ export const THEMES = [
   "mdrender/assets/theme-antigravity.css",
   "mdrender/assets/theme-antigravity-dark.css",
   "mdrender/assets/theme-academic-basic.css",
+  "mdrender/assets/theme-tech-magazine.css",
+  "mdrender/assets/theme-tech-magazine-dark.css",
   "mdrender/assets/density-compact.css",
 ];
 export const PACKAGE_JSON = "mdrender/package.json";
+/** Cover pictures shipped with mdrender: tech_magazine/<magazine>/<file>. */
+export const MAGAZINES_KEY = "mdrender/tech_magazine";
+
+/**
+ * Files of a folder of shipped assets (e.g. "mdrender/tech_magazine/AlphaZeroChess"), as asset
+ * keys; empty when the folder does not exist. Inside the executable, from the embedded keys.
+ */
+export function listAssets(folderKey: string): string[] {
+  const prefix = folderKey.replace(/\/$/, "") + "/";
+  if (isSea()) {
+    const keys = (sea as unknown as { getAssetKeys(): string[] }).getAssetKeys();
+    return keys.filter((k) => k.startsWith(prefix) && !k.slice(prefix.length).includes("/")).sort();
+  }
+  const dir = assetPath(folderKey);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => prefix + entry.name)
+    .sort();
+}
+
+/** Every shipped file under tech_magazine/, as asset keys. */
+function magazineAssets(): string[] {
+  const root = assetPath(MAGAZINES_KEY);
+  if (!existsSync(root)) return [];
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => listAssets(`${MAGAZINES_KEY}/${entry.name}`));
+}
 
 /** Fonts referenced by a stylesheet as url(...woff2), as asset keys. */
 export function woff2References(cssKey: string, css: string): string[] {
@@ -128,11 +170,15 @@ export function woff2References(cssKey: string, css: string): string[] {
  */
 export function assetManifest(): Record<string, string> {
   const keys = new Set<string>([PACKAGE_JSON, ...THEMES, MERMAID_JS]);
-  for (const { file } of INTER_FACES) keys.add(`${INTER_DIR}/${file}`);
+  for (const { file } of [...INTER_FACES, ...INTER_MAGAZINE_FACES]) {
+    keys.add(`${INTER_DIR}/${file}`);
+  }
+  for (const key of magazineAssets()) keys.add(key);
   for (const cssKey of [
     ...MANROPE_STYLESHEETS,
     ...MONO_STYLESHEETS,
     ...SERIF_STYLESHEETS,
+    ...NEWSREADER_STYLESHEETS,
     KATEX_CSS,
   ]) {
     keys.add(cssKey);

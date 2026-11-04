@@ -130,6 +130,31 @@ describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
     expect(text).toContain("Keywords: catalysis, kinetics");
   });
 
+  it("prints the magazine theme with a full-bleed cover and a footer on later pages", async () => {
+    const output = path.join(tempDir(), "magazine.pdf");
+    const result = await convertFile({ input: fixture("magazine.md"), output, format: "pdf" });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.notes).toContainEqual({ message: "cover: picture 2" });
+    const raw = readFileSync(output).toString("latin1");
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-ExtraBold/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Newsreader\w*-Italic/);
+    expect(raw).not.toMatch(/\/Subtype\s*\/Type3/);
+    expect(raw).not.toMatch(SYSTEM_FONT);
+
+    // Page 1 is the cover with its picture; the footer starts on page 2.
+    const doc = await getDocument({ data: new Uint8Array(readFileSync(output)) }).promise;
+    expect(doc.numPages).toBe(2);
+    const first = await doc.getPage(1);
+    const ops = await first.getOperatorList();
+    const { OPS } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    expect(ops.fnArray).toContain(OPS.paintImageXObject);
+    const second = await doc.getPage(2);
+    const text = (await second.getTextContent()).items
+      .map((i) => ("str" in i ? i.str : ""))
+      .join("");
+    expect(text.replaceAll(" ", "")).toContain("ALPHAZEROCHESS·NOVIEMBREDE2026");
+  });
+
   it("writes the document title into the PDF metadata", async () => {
     const output = path.join(tempDir(), "basic.pdf");
     await convertFile({ input: fixture("basic.md"), output, format: "pdf" });

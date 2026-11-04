@@ -1,0 +1,9 @@
+{
+  "accent": "#2f6bff",
+  "covers": {
+    "1": { "ink": "dark", "veil": "rgba(255, 255, 255, 0.6)" },
+    "2": { "ink": "light", "veil": "rgba(8, 14, 28, 0.85)" },
+    "3": { "ink": "dark", "veil": "rgba(246, 238, 228, 0.65)" },
+    "4": { "ink": "light", "veil": "rgba(20, 10, 4, 0.65)" }
+  }
+}

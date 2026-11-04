@@ -87,6 +87,18 @@ describe("academic_basic theme", () => {
   });
 });
 
+describe("tech_magazine theme", () => {
+  it("adds Inter Light and ExtraBold and the Newsreader serif", () => {
+    const [fonts, ...css] = builtinThemeCss("tech_magazine");
+    expect(fonts).toMatch(/font-family: "Inter";\s+font-style: normal;\s+font-weight: 300;/);
+    expect(fonts).toMatch(/font-family: "Inter";\s+font-style: normal;\s+font-weight: 800;/);
+    expect(fonts).toMatch(/font-family: 'Newsreader';\s+font-style: italic;/);
+    expect(fonts).not.toMatch(/url\((?!data:font\/woff2)/);
+    expect(css.join("\n")).toContain("--tm-accent: #2f6bff;");
+    expect(builtinThemeCss("tech_magazine-dark").join("\n")).toContain("--tm-bg: #000000;");
+  });
+});
+
 describe("title block", () => {
   const html = buildHtmlDocument({
     title: "Cinética",
@@ -99,9 +111,11 @@ describe("title block", () => {
     affiliations: ["Uno", "Dos"],
     abstract: "Primero.\n\nSegundo.",
     keywords: ["a", "b"],
+    headerClass: "cover-ink-dark cover-text-top",
   });
 
   it("shows kicker, authors with superscripts, affiliations, abstract and keywords", () => {
+    expect(html).toContain('<header class="doc-header cover-ink-dark cover-text-top">');
     expect(html).toContain('<p class="doc-kicker">Research article</p>\n<h1 class="doc-title">');
     expect(html).toContain(
       '<p class="doc-meta">Ana Pérez<sup>1</sup>, Luis &lt;Gómez&gt;<sup>1,2</sup> · 2026</p>',

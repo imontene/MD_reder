@@ -1,8 +1,10 @@
 import {
   INTER_DIR,
   INTER_FACES,
+  INTER_MAGAZINE_FACES,
   MANROPE_STYLESHEETS,
   MONO_STYLESHEETS,
+  NEWSREADER_STYLESHEETS,
   readAsset,
   SERIF_STYLESHEETS,
   readTextAsset,
@@ -21,6 +23,8 @@ import type { TextFont } from "../options.js";
  * Code: JetBrains Mono from Fontsource (split into unicode-range subsets).
  * Serif (academic theme only): STIX Two Text from Fontsource, the text face of the STIX fonts
  * made for scientific publishing.
+ * Magazine themes: Inter Light and ExtraBold besides the text weights, and Newsreader from
+ * Fontsource for the drop caps, pull quotes and standfirst.
  */
 
 export const FONT_FAMILIES: Record<TextFont, string> = { manrope: "Manrope", inter: "Inter" };
@@ -36,7 +40,9 @@ function woff2DataUri(key: string): string {
   return `data:font/woff2;base64,${readAsset(key).toString("base64")}`;
 }
 
-function interFace({ weight, style, file }: (typeof INTER_FACES)[number]): string {
+type InterFace = (typeof INTER_FACES)[number] | (typeof INTER_MAGAZINE_FACES)[number];
+
+function interFace({ weight, style, file }: InterFace): string {
   return `@font-face {
   font-family: "Inter";
   font-style: ${style};
@@ -93,6 +99,17 @@ let serif: string | undefined;
 export function serifFontFaceCss(): string {
   serif ??= SERIF_STYLESHEETS.map(inlineFontStylesheet).join("\n");
   return serif;
+}
+
+let magazine: string | undefined;
+
+/** @font-face rules the magazine themes add to the text and code fonts, files embedded. */
+export function magazineFontFaceCss(): string {
+  magazine ??= [
+    ...INTER_MAGAZINE_FACES.map(interFace),
+    ...NEWSREADER_STYLESHEETS.map(inlineFontStylesheet),
+  ].join("\n");
+  return magazine;
 }
 
 let monoRegular: string | undefined;

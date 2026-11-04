@@ -10,6 +10,12 @@ const PAPER_MM: Record<PageSize, [number, number]> = {
   Tabloid: [279.4, 431.8],
 };
 
+/** Width and height of the paper in millimetres, as printed. */
+export function paperSizeMm(pageSize: PageSize, landscape: boolean): [number, number] {
+  const [width, height] = PAPER_MM[pageSize];
+  return landscape ? [height, width] : [width, height];
+}
+
 const PX_PER_UNIT: Record<string, number> = { px: 1, in: 96, cm: 96 / 2.54, mm: 96 / 25.4 };
 
 export function lengthToPx(length: string): number {

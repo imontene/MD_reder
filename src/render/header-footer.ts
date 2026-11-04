@@ -29,7 +29,7 @@ function renderText(text: string, values: HeaderFooterValues): string {
 }
 
 /** Split on `|` (but not `\|`) into left, center and right columns. */
-function columns(spec: string): [string, string, string] {
+export function columns(spec: string): [string, string, string] {
   const parts = spec.split(/(?<!\\)\|/).map((p) => p.replace(/\\\|/g, "|"));
   if (parts.length === 1) return ["", parts[0]!, ""];
   if (parts.length === 2) return [parts[0]!, "", parts[1]!];

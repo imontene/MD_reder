@@ -23,12 +23,24 @@ export const BUILTIN_THEMES = [
   "light",
   "dark",
   "academic_basic",
+  "tech_magazine",
+  "tech_magazine-dark",
 ] as const;
 export type BuiltinTheme = (typeof BUILTIN_THEMES)[number];
 
 /** Built-in themes with a dark page. */
 export const isDarkTheme = (theme: string): boolean =>
-  theme === "dark" || theme === "antigravity-dark";
+  theme === "dark" || theme === "antigravity-dark" || theme === "tech_magazine-dark";
+
+/** The magazine themes: a full-bleed cover and page margins drawn by the stylesheet. */
+export const isMagazineTheme = (theme: string): boolean => theme.startsWith("tech_magazine");
+
+export const COVER_TEXT_POSITIONS = ["top", "bottom"] as const;
+export type CoverTextPosition = (typeof COVER_TEXT_POSITIONS)[number];
+
+/** Colour of the cover text: dark ink for light pictures, light ink for dark ones. */
+export const COVER_INKS = ["dark", "light"] as const;
+export type CoverInk = (typeof COVER_INKS)[number];
 
 export const TEXT_FONTS = ["manrope", "inter"] as const;
 export type TextFont = (typeof TEXT_FONTS)[number];
@@ -94,6 +106,16 @@ export interface DocumentOptions {
   /** Summary shown under the title block (paragraphs separated by blank lines). */
   abstract?: string;
   keywords?: string[];
+  /** Magazine themes: folder of cover pictures under tech_magazine/, and the masthead. */
+  magazineName?: string;
+  /** Magazine themes: number of the cover picture; a random one when unset. */
+  cover?: number;
+  /** Magazine themes: where the title sits on the cover. */
+  coverText?: CoverTextPosition;
+  /** Magazine themes: colour of the cover text; the magazine's own setting for a cover wins. */
+  coverInk?: CoverInk;
+  /** Magazine themes: accent colour (drop cap, small headings, rules), e.g. "#2f6bff". */
+  accent?: string;
 }
 
 export const DEFAULT_OPTIONS: DocumentOptions = {
@@ -114,12 +136,22 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   lang: DEFAULT_LANG,
 };
 
+/** The magazine themes: one wide ragged column in Inter on generous margins. */
+const MAGAZINE_DEFAULTS: Partial<DocumentOptions> = {
+  margin: "20mm 24mm 22mm",
+  fontSize: "10.5pt",
+  font: "inter",
+  justify: false,
+};
+
 /**
  * Defaults of a built-in theme, applied under every other layer: the academic theme sets its
  * two columns in smaller type on wider margins, with Inter for titles, captions and labels.
  */
 export const THEME_DEFAULTS: Partial<Record<BuiltinTheme, Partial<DocumentOptions>>> = {
   academic_basic: { margin: "18mm 8mm", fontSize: "9.5pt", font: "inter" },
+  tech_magazine: MAGAZINE_DEFAULTS,
+  "tech_magazine-dark": MAGAZINE_DEFAULTS,
 };
 
 export class OptionsError extends MdRenderError {
@@ -166,6 +198,29 @@ const oneOf =
     if (match) return match;
     throw new OptionsError(`${describe} must be one of: ${choices.join(", ")}`);
   };
+
+/** A CSS colour: #rgb, #rrggbb (with or without alpha), rgb()/hsl()/oklch() or a colour name. */
+const COLOR =
+  /^(#[0-9a-f]{3,4}|#[0-9a-f]{6}|#[0-9a-f]{8}|(rgb|rgba|hsl|hsla|oklch|oklab)\([\d\s.,%/+-]+\)|[a-z]+)$/i;
+
+const color: Validator = (value, describe, baseDir) => {
+  const raw = (text(value, describe, baseDir) as string).trim();
+  if (COLOR.test(raw)) return raw;
+  throw new OptionsError(`${describe} must be a CSS colour, e.g. "#2f6bff"`);
+};
+
+/** A folder name under tech_magazine/: no path separators, no "..". */
+const folderName: Validator = (value, describe, baseDir) => {
+  const raw = (text(value, describe, baseDir) as string).trim();
+  if (raw && !/[\\/]/.test(raw) && raw !== "." && raw !== "..") return raw;
+  throw new OptionsError(`${describe} must be the name of a folder inside tech_magazine/`);
+};
+
+const coverNumber: Validator = (value, describe) => {
+  const number = Number(value);
+  if (Number.isInteger(number) && number >= 0) return number;
+  throw new OptionsError(`${describe} must be the number of a cover picture, e.g. 2 or "02"`);
+};
 
 /** Text, or a list of texts (`keywords: [a, b]`). */
 const textList: Validator = (value, describe, baseDir) => {
@@ -260,6 +315,11 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   affiliations: textList,
   abstract: text,
   keywords: textList,
+  magazineName: folderName,
+  cover: coverNumber,
+  coverText: oneOf(COVER_TEXT_POSITIONS),
+  coverInk: oneOf(COVER_INKS),
+  accent: color,
 };
 
 /**
