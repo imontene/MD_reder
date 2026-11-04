@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.10.0 — 2026-11-04
 
 - **Tema de revista de tecnología** `--theme tech_magazine` (o `tech_magazine-dark`, con la
   página en negro), que no se usa por defecto:
@@ -14,6 +14,8 @@
   incluidas), `cover` (número de imagen; al azar si falta), `cover-text` (`top` o `bottom`),
   `cover-ink` (`dark` o `light`) y `accent`. Un `magazine.json` en la carpeta de la revista
   fija su acento y la tinta de cada portada.
+- Nueva especificación del Markdown que esperan los temas `academic_basic` y `tech_magazine`:
+  [docs/ESPECIFICACION_TEMAS.md](docs/ESPECIFICACION_TEMAS.md).
 
 ## 2.9.0 — 2026-10-29
 

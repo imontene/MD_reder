@@ -220,6 +220,9 @@ En el HTML se ve a una sola columna. Chrome no ubica las figuras arriba o abajo 
 como en LaTeX: quedan donde aparecen en el texto, y las que ocupan las dos columnas pueden
 dejar algo de espacio libre antes de ellas.
 
+Qué debe cumplir un `.md` para cada uno de estos dos temas:
+[docs/ESPECIFICACION_TEMAS.md](docs/ESPECIFICACION_TEMAS.md).
+
 **Revista de tecnología** (`--theme tech_magazine`, o `tech_magazine-dark` con la página en
 negro): el aspecto de una revista de divulgación tecnológica. Ejemplo:
 [`examples/revista-tecnologia.md`](examples/revista-tecnologia.md) →
