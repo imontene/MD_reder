@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.11.1 — 2026-11-06
 
 - **Diagramas Mermaid en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): un
   diagrama tan alto como la página ya no deja su tarjeta vacía en una página y el dibujo en la
