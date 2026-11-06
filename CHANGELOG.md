@@ -12,6 +12,23 @@
     rellenos translúcidos; los PDF con diagramas pesan menos, porque Chrome la guardaba como
     imagen.
 
+## 2.10.0 — 2026-11-04
+
+- **Tema de revista de tecnología** `--theme tech_magazine` (o `tech_magazine-dark`, con la
+  página en negro), que no se usa por defecto:
+  - con `title`, portada a sangre con una imagen de `tech_magazine/<magazine-name>/`, el nombre
+    de la revista, la etiqueta, el título, la bajada y la firma;
+  - Inter de 300 a 800 en una columna sin justificar, Newsreader en la bajada, la capitular y
+    las citas destacadas; alertas como recuadros, tablas como fichas técnicas, código en
+    tarjetas oscuras;
+  - pie con la revista, la fecha y el número de página, sin pie en la portada.
+- Front matter de la portada: `magazine-name` (por defecto `AlphaZeroChess`, con 4 portadas
+  incluidas), `cover` (número de imagen; al azar si falta), `cover-text` (`top` o `bottom`),
+  `cover-ink` (`dark` o `light`) y `accent`. Un `magazine.json` en la carpeta de la revista
+  fija su acento y la tinta de cada portada.
+- Nueva especificación del Markdown que esperan los temas `academic_basic` y `tech_magazine`:
+  [docs/ESPECIFICACION_TEMAS.md](docs/ESPECIFICACION_TEMAS.md).
+
 ## 2.9.0 — 2026-10-29
 
 - Los elementos de listas con viñetas y numeradas (también anidadas o dentro de citas y

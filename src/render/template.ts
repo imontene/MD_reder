@@ -1,8 +1,8 @@
 import { readTextAsset } from "../assets.js";
 import { escapeHtml } from "../html.js";
 import { DEFAULT_LANG, strings } from "../i18n.js";
-import { fontFaceCss, serifFontFaceCss } from "./fonts.js";
-import type { BuiltinTheme, TextFont } from "../options.js";
+import { fontFaceCss, magazineFontFaceCss, serifFontFaceCss } from "./fonts.js";
+import { isMagazineTheme, type BuiltinTheme, type TextFont } from "../options.js";
 import { katexCss } from "./katex.js";
 import { version } from "../version.js";
 
@@ -26,12 +26,16 @@ const THEME_FILES: Record<BuiltinTheme, string[]> = {
   light: ["theme.css"],
   dark: ["theme.css", "theme-dark.css"],
   academic_basic: ["theme.css", "theme-academic-basic.css"],
+  tech_magazine: ["theme.css", "theme-tech-magazine.css"],
+  "tech_magazine-dark": ["theme.css", "theme-tech-magazine.css", "theme-tech-magazine-dark.css"],
 };
 
 /** Stylesheets of a built-in theme, with the fonts it adds to the text and code ones. */
 export function builtinThemeCss(theme: BuiltinTheme): string[] {
   const css = THEME_FILES[theme].map(asset);
-  return theme === "academic_basic" ? [serifFontFaceCss(), ...css] : css;
+  if (theme === "academic_basic") return [serifFontFaceCss(), ...css];
+  if (isMagazineTheme(theme)) return [magazineFontFaceCss(), ...css];
+  return css;
 }
 
 /** Stylesheet for a density other than "normal", applied after the theme. */
@@ -55,6 +59,8 @@ export interface DocumentParts {
   abstract?: string;
   keywords?: string[];
   showTitle?: boolean;
+  /** Extra classes of the title block (the magazine cover's ink and text position). */
+  headerClass?: string;
   /** Theme stylesheet contents. Defaults to the built-in light theme. */
   themeCss?: string[];
   /** Text font to embed. Defaults to Manrope. */
@@ -98,7 +104,7 @@ function titleBlock(parts: DocumentParts): string {
   const meta = [author ? withSuperscripts(author) : undefined, date ? escapeHtml(date) : undefined];
   const metaText = meta.filter(Boolean).join(" · ");
   return [
-    `<header class="doc-header">`,
+    `<header class="doc-header${parts.headerClass ? ` ${escapeHtml(parts.headerClass)}` : ""}">`,
     kicker ? `<p class="doc-kicker">${escapeHtml(kicker)}</p>` : "",
     `<h1 class="doc-title">${escapeHtml(title)}</h1>`,
     subtitle ? `<p class="doc-subtitle">${escapeHtml(subtitle)}</p>` : "",

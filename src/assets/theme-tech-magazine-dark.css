@@ -1,0 +1,19 @@
+/* mdrender magazine theme, dark page (tech_magazine-dark): loaded after theme-tech-magazine.css. */
+
+:root {
+  --tm-bg: #000000;
+  --tm-ink: #f5f5f7;
+  --tm-ink-secondary: #d2d2d7;
+  --tm-ink-muted: #98989d;
+  --tm-hairline: #38383a;
+  --tm-surface: #1c1c1e;
+  --tm-code-bg: #1c1c1e;
+  /* The accent lightened so it reads on black. */
+  --tm-accent-text: color-mix(in srgb, var(--tm-accent) 72%, white);
+}
+
+/* Pictures drawn on a light card keep it, outlined so they do not float. */
+figure img,
+.figure img {
+  box-shadow: 0 0 0 1px #2c2c2e;
+}
