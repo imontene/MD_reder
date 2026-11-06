@@ -335,6 +335,12 @@ resumen se separan con una línea en blanco.
 - Si una fórmula o diagrama tiene un error, el documento se genera igual con una caja roja en
   su lugar, se informa `error: archivo.md:LÍNEA: mensaje` y el comando termina con código `2`.
 
+**Acabado de los diagramas**: en todos los temas, las figuras de Mermaid tienen las esquinas
+ligeramente redondeadas (rectángulos, rombos, hexágonos, paralelogramos, trapecios, banderas,
+subgraphs, actores y notas), los títulos de los subgraphs van en negrita, y el relleno de figuras
+y subgraphs conserva su color pero es algo transparente, de modo que se ven el fondo de la página
+y las marcas de agua.
+
 **Autoajuste de diagramas de flujo**: en el PDF, un diagrama más ancho que la columna o más alto
 que la página se reduce entero, y su texto puede quedar diminuto. Por eso mdrender dibuja cada
 `flowchart`/`graph` con varios anchos de ajuste de las etiquetas y se queda con el que imprime el

@@ -177,8 +177,11 @@ describe.skipIf(!browser && !browserRequired)("Anti-Gravity PDF", () => {
   });
 
   it("keeps the previous look with --theme light", async () => {
-    const { pages } = await render("light");
-    for (const page of pages) expect(page.patterns).toBe(0);
+    const { output, pages } = await render("light");
+    // No field of light: those are radial shadings. (Mermaid's own look strokes its nodes with
+    // a small linear gradient in this theme.)
+    expect(readFileSync(output).toString("latin1")).not.toMatch(/\/ShadingType\s*3/);
+    expect(pages[1]!.patterns).toBe(0);
     expect(pages[0]!.colors).not.toContain("#2456d3");
   });
 });

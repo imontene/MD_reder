@@ -5,6 +5,7 @@ import type { MermaidFlip, MermaidTheme, TextFont } from "../options.js";
 import { mermaidPlaceholder } from "../markdown/mermaid.js";
 import type { BrowserSession } from "./browser.js";
 import { FONT_FAMILIES, fontFaceCss, fontStack } from "./fonts.js";
+import { MERMAID_THEME_CSS, roundNodePolygons } from "./mermaid-style.js";
 import { escapeHtml } from "../html.js";
 import {
   authorConfigured,
@@ -95,6 +96,8 @@ function mermaidConfig(
     fontSize: fontPx,
     themeVariables: { ...themeVariables, fontFamily, fontSize: `${fontPx}px` },
     htmlLabels: true,
+    // Rounded corners, bold subgraph titles, see-through fills (render/mermaid-style.ts).
+    themeCSS: MERMAID_THEME_CSS,
     // Actors only at the top of sequence diagrams: repeating them below costs height.
     sequence: { mirrorActors: false },
     ...(wrap === undefined ? {} : { flowchart: { wrappingWidth: wrap } }),
@@ -141,21 +144,26 @@ body { margin: 0; width: ${widthPx}px; font-family: ${fontStack(font)}; }</style
     }, family);
 
     const render = (source: string, id: string, wrap: number | undefined) =>
-      page.evaluate(
-        async (source: string, id: string, config: Record<string, unknown>) => {
-          const { mermaid } = globalThis as unknown as PageGlobals;
-          // Each render sets the whole configuration, so one layout never leaks into the next.
-          mermaid.initialize(config);
-          try {
-            return { svg: (await mermaid.render(id, source)).svg };
-          } catch (error) {
-            return { error: String((error as Error)?.message ?? error) };
-          }
-        },
-        source,
-        id,
-        mermaidConfig(theme, font, fontPx, wrap, options.themeVariables),
-      ) as Promise<{ svg: string } | { error: string }>;
+      page
+        .evaluate(
+          async (source: string, id: string, config: Record<string, unknown>) => {
+            const { mermaid } = globalThis as unknown as PageGlobals;
+            // Each render sets the whole configuration, so one layout never leaks into the next.
+            mermaid.initialize(config);
+            try {
+              return { svg: (await mermaid.render(id, source)).svg };
+            } catch (error) {
+              return { error: String((error as Error)?.message ?? error) };
+            }
+          },
+          source,
+          id,
+          mermaidConfig(theme, font, fontPx, wrap, options.themeVariables),
+        )
+        .then((result: { svg: string } | { error: string }) =>
+          // Rounding the polygons keeps each diagram's size, so autofit measures it the same.
+          "svg" in result ? { svg: roundNodePolygons(result.svg) } : result,
+        );
 
     const results: DiagramResult[] = [];
     for (const [i, block] of blocks.entries()) {

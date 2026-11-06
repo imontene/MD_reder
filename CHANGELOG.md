@@ -1,5 +1,17 @@
 # Cambios
 
+## Sin publicar
+
+- **Acabado de los diagramas Mermaid**, en todos los temas:
+  - esquinas ligeramente redondeadas en todas las figuras: rectángulos, subgraphs, actores y
+    notas, y también rombos, hexágonos, paralelogramos, trapecios y banderas, redibujados con
+    las esquinas suavizadas;
+  - títulos de los subgraphs en negrita, medidos así por Mermaid para que no se desborden;
+  - rellenos de figuras y subgraphs con su color, pero al 72 % de opacidad, para que se vean el
+    fondo y las marcas de agua. Se quitó la sombra del estilo de Mermaid 12, que agrisaba los
+    rellenos translúcidos; los PDF con diagramas pesan menos, porque Chrome la guardaba como
+    imagen.
+
 ## 2.9.0 — 2026-10-29
 
 - Los elementos de listas con viñetas y numeradas (también anidadas o dentro de citas y
