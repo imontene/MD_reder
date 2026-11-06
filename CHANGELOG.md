@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.11.0 — 2026-11-06
 
 - **Acabado de los diagramas Mermaid**, en todos los temas:
   - esquinas ligeramente redondeadas en todas las figuras: rectángulos, subgraphs, actores y
