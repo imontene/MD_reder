@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
 import { convertFile } from "../src/convert.js";
 import {
@@ -138,4 +139,58 @@ describe.skipIf(!browser && !browserRequired)("Mermaid finish in documents", () 
     const raw = (await render("pdf")).toString("latin1");
     expect(raw.match(/\/Subtype\s*\/Image/g) ?? []).toHaveLength(0);
   });
+});
+
+async function pageTexts(file: string): Promise<string[]> {
+  const task = getDocument({ data: new Uint8Array(readFileSync(file)) });
+  const doc = await task.promise;
+  const texts = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const content = await (await doc.getPage(i)).getTextContent();
+    texts.push(content.items.map((item) => ("str" in item ? item.str : "")).join(" "));
+  }
+  await task.destroy();
+  return texts;
+}
+
+describe.skipIf(!browser && !browserRequired)("Mermaid diagrams in a framed card", () => {
+  // A diagram as tall as the page: the magazine themes draw it on a padded card.
+  const source = [
+    "```mermaid",
+    "flowchart LR",
+    "  subgraph G1[Grupo uno]",
+    "    A[Rectángulo] --> B{Decisión}",
+    "    B --> C{{Hexágono}}",
+    "  end",
+    "  subgraph G2[Grupo dos]",
+    "    D[/Paralelogramo/] --> E([Estadio]) --> F((Círculo)) --> H[(Base)]",
+    "    I>Bandera] --> J[\\Trapecio/]",
+    "  end",
+    "  C --> D",
+    "```",
+    "",
+  ].join("\n");
+
+  it.each(["tech_magazine", "tech_magazine-dark"])(
+    "fit their page inside the card in %s, instead of leaving it empty",
+    async (theme) => {
+      const dir = tempDir();
+      const input = path.join(dir, "doc.md");
+      writeFileSync(input, source);
+      const output = path.join(dir, "doc.pdf");
+      const result = await convertFile({
+        input,
+        output,
+        format: "pdf",
+        config: false,
+        overrides: { theme },
+      });
+      expect(result.diagnostics).toEqual([]);
+      // The card's padding used to push the diagram to page 2, leaving an empty card on page 1.
+      const texts = await pageTexts(output);
+      expect(texts).toHaveLength(1);
+      expect(texts[0]).toContain("Rectángulo");
+      expect(texts[0]).toContain("Base");
+    },
+  );
 });

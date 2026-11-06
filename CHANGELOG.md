@@ -1,5 +1,12 @@
 # Cambios
 
+## Sin publicar
+
+- **Diagramas Mermaid en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): un
+  diagrama tan alto como la página ya no deja su tarjeta vacía en una página y el dibujo en la
+  siguiente. El diagrama se reduce ahora a la altura útil menos el relleno de la tarjeta, así que
+  la tarjeta entera cabe en su página.
+
 ## 2.11.0 — 2026-11-06
 
 - **Acabado de los diagramas Mermaid**, en todos los temas:

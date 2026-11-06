@@ -509,6 +509,8 @@ hr::after {
   padding: 1.4em;
   border-radius: 18px;
   background: var(--tm-surface);
+  /* The padding above and below: a page-tall diagram still fits its page inside the card. */
+  --diagram-frame: 2.8em;
 }
 
 /* Footnotes: small, after a short rule. */

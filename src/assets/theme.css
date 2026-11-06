@@ -348,16 +348,33 @@ div.math-error {
  * In the PDF, images and diagrams are scaled down to fit the page height (mdrender sets
  * --page-content-height), so they are never cut across pages.
  */
+/*
+ * Height a theme's frame adds around a diagram (its card's padding and border, top and bottom),
+ * which the diagram leaves room for. Registered as a length so it is computed on the figure:
+ * "2.8em" means the figure's em, not those of the svg, whose font size Mermaid sets.
+ */
+@property --diagram-frame {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 @media print {
-  img,
-  .mermaid-diagram svg {
+  img {
     max-height: calc(var(--page-content-height) - 6mm);
   }
 
+  .mermaid-diagram svg {
+    max-height: calc(var(--page-content-height) - 6mm - var(--diagram-frame));
+  }
+
   /* Next to its heading: leave room for it (HEADING_ALLOWANCE_EM in render/mermaid.ts). */
-  .keep-with-heading img,
-  .keep-with-heading .mermaid-diagram svg {
+  .keep-with-heading img {
     max-height: calc(var(--page-content-height) - 6mm - 5rem);
+  }
+
+  .keep-with-heading .mermaid-diagram svg {
+    max-height: calc(var(--page-content-height) - 6mm - 5rem - var(--diagram-frame));
   }
 }
 
