@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.12.0 — 2026-11-08
 
 - **Más acabado en los diagramas Mermaid**, en todos los temas:
   - las figuras, los actores y las notas se rellenan con un degradado vertical muy suave de su
