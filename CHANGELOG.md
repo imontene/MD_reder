@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.12.1 — 2026-11-08
 
 - **Temas de revista** (`tech_magazine` y `tech_magazine-dark`): en el PDF, los párrafos se
   justifican, con las palabras partidas con guion, como en los demás temas. Las citas
