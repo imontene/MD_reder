@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.13.0 — 2026-11-08
 
 - **Ideas clave en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): las notas
   `> [!NOTE]` son ahora una tarjeta teñida con el color de acento, con el texto grande en
