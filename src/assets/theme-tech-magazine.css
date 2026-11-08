@@ -357,6 +357,13 @@ blockquote:not(.markdown-alert) p {
   letter-spacing: -0.01em;
 }
 
+/* Paragraphs are justified in the PDF (convert.ts), but not the pull quotes: large and narrow. */
+@media print {
+  .markdown-body > blockquote:not(.markdown-alert) > p:not(.markdown-alert-title) {
+    text-align: left;
+  }
+}
+
 blockquote:not(.markdown-alert) p + p {
   font-family: var(--tm-sans);
   font-size: 0.72em;

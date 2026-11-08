@@ -8,6 +8,7 @@ import {
   magazinePage,
   type MagazineInput,
 } from "../src/render/magazine.js";
+import { builtinThemeCss } from "../src/render/template.js";
 import { tempDir } from "./helpers.js";
 
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>';
@@ -53,14 +54,22 @@ describe("magazine options", () => {
     expect(() => normalizeOptions({ cover: "uno" }, "fm", "/")).toThrow("number");
   });
 
-  it("sets one ragged column in Inter on wide margins", () => {
+  it("sets one justified column in Inter on wide margins", () => {
     for (const theme of ["tech_magazine", "tech_magazine-dark"]) {
       expect(mergeOptions({ theme })).toMatchObject({
         margin: "20mm 24mm 22mm",
         font: "inter",
-        justify: false,
+        justify: true,
       });
+      // --no-justify still turns it off.
+      expect(mergeOptions({ theme }, { justify: false })).toMatchObject({ justify: false });
     }
+  });
+
+  it("keeps the pull quotes ragged in the justified column", () => {
+    expect(builtinThemeCss("tech_magazine").join("\n")).toMatch(
+      /\.markdown-body > blockquote:not\(\.markdown-alert\) > p:not\(\.markdown-alert-title\) \{\s*text-align: left;/,
+    );
   });
 });
 

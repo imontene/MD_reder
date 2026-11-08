@@ -136,12 +136,11 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   lang: DEFAULT_LANG,
 };
 
-/** The magazine themes: one wide ragged column in Inter on generous margins. */
+/** The magazine themes: one wide column in Inter on generous margins. */
 const MAGAZINE_DEFAULTS: Partial<DocumentOptions> = {
   margin: "20mm 24mm 22mm",
   fontSize: "10.5pt",
   font: "inter",
-  justify: false,
 };
 
 /**

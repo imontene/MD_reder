@@ -232,7 +232,8 @@ negro): el aspecto de una revista de divulgación tecnológica. Ejemplo:
   una imagen de borde a borde, el nombre de la revista arriba, la etiqueta (`kicker`), el
   título, la bajada (`subtitle`) y la firma (`author` y `date`). La portada no lleva
   encabezado ni pie.
-- Inter de 300 a 800 en una columna amplia sin justificar, y la serifa
+- Inter de 300 a 800 en una columna amplia de párrafos justificados (salvo las citas
+  destacadas; `--no-justify` lo desactiva), y la serifa
   [Newsreader](https://fonts.google.com/specimen/Newsreader) en la bajada, la letra capitular
   del primer párrafo y las citas destacadas (`> cita`).
 - Las alertas (`> [!NOTE]`) son recuadros grises redondeados: su primera línea en negrita hace

@@ -1,5 +1,11 @@
 # Cambios
 
+## Sin publicar
+
+- **Temas de revista** (`tech_magazine` y `tech_magazine-dark`): en el PDF, los párrafos se
+  justifican, con las palabras partidas con guion, como en los demás temas. Las citas
+  destacadas quedan alineadas a la izquierda. `--no-justify` vuelve a la columna sin justificar.
+
 ## 2.12.0 — 2026-11-08
 
 - **Más acabado en los diagramas Mermaid**, en todos los temas:
