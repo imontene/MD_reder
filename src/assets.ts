@@ -96,6 +96,8 @@ export const NEWSREADER_STYLESHEETS = [
   "@fontsource/newsreader/400-italic.css",
   "@fontsource/newsreader/600.css",
 ];
+/** Fraunces SemiBold: the key ideas (`> [!NOTE]`) of the magazine themes. */
+export const FRAUNCES_STYLESHEETS = ["@fontsource/fraunces/600.css"];
 /** Manrope faces in use (Fontsource, split into unicode-range subsets); it has no italics. */
 export const MANROPE_STYLESHEETS = [
   "@fontsource/manrope/400.css",
@@ -179,6 +181,7 @@ export function assetManifest(): Record<string, string> {
     ...MONO_STYLESHEETS,
     ...SERIF_STYLESHEETS,
     ...NEWSREADER_STYLESHEETS,
+    ...FRAUNCES_STYLESHEETS,
     KATEX_CSS,
   ]) {
     keys.add(cssKey);

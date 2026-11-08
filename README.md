@@ -236,9 +236,11 @@ negro): el aspecto de una revista de divulgación tecnológica. Ejemplo:
   destacadas; `--no-justify` lo desactiva), y la serifa
   [Newsreader](https://fonts.google.com/specimen/Newsreader) en la bajada, la letra capitular
   del primer párrafo y las citas destacadas (`> cita`).
-- Las alertas (`> [!NOTE]`) son recuadros grises redondeados: su primera línea en negrita hace
-  de título. Las tablas son fichas técnicas, el código va en una tarjeta oscura y `---` se ve
-  como «• • •».
+- Las notas (`> [!NOTE]`) son las ideas clave: una tarjeta teñida con el color de acento y el
+  texto grande en [Fraunces](https://fonts.google.com/specimen/Fraunces) seminegrita. Las demás
+  alertas (`[!TIP]`, `[!WARNING]`…) son recuadros grises redondeados. En ambas, una primera
+  línea solo en negrita (`**Idea clave**`) hace de título.
+- Las tablas son fichas técnicas, el código va en una tarjeta oscura y `---` se ve como «• • •».
 - Imágenes solas como figuras con esquinas redondeadas y su texto alternativo como leyenda.
 - Pie con el nombre de la revista y la fecha a la izquierda y el número de página a la
   derecha; `--header` y `--footer` aceptan además `{magazine}`.
@@ -481,6 +483,6 @@ cambios: [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
-[MIT](LICENSE). Manrope, Inter, JetBrains Mono, STIX Two Text y Newsreader se distribuyen bajo la
+[MIT](LICENSE). Manrope, Inter, JetBrains Mono, STIX Two Text, Newsreader y Fraunces se distribuyen bajo la
 [SIL Open Font License 1.1](https://openfontlicense.org); los ejecutables incluyen
 `THIRD-PARTY-NOTICES.txt` con las licencias de todos los componentes.

@@ -19,6 +19,7 @@
   --tm-accent-text: var(--tm-accent);
   --tm-code-bg: #1d1d1f;
   --tm-serif: "Newsreader", Georgia, serif;
+  --tm-display: "Fraunces", Georgia, serif;
   --tm-sans: var(--font-text);
 
   --color-text: var(--tm-ink);
@@ -410,6 +411,43 @@ blockquote:not(.markdown-alert) p + p {
 
 .markdown-alert ul {
   padding-left: 1.2em;
+}
+
+/*
+ * Notes hold the article's key ideas: a card tinted with the accent, the idea set large in
+ * Fraunces, ragged and unhyphenated. The label line above it stays as in the other cards.
+ */
+.markdown-alert-note {
+  padding: 1.3em 1.5em 0.6em;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--tm-accent-text) 9%, var(--tm-bg));
+}
+
+.markdown-body .markdown-alert-note > p:not(.markdown-alert-title),
+.markdown-body .markdown-alert-note li {
+  font-family: var(--tm-display);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--tm-ink);
+  text-align: left;
+  hyphens: none;
+}
+
+.markdown-body .markdown-alert-note > p:not(.markdown-alert-title) {
+  font-size: 1.42em;
+}
+
+.markdown-body .markdown-alert-note li {
+  font-size: 1.15em;
+}
+
+/* The label line ("**Idea clave**"): back to Inter, at the size of the other cards' labels. */
+.markdown-body .markdown-alert-note > .markdown-alert-title + p:has(> strong:only-child) {
+  font-family: var(--tm-sans);
+  font-size: 0.95em;
+  letter-spacing: normal;
+  line-height: 1.55;
 }
 
 /* Figures with rounded corners and a small grey caption. */

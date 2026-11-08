@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- **Ideas clave en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): las notas
+  `> [!NOTE]` son ahora una tarjeta teñida con el color de acento, con el texto grande en
+  Fraunces seminegrita (Google Fonts, incluida en el paquete), alineado a la izquierda y sin
+  partir palabras. Una primera línea solo en negrita sigue siendo la etiqueta. Las demás alertas
+  conservan la tarjeta gris. Fraunces solo se incrusta en el PDF cuando hay una nota.
+
 ## 2.12.1 — 2026-11-08
 
 - **Temas de revista** (`tech_magazine` y `tech_magazine-dark`): en el PDF, los párrafos se

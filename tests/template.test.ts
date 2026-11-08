@@ -88,13 +88,23 @@ describe("academic_basic theme", () => {
 });
 
 describe("tech_magazine theme", () => {
-  it("adds Inter Light and ExtraBold and the Newsreader serif", () => {
+  it("adds Inter Light and ExtraBold, the Newsreader serif and Fraunces", () => {
     const [fonts, ...css] = builtinThemeCss("tech_magazine");
+    expect(fonts).toMatch(
+      /font-family: 'Fraunces';\s+font-style: normal;\s+font-display: block;\s+font-weight: 600;/,
+    );
     expect(fonts).toMatch(/font-family: "Inter";\s+font-style: normal;\s+font-weight: 300;/);
     expect(fonts).toMatch(/font-family: "Inter";\s+font-style: normal;\s+font-weight: 800;/);
     expect(fonts).toMatch(/font-family: 'Newsreader';\s+font-style: italic;/);
     expect(fonts).not.toMatch(/url\((?!data:font\/woff2)/);
     expect(css.join("\n")).toContain("--tm-accent: #2f6bff;");
+    // Notes (key ideas) on a tinted card, in Fraunces; the other alerts keep the grey card.
+    expect(css.join("\n")).toMatch(
+      /\.markdown-alert-note \{[^}]*background: color-mix\(in srgb, var\(--tm-accent-text\) 9%, var\(--tm-bg\)\);/,
+    );
+    expect(css.join("\n")).toMatch(
+      /\.markdown-alert-note > p:not\(\.markdown-alert-title\),[^{]*\{\s*font-family: var\(--tm-display\);/,
+    );
     expect(builtinThemeCss("tech_magazine-dark").join("\n")).toContain("--tm-bg: #000000;");
   });
 });

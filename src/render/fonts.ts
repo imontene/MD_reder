@@ -5,6 +5,7 @@ import {
   MANROPE_STYLESHEETS,
   MONO_STYLESHEETS,
   NEWSREADER_STYLESHEETS,
+  FRAUNCES_STYLESHEETS,
   readAsset,
   SERIF_STYLESHEETS,
   readTextAsset,
@@ -23,8 +24,9 @@ import type { TextFont } from "../options.js";
  * Code: JetBrains Mono from Fontsource (split into unicode-range subsets).
  * Serif (academic theme only): STIX Two Text from Fontsource, the text face of the STIX fonts
  * made for scientific publishing.
- * Magazine themes: Inter Light and ExtraBold besides the text weights, and Newsreader from
- * Fontsource for the drop caps, pull quotes and standfirst.
+ * Magazine themes: Inter Light and ExtraBold besides the text weights, Newsreader from
+ * Fontsource for the drop caps, pull quotes and standfirst, and Fraunces SemiBold for the key
+ * ideas (`> [!NOTE]`).
  */
 
 export const FONT_FAMILIES: Record<TextFont, string> = { manrope: "Manrope", inter: "Inter" };
@@ -108,6 +110,7 @@ export function magazineFontFaceCss(): string {
   magazine ??= [
     ...INTER_MAGAZINE_FACES.map(interFace),
     ...NEWSREADER_STYLESHEETS.map(inlineFontStylesheet),
+    ...FRAUNCES_STYLESHEETS.map(inlineFontStylesheet),
   ].join("\n");
   return magazine;
 }

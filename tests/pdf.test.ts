@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
@@ -320,5 +320,31 @@ describe.skipIf(!browser && !browserRequired)("page size, orientation and margin
       overrides: { margin: "10mm", marginLeft: "40mm" },
     });
     expectNear(await leftmostText(output), mm(40));
+  });
+});
+
+describe.skipIf(!browser && !browserRequired)("magazine key ideas", () => {
+  const render = async (markdown: string) => {
+    const dir = tempDir();
+    const input = path.join(dir, "doc.md");
+    writeFileSync(input, markdown);
+    const output = path.join(dir, "doc.pdf");
+    const result = await convertFile({
+      input,
+      output,
+      format: "pdf",
+      config: false,
+      overrides: { theme: "tech_magazine" },
+    });
+    expect(result.diagnostics).toEqual([]);
+    return readFileSync(output).toString("latin1");
+  };
+
+  it("sets notes in Fraunces, embedded only when a note is there", async () => {
+    const note = "> [!NOTE]\n> **Idea clave**\n>\n> El sistema lo redescubrió desde cero.\n";
+    const raw = await render(`Texto.\n\n${note}`);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Fraunces\w*-SemiBold/);
+    expect(raw).not.toMatch(SYSTEM_FONT);
+    expect(await render("Texto.\n\n> [!TIP]\n> Un consejo.\n")).not.toContain("Fraunces");
   });
 });
