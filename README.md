@@ -394,9 +394,12 @@ resumen se separan con una línea en blanco.
 
 **Acabado de los diagramas**: en todos los temas, las figuras de Mermaid tienen las esquinas
 ligeramente redondeadas (rectángulos, rombos, hexágonos, paralelogramos, trapecios, banderas,
-subgraphs, actores y notas), los títulos de los subgraphs van en negrita, y el relleno de figuras
-y subgraphs conserva su color pero es algo transparente, de modo que se ven el fondo de la página
-y las marcas de agua.
+subgraphs, actores y notas), y el relleno de figuras y subgraphs conserva su color pero es algo
+transparente, de modo que se ven el fondo de la página y las marcas de agua. Las figuras, los
+actores y las notas se rellenan con un degradado vertical muy suave de su color (un poco más
+claro arriba, un poco más oscuro abajo, también con los colores de `classDef` o `style`); los
+subgraphs mantienen su color liso, con el título en negrita sobre un encabezado algo más oscuro
+que el resto del subgraph (algo más claro en los temas oscuros).
 
 **Autoajuste de diagramas de flujo**: en el PDF, un diagrama más ancho que la columna o más alto
 que la página se reduce entero, y su texto puede quedar diminuto. Por eso mdrender dibuja cada

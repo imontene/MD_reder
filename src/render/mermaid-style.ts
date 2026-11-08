@@ -6,11 +6,15 @@
  *   trapezoid) redrawn as paths with eased corners, since an SVG polygon has no corner radius;
  * - subgraph titles in bold;
  * - shape and subgraph fills kept in their colours but partly transparent, so the page and its
- *   watermarks show through.
+ *   watermarks show through;
+ * - shapes (not subgraphs) filled with a very soft top-to-bottom gradient of their colour;
+ * - subgraph titles on a header band, a little darker than the subgraph (lighter on a dark one).
  *
  * The CSS goes to Mermaid as `themeCSS`, so it applies while Mermaid measures labels: a bold
- * subgraph title gets the room it needs. Polygons are rounded after rendering, which leaves the
- * diagram's size unchanged.
+ * subgraph title gets the room it needs, and `subGraphTitleMargin` leaves room for its band.
+ * The rest is done to the rendered SVG, which leaves the diagram's size unchanged: in the page
+ * Mermaid draws in, FILL_PROBE notes the colour Mermaid gave each shape (author `classDef` and
+ * `style` included); finishDiagram then rounds polygons, adds the gradients and the bands.
  */
 
 /** Corner radius of rectangles and polygon nodes, in CSS px. */
@@ -171,4 +175,168 @@ export function roundNodePolygons(svg: string, radius = CORNER_RADIUS): string {
       const corners = straightPathCorners(d);
       return corners ? `<path${before} d="${roundedPolygonPath(corners, radius)}"` : tag;
     });
+}
+
+/** Lightness added at the top of a shape's gradient and taken at its bottom, in HSL points. */
+export const GRADIENT_STEP = 4;
+
+/** How much darker (on a dark subgraph, lighter) a subgraph's header band is, in HSL points. */
+export const HEADER_STEP = 7;
+
+/** Room Mermaid leaves around a subgraph title (`flowchart.subGraphTitleMargin`), in px. */
+export const SUBGRAPH_TITLE_MARGIN = { top: 3, bottom: 6 };
+
+const FILL_ATTR = "data-mdr-fill";
+const CLUSTER_FILL_ATTR = "data-mdr-cluster-fill";
+
+/** Shapes that get a gradient: flowchart (and other) nodes, sequence actors and notes. */
+const GRADIENT_SHAPES = [
+  ".node rect.label-container",
+  ".node polygon.label-container",
+  ".node path.label-container",
+  ".node circle",
+  ".node ellipse",
+  ".node .outer-path path",
+  "rect.actor",
+  "rect.note",
+].join(", ");
+
+/**
+ * Runs in Mermaid's page (as source text, so no build step touches it): takes a rendered SVG,
+ * writes the fill colour Mermaid computed for each shape, and for each flowchart subgraph, into
+ * data attributes, and returns the SVG again.
+ */
+export const FILL_PROBE = `(svgText) => {
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  try {
+    host.innerHTML = svgText;
+    const svg = host.querySelector("svg");
+    if (!svg) return svgText;
+    const solid = (fill) => /^rgb\\(|^rgba\\((?![^)]*,\\s*0\\))/.test(fill);
+    for (const shape of svg.querySelectorAll(${JSON.stringify(GRADIENT_SHAPES)})) {
+      if (shape.closest(".cluster")) continue;
+      const fill = getComputedStyle(shape).fill;
+      if (solid(fill)) shape.setAttribute("${FILL_ATTR}", fill);
+    }
+    if ((svg.getAttribute("aria-roledescription") || "").startsWith("flowchart")) {
+      for (const cluster of svg.querySelectorAll("g.cluster")) {
+        const rect = cluster.querySelector(":scope > rect");
+        if (!rect || !cluster.querySelector(":scope > .cluster-label")) continue;
+        const fill = getComputedStyle(rect).fill;
+        if (solid(fill)) rect.setAttribute("${CLUSTER_FILL_ATTR}", fill);
+      }
+    }
+    return svg.outerHTML;
+  } finally {
+    host.remove();
+  }
+}`;
+
+type Hsl = [number, number, number];
+
+/** "rgb(r, g, b)" or "rgba(r, g, b, a)" (as getComputedStyle gives it) in HSL. */
+export function rgbToHsl(color: string): Hsl | undefined {
+  const match = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(color);
+  if (!match) return undefined;
+  const [r, g, b] = [match[1], match[2], match[3]].map((v) => Number(v) / 255) as Hsl;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l * 100];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h =
+    max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s * 100, l * 100];
+}
+
+const hsl = ([h, s, l]: Hsl, dl: number) =>
+  `hsl(${round(h)} ${round(s)}% ${round(Math.max(0, Math.min(100, l + dl)))}%)`;
+
+/** Set fill and fill-opacity (over Mermaid's CSS and the author's inline styles) on a tag. */
+function withFill(tag: string, fill: string, opacity: number): string {
+  const set = `fill: ${fill} !important; fill-opacity: ${opacity} !important`;
+  const style = /\sstyle="([^"]*)"/.exec(tag);
+  if (!style) return tag.replace(/^<\w+/, (open) => `${open} style="${set}"`);
+  const rest = style[1]!.trim().replace(/;?$/, style[1]!.trim() ? "; " : "");
+  return tag.replace(style[0], ` style="${rest}${set}"`);
+}
+
+/**
+ * Give every shape FILL_PROBE marked a vertical gradient of its colour: GRADIENT_STEP lighter at
+ * the top, as much darker at the bottom. One gradient per colour, named after the diagram. The
+ * see-through FILL_OPACITY goes in the gradient's stops: Chrome drops fill-opacity from a
+ * gradient fill when it prints to PDF.
+ */
+export function addFillGradients(svg: string): string {
+  const id = /<svg\b[^>]*?\sid="([^"]+)"/.exec(svg)?.[1] ?? "mermaid";
+  const gradients = new Map<string, string>();
+  const marked = new RegExp(`<\\w+\\b[^>]*?\\s${FILL_ATTR}="([^"]*)"[^>]*>`, "g");
+  const out = svg.replace(marked, (tag, color: string) => {
+    const bare = tag.replace(` ${FILL_ATTR}="${color}"`, "");
+    const base = rgbToHsl(color);
+    if (!base) return bare;
+    let name = gradients.get(color);
+    if (!name) {
+      name = `${id}-fill-${gradients.size}`;
+      gradients.set(color, name);
+    }
+    return withFill(bare, `url(#${name})`, 1);
+  });
+  if (gradients.size === 0) return out;
+  const defs = [...gradients]
+    .map(([color, name]) => {
+      const base = rgbToHsl(color)!;
+      return (
+        `<linearGradient id="${name}" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="${hsl(base, GRADIENT_STEP)}" stop-opacity="${FILL_OPACITY}"></stop>` +
+        `<stop offset="1" stop-color="${hsl(base, -GRADIENT_STEP)}" stop-opacity="${FILL_OPACITY}"></stop>` +
+        `</linearGradient>`
+      );
+    })
+    .join("");
+  return out.replace(/<svg\b[^>]*>/, (open) => `${open}<defs>${defs}</defs>`);
+}
+
+const number = (tag: string, name: string) =>
+  Number(new RegExp(`\\s${name}="(-?[\\d.]+)"`).exec(tag)?.[1]);
+
+const CLUSTER =
+  /(<g class="cluster\b[^"]*"[^>]*>)(<rect\b[^>]*>(?:<\/rect>)?)(<g class="cluster-label\b[^"]*" transform="translate\(\s*-?[\d.]+[\s,]+(-?[\d.]+)\s*\)"><foreignObject\b[^>]*>)/g;
+
+/**
+ * Put a header band behind each flowchart subgraph title FILL_PROBE marked: as wide as the
+ * subgraph, from its top to SUBGRAPH_TITLE_MARGIN.bottom under the title, with the subgraph's
+ * rounded top corners, in its colour HEADER_STEP darker (lighter when the subgraph is dark).
+ */
+export function addClusterHeads(svg: string, radius = CORNER_RADIUS): string {
+  return svg.replace(CLUSTER, (all, open: string, rect: string, label: string, ty: string) => {
+    const color = new RegExp(`\\s${CLUSTER_FILL_ATTR}="([^"]*)"`).exec(rect)?.[1];
+    if (color === undefined) return all;
+    const bare = rect.replace(` ${CLUSTER_FILL_ATTR}="${color}"`, "");
+    const base = rgbToHsl(color);
+    const [x, y, w] = [number(rect, "x"), number(rect, "y"), number(rect, "width")];
+    const labelHeight = number(label, "height");
+    if (!base || ![x, y, w, labelHeight].every(Number.isFinite)) return open + bare + label;
+    // Inside the subgraph's 1 px outline, which stays on top of the band.
+    const left = x + 0.5;
+    const top = y + 0.5;
+    const right = x + w - 0.5;
+    const bottom = Number(ty) + labelHeight + SUBGRAPH_TITLE_MARGIN.bottom;
+    const r = Math.max(0, Math.min(radius - 0.5, (bottom - top) / 2));
+    const d =
+      `M${round(left)},${round(bottom)} L${round(left)},${round(top + r)} ` +
+      `Q${round(left)},${round(top)} ${round(left + r)},${round(top)} ` +
+      `L${round(right - r)},${round(top)} Q${round(right)},${round(top)} ${round(right)},${round(top + r)} ` +
+      `L${round(right)},${round(bottom)} Z`;
+    const fill = hsl(base, base[2] < 50 ? HEADER_STEP : -HEADER_STEP);
+    const band = `<path class="cluster-head" d="${d}" style="fill: ${fill}; fill-opacity: ${FILL_OPACITY}; stroke: none"></path>`;
+    return open + bare + band + label;
+  });
+}
+
+/** Everything done to a rendered diagram: rounded polygons, gradients, subgraph headers. */
+export function finishDiagram(svg: string): string {
+  return addClusterHeads(addFillGradients(roundNodePolygons(svg)));
 }

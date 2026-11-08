@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- **Más acabado en los diagramas Mermaid**, en todos los temas:
+  - las figuras, los actores y las notas se rellenan con un degradado vertical muy suave de su
+    color, también el que pone el autor con `classDef` o `style`; los subgraphs mantienen su color
+    liso. La transparencia de los rellenos se conserva en el PDF, que sigue siendo vectorial;
+  - los subgraphs llevan un encabezado detrás del título: una franja algo más oscura que el resto
+    del subgraph, o algo más clara cuando el subgraph es oscuro. Mermaid deja unos píxeles más
+    alrededor del título para que la franja no toque los nodos.
+
 ## 2.11.1 — 2026-11-06
 
 - **Diagramas Mermaid en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): un

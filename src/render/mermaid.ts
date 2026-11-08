@@ -5,7 +5,12 @@ import type { MermaidFlip, MermaidTheme, TextFont } from "../options.js";
 import { mermaidPlaceholder } from "../markdown/mermaid.js";
 import type { BrowserSession } from "./browser.js";
 import { FONT_FAMILIES, fontFaceCss, fontStack } from "./fonts.js";
-import { MERMAID_THEME_CSS, roundNodePolygons } from "./mermaid-style.js";
+import {
+  FILL_PROBE,
+  finishDiagram,
+  MERMAID_THEME_CSS,
+  SUBGRAPH_TITLE_MARGIN,
+} from "./mermaid-style.js";
 import { escapeHtml } from "../html.js";
 import {
   authorConfigured,
@@ -100,7 +105,11 @@ function mermaidConfig(
     themeCSS: MERMAID_THEME_CSS,
     // Actors only at the top of sequence diagrams: repeating them below costs height.
     sequence: { mirrorActors: false },
-    ...(wrap === undefined ? {} : { flowchart: { wrappingWidth: wrap } }),
+    flowchart: {
+      // Room for the header band behind subgraph titles (render/mermaid-style.ts).
+      subGraphTitleMargin: SUBGRAPH_TITLE_MARGIN,
+      ...(wrap === undefined ? {} : { wrappingWidth: wrap }),
+    },
   };
 }
 
@@ -134,6 +143,7 @@ body { margin: 0; width: ${widthPx}px; font-family: ${fontStack(font)}; }</style
 </head><body></body></html>`,
     );
     await page.evaluate(mermaidJs);
+    await page.evaluate(`globalThis.mdrFillProbe = ${FILL_PROBE};`);
     await page.evaluate(async (family: string) => {
       // Runs in the browser. The project is compiled without DOM types, hence PageGlobals.
       const { document } = globalThis as unknown as PageGlobals;
@@ -147,11 +157,13 @@ body { margin: 0; width: ${widthPx}px; font-family: ${fontStack(font)}; }</style
       page
         .evaluate(
           async (source: string, id: string, config: Record<string, unknown>) => {
-            const { mermaid } = globalThis as unknown as PageGlobals;
+            const { mermaid, mdrFillProbe } = globalThis as unknown as PageGlobals;
             // Each render sets the whole configuration, so one layout never leaks into the next.
             mermaid.initialize(config);
             try {
-              return { svg: (await mermaid.render(id, source)).svg };
+              const { svg } = await mermaid.render(id, source);
+              // Note each shape's computed colour for finishDiagram (render/mermaid-style.ts).
+              return { svg: mdrFillProbe(svg) };
             } catch (error) {
               return { error: String((error as Error)?.message ?? error) };
             }
@@ -161,8 +173,8 @@ body { margin: 0; width: ${widthPx}px; font-family: ${fontStack(font)}; }</style
           mermaidConfig(theme, font, fontPx, wrap, options.themeVariables),
         )
         .then((result: { svg: string } | { error: string }) =>
-          // Rounding the polygons keeps each diagram's size, so autofit measures it the same.
-          "svg" in result ? { svg: roundNodePolygons(result.svg) } : result,
+          // The finish keeps each diagram's size, so autofit measures it the same.
+          "svg" in result ? { svg: finishDiagram(result.svg) } : result,
         );
 
     const results: DiagramResult[] = [];
@@ -236,6 +248,7 @@ interface PageGlobals {
     initialize(config: Record<string, unknown>): void;
     render(id: string, text: string): Promise<{ svg: string }>;
   };
+  mdrFillProbe(svg: string): string;
 }
 
 /**
