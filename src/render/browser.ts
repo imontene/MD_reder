@@ -42,11 +42,49 @@ export interface PrintOptions {
   /** Let the page load http(s) resources (remote images, stylesheets). Off by default. */
   allowRemote?: boolean;
   /**
-   * Width of the text column in CSS px. When set, the soft hyphens that do not fall at the end of
-   * a line are removed before printing (see SOFT_HYPHEN_CLEANUP).
+   * Width of the page's text area in CSS px. When set, the page is laid out at that width with
+   * print styles before printing, to fit each figure's image above its caption (see
+   * FIGURE_FIT) and, with `cleanSoftHyphens`, to drop the soft hyphens that do not fall
+   * at the end of a line (see SOFT_HYPHEN_CLEANUP).
    */
-  softHyphensWidthPx?: number;
+  textWidthPx?: number;
+  cleanSoftHyphens?: boolean;
 }
+
+/**
+ * Fit each figure on its page. Images are scaled down to the page's text height (theme.css); a
+ * figure's caption must fit on the same page, or it lands alone on the next one. Each captioned
+ * figure gets `--caption-room`: the caption's height with its top margin, plus the figure's
+ * bottom margin (kept at the foot of a page when the figure spans the columns). Then an image
+ * stretched to its column's width (magazine themes) but cut down in height gets the width of
+ * its proportions back. Runs as our own code in the print page.
+ */
+export const FIGURE_FIT = `(width) => {
+  const root = document.documentElement;
+  root.style.width = width + "px";
+  try {
+    let fitted = 0;
+    for (const figure of document.querySelectorAll("figure")) {
+      const caption = figure.querySelector(":scope > figcaption");
+      if (!caption || !figure.querySelector(":scope > img, :scope > a > img")) continue;
+      const px = (element, property) => parseFloat(getComputedStyle(element)[property]) || 0;
+      const room =
+        caption.getBoundingClientRect().height + px(caption, "marginTop") + px(figure, "marginBottom");
+      figure.style.setProperty("--caption-room", Math.ceil(room) + "px");
+      fitted++;
+    }
+    for (const image of document.querySelectorAll("figure img")) {
+      const ratio = image.naturalWidth / image.naturalHeight;
+      const box = image.getBoundingClientRect();
+      if (!(ratio > 0) || box.height === 0 || box.width <= box.height * ratio * 1.01) continue;
+      image.style.width = box.height * ratio + "px";
+      image.style.marginLeft = image.style.marginRight = "auto";
+    }
+    return fitted;
+  } finally {
+    root.style.width = "";
+  }
+}`;
 
 /**
  * Keep only the soft hyphens (U+00AD) where a line actually breaks. Chrome copies every soft
@@ -183,10 +221,12 @@ export class BrowserSession {
       await page.setContent(html, { waitUntil: "load" });
       // Make sure every embedded font has loaded before printing.
       await page.evaluate("document.fonts.ready.then(() => undefined)");
-      if (options.softHyphensWidthPx !== undefined) {
+      if (options.textWidthPx !== undefined) {
+        const width = options.textWidthPx;
         await page.emulateMediaType("print");
-        await page.setViewport({ width: Math.ceil(options.softHyphensWidthPx), height: 1000 });
-        await page.evaluate(`(${SOFT_HYPHEN_CLEANUP})(${options.softHyphensWidthPx})`);
+        await page.setViewport({ width: Math.ceil(width), height: 1000 });
+        await page.evaluate(`(${FIGURE_FIT})(${width})`);
+        if (options.cleanSoftHyphens) await page.evaluate(`(${SOFT_HYPHEN_CLEANUP})(${width})`);
       }
       const pdf = await page.pdf({
         format: options.format ?? "A4",

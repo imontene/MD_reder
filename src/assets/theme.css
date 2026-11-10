@@ -360,8 +360,9 @@ div.math-error {
 }
 
 @media print {
+  /* --caption-room: a figure's caption and margin under it, measured at print time (browser.ts). */
   img {
-    max-height: calc(var(--page-content-height) - 6mm);
+    max-height: calc(var(--page-content-height) - 6mm - var(--caption-room, 0px));
   }
 
   .mermaid-diagram svg {
@@ -370,7 +371,7 @@ div.math-error {
 
   /* Next to its heading: leave room for it (HEADING_ALLOWANCE_EM in render/mermaid.ts). */
   .keep-with-heading img {
-    max-height: calc(var(--page-content-height) - 6mm - 5rem);
+    max-height: calc(var(--page-content-height) - 6mm - 5rem - var(--caption-room, 0px));
   }
 
   .keep-with-heading .mermaid-diagram svg {

@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { deflateSync } from "node:zlib";
+import { getDocument, OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
 import { convertFile } from "../src/convert.js";
 import { browserRequired, fixture, tempDir, testBrowser } from "./helpers.js";
@@ -431,5 +432,111 @@ describe.skipIf(!browser && !browserRequired)("magazine layout", () => {
       }
     }
     await doc.cleanup();
+  });
+});
+
+/** A solid-colour PNG of the given size. */
+function png(width: number, height: number): Buffer {
+  const table = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (data: Buffer) => {
+    let c = 0xffffffff;
+    for (const byte of data) c = table[(c ^ byte) & 0xff]! ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type, "latin1"), data]);
+    const out = Buffer.alloc(body.length + 8);
+    out.writeUInt32BE(data.length, 0);
+    body.copy(out, 4);
+    out.writeUInt32BE(crc(body), body.length + 4);
+    return out;
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8); // 8-bit RGB
+  const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(width * 3, 0x60)]);
+  const pixels = deflateSync(Buffer.concat(Array.from({ length: height }, () => row)));
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", header),
+    chunk("IDAT", pixels),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+describe.skipIf(!browser && !browserRequired)("page-tall figures", () => {
+  const caption = "Una figura muy alta con una leyenda larga que ocupa varias líneas en la columna";
+
+  /** Per page: its text and the width / height of each image drawn on it. */
+  const render = async (theme: string, wide: boolean) => {
+    const dir = tempDir();
+    writeFileSync(path.join(dir, "alta.png"), png(300, 1600));
+    const input = path.join(dir, "doc.md");
+    const image = `![${caption}](alta.png${wide ? "#wide" : ""})`;
+    writeFileSync(input, `Texto antes.\n\n${image}\n\nTexto después.\n`);
+    const output = path.join(dir, "doc.pdf");
+    const result = await convertFile({
+      input,
+      output,
+      format: "pdf",
+      config: false,
+      overrides: { theme },
+    });
+    expect(result.diagnostics).toEqual([]);
+    const doc = await getDocument({ data: new Uint8Array(readFileSync(output)) }).promise;
+    const pages: { text: string; ratios: number[] }[] = [];
+    for (let n = 1; n <= doc.numPages; n++) {
+      const page = await doc.getPage(n);
+      const items = (await page.getTextContent()).items;
+      const text = items.map((i) => ("str" in i ? i.str : "")).join(" ");
+      // Follow the transformation matrix to the size each image is drawn at.
+      const ops = await page.getOperatorList();
+      const ratios: number[] = [];
+      const stack: number[][] = [];
+      let m = [1, 0, 0, 1, 0, 0];
+      ops.fnArray.forEach((fn, i) => {
+        if (fn === OPS.save) stack.push(m);
+        else if (fn === OPS.restore) m = stack.pop() ?? m;
+        else if (fn === OPS.transform) {
+          const [a, b, c, d, e, f] = ops.argsArray[i] as number[];
+          const [A, B, C, D, E, F] = m as [number, number, number, number, number, number];
+          m = [
+            a! * A + b! * C,
+            a! * B + b! * D,
+            c! * A + d! * C,
+            c! * B + d! * D,
+            e! * A + f! * C + E,
+            e! * B + f! * D + F,
+          ];
+        } else if (fn === OPS.paintImageXObject) {
+          ratios.push(Math.hypot(m[0]!, m[1]!) / Math.hypot(m[2]!, m[3]!));
+        }
+      });
+      pages.push({ text: text.replace(/\s+/g, " "), ratios });
+    }
+    await doc.cleanup();
+    return pages;
+  };
+
+  it.each([
+    ["academic_basic", false],
+    ["academic_basic", true],
+    ["tech_magazine", false],
+    ["tech_magazine", true],
+  ])("in %s (wide: %s) keep their caption on their page, in proportion", async (theme, wide) => {
+    const pages = await render(theme, wide);
+    // The image once, in its proportions, with its caption on the same page (it used to land
+    // alone on the next one); no page is left without text.
+    const withImage = pages.filter((p) => p.ratios.length > 0);
+    expect(withImage).toHaveLength(1);
+    expect(withImage[0]!.ratios).toHaveLength(1);
+    expect(withImage[0]!.ratios[0]).toBeCloseTo(300 / 1600, 2);
+    expect(withImage[0]!.text).toContain("leyenda larga");
+    for (const page of pages) expect(page.text.replace(/\d/g, "").trim()).not.toBe("");
   });
 });

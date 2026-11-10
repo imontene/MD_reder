@@ -427,9 +427,8 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
           ? headerFooterTemplate(footer, values, margin, options.font, pageLook)
           : undefined,
         allowRemote: convert.allowRemote,
-        softHyphensWidthPx: options.justify
-          ? textWidthPx(options.pageSize, options.orientation === "landscape", margin)
-          : undefined,
+        textWidthPx: textWidthPx(options.pageSize, options.orientation === "landscape", margin),
+        cleanSoftHyphens: options.justify,
       });
       for (const url of blocked) {
         const hint = /^https?:/i.test(url) ? " (use --allow-remote to download it)" : "";

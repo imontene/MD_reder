@@ -1,5 +1,14 @@
 # Cambios
 
+## Sin publicar
+
+- **Figuras tan altas como la página** (temas `academic_basic`, `tech_magazine` y
+  `tech_magazine-dark`), en el PDF:
+  - la leyenda ya no queda sola en la página siguiente: la imagen se reduce lo justo para dejar
+    sitio a su leyenda, que se mide al imprimir, sea de una línea o de varias;
+  - en los temas de revista, una imagen recortada en altura ya no se estira a lo ancho: conserva
+    sus proporciones, centrada y con sus esquinas redondeadas.
+
 ## 2.14.0 — 2026-11-10
 
 - **Temas de revista a dos columnas** (`tech_magazine` y `tech_magazine-dark`), en el PDF:

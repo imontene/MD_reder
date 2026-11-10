@@ -320,7 +320,8 @@ Juntos ahorran entre un 15 y un 25 % de páginas. Además, siempre:
 - Los bloques de código largos continúan en la página siguiente (con al menos 4 líneas a cada
   lado del corte) en lugar de saltar enteros y dejar un hueco; los de hasta 12 líneas no se
   parten.
-- Las imágenes y diagramas más altos que la página se reducen para caber en una sola.
+- Las imágenes y diagramas más altos que la página se reducen para caber en una sola, con su
+  leyenda y en sus proporciones.
 - Los diagramas de secuencia no repiten los actores al pie.
 
 **Encabezado y pie**: texto con marcadores `{page}`, `{pages}`, `{title}`, `{author}` y
