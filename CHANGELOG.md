@@ -1,5 +1,17 @@
 # Cambios
 
+## Sin publicar
+
+- **Revista `Introspect`**: el paquete trae la carpeta `tech_magazine/Introspect/`, con las
+  mismas cuatro portadas y el mismo `magazine.json` (acento, tintas y velos) que
+  `AlphaZeroChess`. `magazine-name: Introspect` ya tiene portada y pone «Introspect» en la
+  cabecera y el pie. `AlphaZeroChess` no cambia y sigue siendo el valor por defecto.
+- **Licencia de las portadas**: las portadas de revista del paquete (`tech_magazine/`, imágenes
+  y `magazine.json`) se distribuyen desde esta versión bajo CC BY-NC-ND 4.0 (titular: Ivan
+  Montenegro, IMMA AI Works), no bajo la MIT del código. Ver `tech_magazine/LICENSE.md`; el
+  campo `license` de `package.json` pasa a `MIT AND CC-BY-NC-ND-4.0` y los ejecutables traen
+  `LICENSE-tech_magazine.md`. Las versiones 2.14.1 y anteriores siguen bajo MIT.
+
 ## 2.14.1 — 2026-11-10
 
 - **Figuras tan altas como la página** (temas `academic_basic`, `tech_magazine` y

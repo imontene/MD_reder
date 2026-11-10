@@ -22,7 +22,7 @@
     "type": "git",
     "url": "https://github.com/imontene/MD_reder.git"
   },
-  "license": "MIT",
+  "license": "MIT AND CC-BY-NC-ND-4.0",
   "type": "module",
   "bin": {
     "mdrender": "dist/bin.js"

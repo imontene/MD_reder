@@ -108,6 +108,7 @@ jobs:
           mkdir -p "dist-release/$name"
           exe=build/sea/mdrender; [ -f "$exe.exe" ] && exe="$exe.exe"
           cp "$exe" build/sea/THIRD-PARTY-NOTICES.txt README.md LICENSE "dist-release/$name/"
+          cp tech_magazine/LICENSE.md "dist-release/$name/LICENSE-tech_magazine.md"
           cd dist-release
           if [ "${{ runner.os }}" = Windows ]; then
             7z a -tzip "$name.zip" "$name" > /dev/null

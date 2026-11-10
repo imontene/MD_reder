@@ -254,7 +254,9 @@ el número de página a la derecha, en todas las páginas menos la portada.
 
 Las imágenes de portada de una revista **deben** estar en `tech_magazine/<magazine-name>/`.
 mdrender busca esa carpeta primero junto al archivo `.md` y, si no existe, entre las que trae
-incluidas (hoy, `AlphaZeroChess` con 4 portadas).
+incluidas: `AlphaZeroChess` e `Introspect`, con las mismas 4 portadas y el mismo `magazine.json`.
+Las portadas incluidas se distribuyen bajo CC BY-NC-ND 4.0, no bajo la MIT del código (ver
+`tech_magazine/LICENSE.md`).
 
 ```text
 mi-articulo.md
@@ -297,8 +299,8 @@ texto, que lo hace legible sobre la imagen):
 | `covers.<n>.veil` | color CSS            | Color del velo, que se desvanece hacia la mitad de la hoja      |
 
 Sin `veil`, el velo es blanco al 60 % con tinta oscura y negro al 60 % con tinta clara. Un
-`magazine.json` mal formado se ignora con un aviso. En `AlphaZeroChess`, las portadas 1 y 3
-llevan tinta oscura y la 2 y la 4 tinta clara.
+`magazine.json` mal formado se ignora con un aviso. En `AlphaZeroChess` e `Introspect`, las
+portadas 1 y 3 llevan tinta oscura y la 2 y la 4 tinta clara.
 
 ### 4.5 Estructura del cuerpo
 

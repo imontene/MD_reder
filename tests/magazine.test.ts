@@ -1,10 +1,14 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { mergeOptions, normalizeOptions, resolveMargins } from "../src/options.js";
+import type { Diagnostic } from "../src/diagnostics.js";
 import {
   coverNumber,
   cssString,
+  findMagazine,
   magazinePage,
   type MagazineInput,
 } from "../src/render/magazine.js";
@@ -151,4 +155,82 @@ describe("magazinePage", () => {
   it("writes CSS strings safely", () => {
     expect(cssString('A "B" \\ C\nD')).toBe('"A \\"B\\" \\\\ C D"');
   });
+});
+
+describe("bundled magazines", () => {
+  /** sha256 of the covers as published in 2.14.1 (and of the project's originals). */
+  const COVERS_SHA256: Record<string, string> = {
+    "cover01.png": "402d4ddb62cdfdfe283a4f13fdd4e8610c7123bb43773b1ec6edb0c7fd65e2d8",
+    "cover02.png": "89893a626dff29b05f375f437a52f57cf4d07aee7b04196755dd224ee6e1991f",
+    "cover03.png": "cb4fb524226a71dbd1c922de13c37911e376510b06527e4e9c3e966ec55fd79a",
+    "cover04.png": "a171fd49800f0221c37040a0ee33b304237a54b48303260a5203e2a19d7c297e",
+    "magazine.json": "5686e2b7d7c75fa01f68283257b48a6aabbedfa92bdd874ae85a3044cf367ae7",
+  };
+  const sha256 = (data: Buffer) => createHash("sha256").update(data).digest("hex");
+
+  it("ship Introspect with the same four covers, inks and accent as AlphaZeroChess", () => {
+    for (const name of ["Introspect", "AlphaZeroChess"]) {
+      const diagnostics: Diagnostic[] = [];
+      const folder = findMagazine(name, tempDir(), diagnostics);
+      expect(diagnostics).toEqual([]);
+      expect(folder.where).toBe(`tech_magazine/${name}`);
+      expect(folder.covers.map((cover) => cover.number)).toEqual([1, 2, 3, 4]);
+      expect(folder.settings.accent).toBe("#2f6bff");
+      expect([1, 2, 3, 4].map((n) => folder.settings.covers?.[String(n)]?.ink)).toEqual([
+        "dark",
+        "light",
+        "dark",
+        "light",
+      ]);
+      for (const file of Object.keys(COVERS_SHA256)) {
+        const bytes = readFileSync(path.join("tech_magazine", name, file));
+        expect(sha256(bytes), `${name}/${file}`).toBe(COVERS_SHA256[file]);
+      }
+    }
+  });
+
+  it("print an Introspect cover with its name in the masthead and the footer", () => {
+    const introspect = page({ "magazine-name": "Introspect", cover: 1 });
+    expect(introspect.diagnostics).toEqual([]);
+    expect(introspect.coverNumber).toBe(1);
+    const picture = readFileSync("tech_magazine/Introspect/cover01.png").toString("base64");
+    expect(introspect.css).toContain(`url("data:image/png;base64,${picture}")`);
+    expect(introspect.css).toContain('.doc-header::before { content: "Introspect"; }');
+    expect(introspect.css).toContain('@bottom-left { content: "Introspect"; }');
+    expect(introspect.css).not.toContain("AlphaZeroChess");
+
+    // AlphaZeroChess prints as before: the same picture, under its own name.
+    const alpha = page({ "magazine-name": "AlphaZeroChess", cover: 1 });
+    expect(alpha.diagnostics).toEqual([]);
+    expect(alpha.css).toBe(introspect.css.replaceAll("Introspect", "AlphaZeroChess"));
+    expect(page({ cover: 1 }).css).toBe(alpha.css); // still the default
+  });
+
+  it("still prefer a local Introspect folder next to the document", () => {
+    const baseDir = tempDir();
+    const folder = path.join(baseDir, "tech_magazine", "Introspect");
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(path.join(folder, "portada5.svg"), SVG);
+    const result = page({ "magazine-name": "Introspect" }, { baseDir });
+    expect(result.coverNumber).toBe(5);
+    expect(result.css).toContain('url("data:image/svg+xml;base64,');
+  });
+
+  it("are packed with their own licence", () => {
+    const out = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], {
+      encoding: "utf8",
+      shell: process.platform === "win32",
+    });
+    const files = (JSON.parse(out) as { files: { path: string }[] }[])[0]!.files.map((f) => f.path);
+    for (const name of ["AlphaZeroChess", "Introspect"]) {
+      for (const file of Object.keys(COVERS_SHA256)) {
+        expect(files).toContain(`tech_magazine/${name}/${file}`);
+      }
+    }
+    expect(files).toContain("tech_magazine/LICENSE.md");
+    const pkg = JSON.parse(readFileSync("package.json", "utf8")) as { license: string };
+    expect(pkg.license).toBe("MIT AND CC-BY-NC-ND-4.0");
+    expect(readFileSync("LICENSE", "utf8")).toContain("tech_magazine/LICENSE.md");
+    expect(readFileSync("tech_magazine/LICENSE.md", "utf8")).toContain("CC BY-NC-ND 4.0");
+  }, 60_000);
 });

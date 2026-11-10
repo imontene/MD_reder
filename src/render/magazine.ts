@@ -48,7 +48,7 @@ interface CoverFile {
   read: () => Buffer;
 }
 
-interface MagazineFolder {
+export interface MagazineFolder {
   /** Where the pictures were found, for messages. */
   where: string;
   covers: CoverFile[];
@@ -90,7 +90,11 @@ function toCovers(files: { name: string; read: () => Buffer }[]): CoverFile[] {
 }
 
 /** The magazine's folder next to the document, else the one shipped with mdrender. */
-function findMagazine(name: string, baseDir: string, diagnostics: Diagnostic[]): MagazineFolder {
+export function findMagazine(
+  name: string,
+  baseDir: string,
+  diagnostics: Diagnostic[],
+): MagazineFolder {
   const local = path.join(baseDir, MAGAZINE_DIR, name);
   if (existsSync(local) && statSync(local).isDirectory()) {
     const where = path.join(MAGAZINE_DIR, name);

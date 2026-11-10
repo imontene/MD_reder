@@ -260,14 +260,15 @@ Campos del front matter (o de `mdrender.config.json`) para la portada:
 | `accent`        | Color de acento: capitular, títulos pequeños, líneas (`"#2f6bff"`, `rgb(…)`, un nombre…) | el de la revista, o `#2f6bff`  |
 
 Las imágenes se buscan en `tech_magazine/<magazine-name>/`, primero junto al `.md` y si no,
-entre las que trae mdrender (hoy, `AlphaZeroChess` con 4 portadas). El número de una imagen es
+entre las que trae mdrender: `AlphaZeroChess` e `Introspect`, con las mismas 4 portadas y las
+mismas tintas. El número de una imagen es
 el último grupo de cifras de su nombre: `cover03.png`, `portada-3.jpg`. Admite PNG, JPEG, WebP,
 AVIF y SVG.
 
 Un `magazine.json` opcional en esa carpeta fija el acento de la revista y, para cada portada, la
 tinta y el velo detrás del texto. Lo que diga para una portada prevalece sobre `cover-ink`,
-porque la imagen decide qué color se lee sobre ella. En `AlphaZeroChess`, las portadas 1 y 3
-llevan texto oscuro y la 2 y la 4 texto claro:
+porque la imagen decide qué color se lee sobre ella. En `AlphaZeroChess` e `Introspect`, las
+portadas 1 y 3 llevan texto oscuro y la 2 y la 4 texto claro:
 
 ```json
 {
@@ -488,6 +489,11 @@ cambios: [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
-[MIT](LICENSE). Manrope, Inter, JetBrains Mono, STIX Two Text, Newsreader y Fraunces se distribuyen bajo la
-[SIL Open Font License 1.1](https://openfontlicense.org); los ejecutables incluyen
-`THIRD-PARTY-NOTICES.txt` con las licencias de todos los componentes.
+El código, [MIT](LICENSE). Las portadas de revista que trae el paquete (`tech_magazine/`:
+`AlphaZeroChess` e `Introspect`, imágenes y `magazine.json`) no son MIT: desde la 2.15.0 se
+distribuyen bajo [CC BY-NC-ND 4.0](tech_magazine/LICENSE.md), con uso no comercial y sin
+modificarlas; para tu propia revista, pon tus portadas en una carpeta `tech_magazine/` junto al
+`.md`. Manrope, Inter, JetBrains Mono, STIX Two Text, Newsreader y Fraunces se distribuyen bajo
+la [SIL Open Font License 1.1](https://openfontlicense.org); los ejecutables incluyen
+`THIRD-PARTY-NOTICES.txt` con las licencias de todos los componentes y
+`LICENSE-tech_magazine.md` con la de las portadas.
