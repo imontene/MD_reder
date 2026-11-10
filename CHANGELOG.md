@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.14.1 — 2026-11-10
 
 - **Figuras tan altas como la página** (temas `academic_basic`, `tech_magazine` y
   `tech_magazine-dark`), en el PDF:
