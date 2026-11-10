@@ -98,6 +98,12 @@ describe("tech_magazine theme", () => {
     expect(fonts).toMatch(/font-family: 'Newsreader';\s+font-style: italic;/);
     expect(fonts).not.toMatch(/url\((?!data:font\/woff2)/);
     expect(css.join("\n")).toContain("--tm-accent: #2f6bff;");
+    // Two columns in the PDF; the cover and diagrams span them, titles never end a column.
+    expect(css.join("\n")).toMatch(/@media print \{\s*\.markdown-body \{[^}]*columns: 2;/);
+    expect(css.join("\n")).toMatch(
+      /\.doc-header,[^{]*\.mermaid-diagram,[^{]*\{\s*column-span: all;/,
+    );
+    expect(css.join("\n")).toMatch(/h4 \{\s*break-after: avoid;\s*break-inside: avoid;/);
     // Notes (key ideas) on a tinted card, in Fraunces; the other alerts keep the grey card.
     expect(css.join("\n")).toMatch(
       /\.markdown-alert-note \{[^}]*background: color-mix\(in srgb, var\(--tm-accent-text\) 9%, var\(--tm-bg\)\);/,

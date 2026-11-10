@@ -232,8 +232,12 @@ negro): el aspecto de una revista de divulgación tecnológica. Ejemplo:
   una imagen de borde a borde, el nombre de la revista arriba, la etiqueta (`kicker`), el
   título, la bajada (`subtitle`) y la firma (`author` y `date`). La portada no lleva
   encabezado ni pie.
-- Inter de 300 a 800 en una columna amplia de párrafos justificados (salvo las citas
-  destacadas; `--no-justify` lo desactiva), y la serifa
+- En el PDF, **dos columnas** de párrafos justificados (salvo las citas destacadas;
+  `--no-justify` lo desactiva) entre márgenes laterales de 16 mm; la portada queda sola en su
+  página, a sangre. Los diagramas, las figuras anchas y los títulos `#` ocupan las dos columnas;
+  tablas, notas, citas y código, su columna. Un título nunca queda solo al pie de una columna o
+  página. En el HTML se ve a una sola columna.
+- Inter de 300 a 800 y la serifa
   [Newsreader](https://fonts.google.com/specimen/Newsreader) en la bajada, la letra capitular
   del primer párrafo y las citas destacadas (`> cita`).
 - Las notas (`> [!NOTE]`) son las ideas clave: una tarjeta teñida con el color de acento y el

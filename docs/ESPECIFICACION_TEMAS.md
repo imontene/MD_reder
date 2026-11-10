@@ -212,7 +212,7 @@ Ejemplo completo: [`examples/articulo-academico.md`](../examples/articulo-academ
 ### 4.1 Uso previsto
 
 Reportajes y artículos de divulgación con aspecto de revista de tecnología: portada a sangre
-con una imagen, Inter de 300 a 800 en una sola columna sin justificar, y la serifa Newsreader
+con una imagen, Inter de 300 a 800 a dos columnas justificadas en el PDF, y la serifa Newsreader
 en la bajada, la letra capitular y las citas destacadas. `tech_magazine-dark` imprime el
 artículo sobre fondo negro.
 
@@ -245,8 +245,9 @@ Reglas:
   fijar `cover`.
 - La fecha aparece arriba a la derecha de la portada y en el pie: conviene que sea corta.
 
-Valores por defecto del tema: márgenes de 20 mm arriba, 24 mm a los lados y 22 mm abajo, texto
-de 10,5 pt, `font: inter`, párrafos sin justificar. Pie: «{magazine} · {date}» a la izquierda y
+Valores por defecto del tema: márgenes de 20 mm arriba, 16 mm a los lados y 22 mm abajo (la
+portada va a sangre, sin márgenes), texto de 10,5 pt, `font: inter`, párrafos justificados, dos
+columnas en el PDF. Pie: «{magazine} · {date}» a la izquierda y
 el número de página a la derecha, en todas las páginas menos la portada.
 
 ### 4.3 Carpeta de portadas

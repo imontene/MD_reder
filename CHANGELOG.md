@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- **Temas de revista a dos columnas** (`tech_magazine` y `tech_magazine-dark`), en el PDF:
+  - el artículo se diagrama a dos columnas; la portada sigue sola en la página 1, a sangre y
+    sin cambios. Los diagramas, las figuras anchas y los títulos `#` ocupan las dos columnas;
+    las tablas, las notas, las citas destacadas y el código quedan en su columna, y las tablas
+    no se parten;
+  - un título nunca queda solo al pie de una columna o página, ni partido entre dos;
+  - márgenes laterales de 16 mm (antes 24 mm). El HTML sigue a una sola columna.
+
 ## 2.13.0 — 2026-11-08
 
 - **Ideas clave en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): las notas

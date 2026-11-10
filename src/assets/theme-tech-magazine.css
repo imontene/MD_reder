@@ -116,10 +116,44 @@ body {
   max-width: 680px;
 }
 
-/* In the PDF the page margins set the column, and the cover spans the whole sheet. */
+/*
+ * In the PDF: two columns between the page margins. The cover, alone on page 1, spans the whole
+ * sheet; diagrams, wide figures and top-level titles span both columns; tables, notes, pull
+ * quotes and code stay in their column. The HTML keeps one column.
+ */
 @media print {
   .markdown-body {
     max-width: none;
+    columns: 2;
+    column-gap: 7mm;
+  }
+
+  .doc-header,
+  .markdown-body > h1,
+  .toc,
+  .mermaid-diagram,
+  .figure-wide,
+  .keep-with-heading:has(.mermaid-diagram, .figure-wide) {
+    column-span: all;
+  }
+
+  /* A title is never left alone at the foot of a column or page, nor split across two. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  /* Spec sheets stay whole in their column. */
+  table {
+    break-inside: avoid;
+  }
+
+  /* Pull quotes take their column's width (62% of the page's single column on screen). */
+  .markdown-body blockquote:not(.markdown-alert) {
+    width: auto;
   }
 }
 
@@ -362,6 +396,7 @@ blockquote:not(.markdown-alert) p {
 @media print {
   .markdown-body > blockquote:not(.markdown-alert) > p:not(.markdown-alert-title) {
     text-align: left;
+    hyphens: none;
   }
 }
 
@@ -554,8 +589,12 @@ hr::after {
   padding: 1.4em;
   border-radius: 18px;
   background: var(--tm-surface);
-  /* The padding above and below: a page-tall diagram still fits its page inside the card. */
-  --diagram-frame: 2.8em;
+  /*
+   * The padding above and below, and the margin below: a page-tall diagram still fits its page
+   * inside the card. (Across the two columns of the PDF, the margin under a diagram is not
+   * dropped at the foot of a page: without it, the diagram would push an empty page.)
+   */
+  --diagram-frame: 4.6em;
 }
 
 /* Footnotes: small, after a short rule. */

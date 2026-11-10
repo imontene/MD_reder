@@ -136,9 +136,9 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   lang: DEFAULT_LANG,
 };
 
-/** The magazine themes: one wide column in Inter on generous margins. */
+/** The magazine themes: two columns in Inter, with 16 mm side margins (the cover bleeds). */
 const MAGAZINE_DEFAULTS: Partial<DocumentOptions> = {
-  margin: "20mm 24mm 22mm",
+  margin: "20mm 16mm 22mm",
   fontSize: "10.5pt",
   font: "inter",
 };

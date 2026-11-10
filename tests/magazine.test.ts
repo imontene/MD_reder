@@ -54,10 +54,10 @@ describe("magazine options", () => {
     expect(() => normalizeOptions({ cover: "uno" }, "fm", "/")).toThrow("number");
   });
 
-  it("sets one justified column in Inter on wide margins", () => {
+  it("sets justified text in Inter, with 16 mm side margins", () => {
     for (const theme of ["tech_magazine", "tech_magazine-dark"]) {
       expect(mergeOptions({ theme })).toMatchObject({
-        margin: "20mm 24mm 22mm",
+        margin: "20mm 16mm 22mm",
         font: "inter",
         justify: true,
       });
@@ -129,7 +129,7 @@ describe("magazinePage", () => {
 
   it("draws the margins, header and footer, with none on the cover", () => {
     const css = page({ cover: 1, date: "Noviembre de 2026" }).css;
-    expect(css).toContain("margin: 20mm 24mm 22mm 24mm;");
+    expect(css).toContain("margin: 20mm 16mm 22mm 16mm;");
     expect(css).toContain('@bottom-left { content: "AlphaZeroChess · Noviembre de 2026"; }');
     expect(css).toContain("@bottom-right { content: counter(page); }");
     expect(css).toMatch(/@page :first \{\n {2}margin: 0;\n {2}@top-left \{ content: none; \}/);

@@ -348,3 +348,88 @@ describe.skipIf(!browser && !browserRequired)("magazine key ideas", () => {
     expect(await render("Texto.\n\n> [!TIP]\n> Un consejo.\n")).not.toContain("Fraunces");
   });
 });
+
+describe.skipIf(!browser && !browserRequired)("magazine layout", () => {
+  /** A long article: many titles of different kinds between paragraphs of varied length. */
+  function article(): string {
+    let seed = 2;
+    const next = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const words =
+      "la red aprende de cada partida y ajusta sus estimaciones sobre qué jugadas conviene mirar".split(
+        " ",
+      );
+    const paragraph = (min: number, max: number) => {
+      const n = min + Math.floor(next() * (max - min));
+      const text = Array.from({ length: n }, () => words[Math.floor(next() * words.length)]).join(
+        " ",
+      );
+      return `${text[0]!.toUpperCase()}${text.slice(1)}.`;
+    };
+    const parts = ["---", "title: Revista", "---", "", "Texto inicial del artículo.", ""];
+    for (let k = 1; k <= 10; k++) {
+      parts.push(`## Sección ${k} con un título largo`, "");
+      for (let j = 0; j < 1 + Math.floor(next() * 3); j++) parts.push(paragraph(15, 90), "");
+      parts.push(`#### Apartado ${k}`, "", paragraph(20, 70), "");
+    }
+    return parts.join("\n");
+  }
+
+  it("prints the cover alone, then two columns where no title ends a column", async () => {
+    const dir = tempDir();
+    const input = path.join(dir, "doc.md");
+    writeFileSync(input, article());
+    const output = path.join(dir, "doc.pdf");
+    const result = await convertFile({
+      input,
+      output,
+      format: "pdf",
+      config: false,
+      overrides: { theme: "tech_magazine" },
+    });
+    expect(result.diagnostics).toEqual([]);
+
+    const doc = await getDocument({ data: new Uint8Array(readFileSync(output)) }).promise;
+    expect(doc.numPages).toBeGreaterThan(3);
+    const pageText = async (n: number) => {
+      const page = await doc.getPage(n);
+      const { width } = page.getViewport({ scale: 1 });
+      const items = (await page.getTextContent()).items
+        .filter((item) => "str" in item && item.str.trim() && item.transform[5] > 70)
+        .map((item) => {
+          const { str, transform } = item as { str: string; transform: number[] };
+          return {
+            str,
+            x: transform[4]!,
+            y: transform[5]!,
+            column: transform[4]! < width / 2 ? 0 : 1,
+          };
+        });
+      return { width, items };
+    };
+
+    // Page 1: the cover only.
+    expect((await pageText(1)).items.map((i) => i.str).join(" ")).not.toContain("Texto inicial");
+    for (let n = 2; n <= doc.numPages; n++) {
+      const { width, items } = await pageText(n);
+      // Two columns between 16 mm side margins (45.4 pt).
+      if (n < doc.numPages) expect(new Set(items.map((i) => i.column))).toEqual(new Set([0, 1]));
+      expect(Math.min(...items.map((i) => i.x))).toBeGreaterThanOrEqual(44);
+      expect(Math.min(...items.map((i) => i.x))).toBeLessThan(48);
+      expect(width).toBeGreaterThan(590);
+      // Every title has at least two lines of its section under it, in the same column.
+      for (const title of items.filter((i) => /^(Sección \d|Apartado \d)/.test(i.str))) {
+        const below = items.filter(
+          (i) =>
+            i.column === title.column &&
+            i.y < title.y - 1 &&
+            !/Sección|título|Apartado/.test(i.str),
+        );
+        expect(
+          new Set(below.map((i) => Math.round(i.y))).size,
+          `${title.str} on page ${n}`,
+        ).toBeGreaterThanOrEqual(2);
+      }
+    }
+    await doc.cleanup();
+  });
+});
