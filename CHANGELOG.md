@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.15.0 — 2026-11-10
 
 - **Revista `Introspect`**: el paquete trae la carpeta `tech_magazine/Introspect/`, con las
   mismas cuatro portadas y el mismo `magazine.json` (acento, tintas y velos) que
