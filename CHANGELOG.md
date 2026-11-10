@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.14.0 — 2026-11-10
 
 - **Temas de revista a dos columnas** (`tech_magazine` y `tech_magazine-dark`), en el PDF:
   - el artículo se diagrama a dos columnas; la portada sigue sola en la página 1, a sangre y
