@@ -220,6 +220,13 @@ En el HTML se ve a una sola columna. Chrome no ubica las figuras arriba o abajo 
 como en LaTeX: quedan donde aparecen en el texto, y las que ocupan las dos columnas pueden
 dejar algo de espacio libre antes de ellas.
 
+**En Typora**: [`typora/academic-basic.css`](typora/academic-basic.css) lleva este mismo
+aspecto a Typora. Cópialo a la carpeta de temas (Preferencias → Apariencia → «Abrir carpeta
+de temas»), reinicia Typora y elige **Academic Basic** en el menú Tema. El primer `# Título`
+hace de título del artículo, y al exportar a PDF el texto pasa a dos columnas. Typora no
+interpreta el front matter de mdrender, así que no hay bloque de autores ni resumen, ni
+figuras numeradas.
+
 Qué debe cumplir un `.md` para cada uno de estos dos temas:
 [docs/ESPECIFICACION_TEMAS.md](docs/ESPECIFICACION_TEMAS.md).
 

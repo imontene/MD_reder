@@ -1,0 +1,464 @@
+/*
+ * Academic Basic — tema para Typora basado en el tema academic_basic de mdrender
+ * (src/assets/theme.css + src/assets/theme-academic-basic.css).
+ *
+ * Un artículo de revista científica: STIX Two Text para el texto, Inter para títulos, tablas
+ * y etiquetas, tablas con tres filetes, párrafos sin espacio entre ellos con sangría, y dos
+ * columnas justificadas al exportar a PDF o imprimir. En pantalla, una sola columna.
+ *
+ * Instalación: Typora → Preferencias → Apariencia → «Abrir carpeta de temas», copiar este
+ * archivo allí, reiniciar Typora y elegir «Academic Basic» en el menú Tema.
+ *
+ * Las fuentes se cargan de Google Fonts; sin conexión se usan Georgia y la sans del sistema.
+ * Para trabajar sin conexión, instala STIX Two Text, Inter y JetBrains Mono en el sistema.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=STIX+Two+Text:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap");
+
+:root {
+  --font-serif: "STIX Two Text", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, Consolas, monospace;
+
+  --ac-ink: #141414;
+  --ac-ink-secondary: #3d3d3d;
+  --ac-ink-muted: #5c5c5c;
+  --ac-rule: #141414;
+  --ac-hairline: #c4c4c4;
+  --ac-surface: #f6f6f4;
+  --ac-accent: #9b1b1f;
+  --ac-link: #1d4e89;
+  --ac-warning: #8a5d00;
+  --ac-column-gap: 6.5mm;
+
+  /* Variables propias de Typora (barra lateral, selección, código) */
+  --bg-color: #ffffff;
+  --text-color: var(--ac-ink);
+  --primary-color: var(--ac-accent);
+  --monospace: var(--font-code);
+  --side-bar-bg-color: #fafaf8;
+  --control-text-color: var(--ac-ink-secondary);
+  --active-file-bg-color: #eeeeea;
+  --active-file-text-color: var(--ac-ink);
+  --active-file-border-color: var(--ac-accent);
+  --item-hover-bg-color: #f0f0ec;
+  --item-hover-text-color: var(--ac-ink);
+  --select-text-bg-color: rgba(29, 78, 137, 0.18);
+  --window-border: 1px solid var(--ac-hairline);
+  --md-char-color: #a0a0a0;
+  --meta-content-color: var(--ac-ink-muted);
+  --rawblock-edit-panel-bd: var(--ac-surface);
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  color: var(--ac-ink);
+  background: var(--bg-color);
+  font-family: var(--font-serif);
+}
+
+/* ------------------------------------------------------------------ Página */
+
+#write {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 32px 80px;
+  color: var(--ac-ink);
+  font-family: var(--font-serif);
+  font-feature-settings: "kern", "liga";
+  line-height: 1.38;
+  text-rendering: optimizeLegibility;
+}
+
+#write > :first-child {
+  margin-top: 0;
+}
+
+/* ------------------------------------------------------------------ Títulos (en la sans) */
+
+#write h1,
+#write h2,
+#write h3,
+#write h4,
+#write h5,
+#write h6 {
+  position: relative;
+  color: var(--ac-ink);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  line-height: 1.25;
+  padding-bottom: 0;
+  border-bottom: 0;
+  break-after: avoid;
+}
+
+/* El H1 hace de título del artículo: grande, sobre un filete en el color de acento. */
+#write h1 {
+  margin: 0 0 0.6em;
+  padding-top: 0.45em;
+  font-size: 2.1em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+  border-top: 2.5pt solid var(--ac-accent);
+}
+
+#write h2 {
+  margin: 1.3em 0 0.35em;
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+#write h3 {
+  margin: 1.1em 0 0.3em;
+  font-size: 1em;
+  font-weight: 600;
+  font-style: italic;
+}
+
+#write h4,
+#write h5,
+#write h6 {
+  margin: 1em 0 0.2em;
+  font-family: var(--font-serif);
+  font-size: 1em;
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* ------------------------------------------------------------------ Párrafos */
+
+/* Sin espacio entre párrafos; la primera línea del siguiente, sangrada. */
+#write p {
+  margin: 0;
+  orphans: 3;
+  widows: 3;
+}
+
+#write > p + p {
+  text-indent: 1.2em;
+}
+
+/* Un bloque que no es párrafo (lista, tabla, cita…) sigue llevando su aire. */
+#write > p + :not(p),
+#write > :not(p) + p {
+  margin-top: 0.6em;
+}
+
+#write ul,
+#write ol,
+#write blockquote,
+#write pre,
+#write dl,
+#write .md-math-block,
+#write figure.md-table-fig {
+  margin: 0.6em 0;
+}
+
+#write ul,
+#write ol {
+  padding-left: 1.4em;
+}
+
+#write li + li {
+  margin-top: 0.15em;
+}
+
+#write li > p {
+  margin: 0;
+}
+
+#write .md-task-list-item > input {
+  margin-left: -1.3em;
+}
+
+#write strong {
+  font-weight: 700;
+}
+
+#write a {
+  color: var(--ac-link);
+  text-decoration: none;
+}
+
+#write a:hover {
+  text-decoration: underline;
+}
+
+#write del {
+  color: var(--ac-ink-muted);
+}
+
+#write hr {
+  height: 1px;
+  margin: 1.2em 0;
+  border: 0;
+  background: var(--ac-hairline);
+}
+
+#write blockquote {
+  padding: 0 0 0 0.9em;
+  color: var(--ac-ink-secondary);
+  border-left: 1.5px solid var(--ac-hairline);
+}
+
+#write blockquote > p + p {
+  text-indent: 0;
+  margin-top: 0.4em;
+}
+
+/* ------------------------------------------------------------------ Imágenes */
+
+#write p:has(> .md-image:only-child),
+#write p:has(> img:only-child) {
+  margin: 0.9em 0 1.1em;
+  text-align: center;
+  text-indent: 0;
+}
+
+#write img {
+  max-width: 100%;
+}
+
+/* ------------------------------------------------------------------ Tablas: tres filetes */
+
+#write table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 0.82em;
+  line-height: 1.35;
+  border-top: 1.2pt solid var(--ac-rule);
+  border-bottom: 1.2pt solid var(--ac-rule);
+  break-inside: avoid;
+}
+
+#write th,
+#write td {
+  padding: 0.35em 0.6em;
+  border: 0;
+  text-align: left;
+}
+
+#write th {
+  font-weight: 700;
+  background: none;
+  border-bottom: 0.6pt solid var(--ac-rule);
+}
+
+#write tr,
+#write tbody tr:nth-child(2n) {
+  background: none;
+}
+
+/* ------------------------------------------------------------------ Código */
+
+#write code {
+  padding: 0;
+  font-family: var(--font-code);
+  font-size: 0.84em;
+  background: none;
+}
+
+#write .md-fences,
+#write pre {
+  padding: 0.7em 1em;
+  font-family: var(--font-code);
+  font-size: 0.78em;
+  line-height: 1.5;
+  background: var(--ac-surface);
+  border: 0;
+  border-left: 1.5px solid var(--ac-hairline);
+  border-radius: 0;
+}
+
+#write .md-fences .CodeMirror-lines {
+  padding: 0;
+}
+
+.cm-s-inner .cm-keyword {
+  color: var(--ac-accent);
+}
+
+.cm-s-inner .cm-string,
+.cm-s-inner .cm-string-2 {
+  color: var(--ac-link);
+}
+
+.cm-s-inner .cm-comment {
+  color: var(--ac-ink-muted);
+  font-style: italic;
+}
+
+.cm-s-inner .cm-number,
+.cm-s-inner .cm-atom {
+  color: #5a3e8a;
+}
+
+/* ------------------------------------------------------------------ Avisos (> [!NOTE]…) */
+
+#write .md-alert {
+  --alert-color: var(--ac-ink-secondary);
+  margin: 0.8em 0;
+  padding: 0.1em 0 0.1em 0.9em;
+  color: var(--ac-ink);
+  border-left: 1.5px solid var(--alert-color);
+}
+
+#write .md-alert-important,
+#write .md-alert-caution {
+  --alert-color: var(--ac-accent);
+}
+
+#write .md-alert-warning {
+  --alert-color: var(--ac-warning);
+}
+
+#write .md-alert .md-alert-text {
+  font-family: var(--font-sans);
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--alert-color);
+}
+
+/* ------------------------------------------------------------------ Índice ([TOC]) */
+
+#write .md-toc {
+  margin: 0.8em 0;
+  padding: 0.8em 1em;
+  font-family: var(--font-sans);
+  font-size: 0.9em;
+  border-top: 0.75pt solid var(--ac-rule);
+  border-bottom: 0.75pt solid var(--ac-rule);
+}
+
+#write .md-toc-content {
+  margin: 0;
+}
+
+#write .md-toc-item {
+  color: var(--ac-ink);
+}
+
+#write .md-toc-h1 {
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ Notas al pie */
+
+#write .md-footnote {
+  color: var(--ac-link);
+  background: none;
+}
+
+#write .footnotes-area {
+  margin-top: 1.6em;
+  font-size: 0.82em;
+  line-height: 1.35;
+  color: var(--ac-ink-secondary);
+}
+
+#write .footnotes-area hr {
+  width: 30%;
+  margin: 0 0 0.6em;
+  background: var(--ac-rule);
+}
+
+#write .footnote-line {
+  margin: 0.2em 0;
+  text-indent: 0;
+}
+
+/* ------------------------------------------------------------------ Bloque YAML y fórmulas */
+
+#write pre.md-meta-block {
+  margin-bottom: 1.2em;
+  padding: 0.6em 1em;
+  font-size: 0.75em;
+  color: var(--ac-ink-muted);
+  background: var(--ac-surface);
+  border-left: 1.5px solid var(--ac-hairline);
+}
+
+#write .md-math-block .MathJax_SVG_Display,
+#write mjx-container[display="true"] {
+  margin: 0.6em 0;
+}
+
+/* ------------------------------------------------------------------ Barra lateral de Typora */
+
+.sidebar-content,
+#file-library,
+.outline-content {
+  font-family: var(--font-sans);
+}
+
+.outline-item-active {
+  color: var(--ac-accent);
+}
+
+/* ------------------------------------------------------------------ Exportación a PDF / impresión */
+
+@media print {
+  html {
+    font-size: 9.5pt;
+  }
+
+  #write {
+    max-width: none;
+    padding: 0;
+    columns: 2;
+    column-gap: var(--ac-column-gap);
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  /* Ocupan el ancho de la página: el título, el índice, las tablas, los diagramas y las
+     figuras; rompen el flujo y equilibran las columnas que tienen encima. */
+  #write > h1,
+  #write .md-toc,
+  #write figure.md-table-fig,
+  #write table,
+  #write .md-diagram-panel,
+  #write pre.md-meta-block {
+    column-span: all;
+  }
+
+  #write > h1:not(:first-child),
+  #write > figure.md-table-fig,
+  #write > .md-diagram-panel {
+    margin-top: 0.8em;
+    margin-bottom: 1.1em;
+  }
+
+  #write h1,
+  #write h2,
+  #write h3,
+  #write table,
+  #write th,
+  #write td,
+  #write .md-alert .md-alert-text {
+    text-align: left;
+  }
+
+  #write pre,
+  #write .md-fences,
+  #write blockquote,
+  #write .md-alert,
+  #write p:has(> img:only-child) {
+    break-inside: avoid;
+  }
+
+  /* El bloque YAML no se imprime. */
+  #write pre.md-meta-block {
+    display: none;
+  }
+}
