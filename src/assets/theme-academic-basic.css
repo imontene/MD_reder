@@ -249,10 +249,43 @@ blockquote {
 
 .figure figcaption {
   margin-top: 0.55em;
-  font-size: 0.8em;
+}
+
+/*
+ * Captions of figures, tables and diagrams: Inter, a little smaller than the paragraphs (rem is
+ * the text size here: tables set their own, smaller one), left-aligned and unhyphenated.
+ * "**Tabla 1.** …" and "**Figura 2.** …" paragraphs become captions (markdown/captions.ts).
+ */
+.figure figcaption,
+table > caption,
+.mermaid-diagram figcaption,
+.markdown-body > p.caption {
+  font-family: var(--font-text);
+  font-size: 0.9rem;
   line-height: 1.35;
   text-align: left;
+  text-indent: 0;
+  hyphens: none;
   color: var(--ac-ink);
+}
+
+/* A table's caption goes under it, as wide as the table, and the two stay on one page. */
+table > caption {
+  caption-side: bottom;
+  padding-top: 0.55em;
+}
+
+table:has(> caption) {
+  break-inside: avoid;
+}
+
+/* A diagram's caption: under it, across both columns like the diagram. */
+.mermaid-diagram figcaption {
+  margin-top: 0.55em;
+}
+
+.markdown-body > p.caption + p {
+  text-indent: 0;
 }
 
 .figure figcaption::before {

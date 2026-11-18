@@ -1,4 +1,4 @@
-import type { MarkdownIt } from "markdown-it";
+import type { MarkdownIt, Token } from "markdown-it";
 import { tokenLine, type RenderEnv } from "./env.js";
 
 /** Placeholder left in the HTML for diagram `index`; replaced once the browser renders it. */
@@ -21,6 +21,11 @@ export function mermaid(md: MarkdownIt): void {
     const block = { source: token.content, line: tokenLine(token) };
     const afterHeading = (token.meta as { afterHeading?: boolean } | null)?.afterHeading;
     const index = env.mermaid.push(afterHeading ? { ...block, afterHeading } : block) - 1;
-    return `<figure class="mermaid-diagram">${mermaidPlaceholder(env.nonce, index)}</figure>\n`;
+    // A caption paragraph moved here by captions.ts goes under the diagram.
+    const caption = (token.meta as { caption?: Token } | null)?.caption;
+    const figcaption = caption
+      ? `\n<figcaption>${self.renderInline(caption.children ?? [], options, rawEnv)}</figcaption>`
+      : "";
+    return `<figure class="mermaid-diagram">${mermaidPlaceholder(env.nonce, index)}${figcaption}</figure>\n`;
   };
 }

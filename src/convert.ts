@@ -279,6 +279,7 @@ export async function renderDocument(
     // Soft hyphens only where paragraphs are justified: in the PDF.
     hyphenate: paged && options.justify ? options.lang : undefined,
     figures: options.theme === "academic_basic" || isMagazineTheme(options.theme),
+    captions: options.theme === "academic_basic",
   });
   const diagnostics: Diagnostic[] = [
     ...config.warnings.map((message) => ({ severity: "warning" as const, message })),

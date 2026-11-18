@@ -47,6 +47,9 @@ $$
 donde $X_\infty$ es la conversión final, $k$ la constante de velocidad y $E_a$ la energía de
 activación. Los parámetros ajustados aparecen en la Tabla 1.
 
+**Tabla 1.** Parámetros del modelo de primer orden ajustados para cada catalizador: conversión
+final, constante de velocidad a 40 °C, energía de activación y coeficiente de determinación.
+
 | Catalizador | $X_\infty$ | $k$ a 40 °C (h⁻¹) | $E_a$ (kJ/mol) | $R^2$ |
 | :---------- | ---------: | ----------------: | -------------: | ----: |
 | A           |       1,00 |              0,45 |           38,2 | 0,998 |
@@ -67,6 +70,9 @@ flowchart LR
   S[Sustrato] --> Ad[Adsorción] --> R[Reacción en superficie] --> D[Desorción] --> P[Producto]
   R -. desactivación .-> X[Sitio inactivo]
 ```
+
+**Fig. 2.** Mecanismo propuesto: adsorción, reacción en la superficie y desorción, con la
+desactivación de sitios como vía lateral.
 
 Para procesos continuos conviene el catalizador A; para operaciones por lotes cortas, la
 diferencia es menor y el costo puede decidir.

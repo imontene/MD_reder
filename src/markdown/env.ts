@@ -28,6 +28,8 @@ export interface RenderEnv extends Env {
   hyphenate?: string;
   /** Render lone images as numbered figures captioned with their alt text (see figures.ts). */
   figures?: boolean;
+  /** Turn "**Tabla 1.** …" and "**Figura 2.** …" paragraphs into captions (see captions.ts). */
+  captions?: boolean;
   /** Set when the document places its table of contents with a `[[toc]]` marker. */
   hasTocMarker: boolean;
 }

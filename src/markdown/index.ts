@@ -7,6 +7,7 @@ import { DEFAULT_LANG } from "../i18n.js";
 import { alerts } from "./alerts.js";
 import { codeBlocks } from "./code-blocks.js";
 import { inlineChildLines, type MermaidBlock, type RenderEnv } from "./env.js";
+import { captions } from "./captions.js";
 import { figures } from "./figures.js";
 import { highlightCode } from "./highlight.js";
 import { hyphenation } from "./hyphenate.js";
@@ -42,6 +43,8 @@ export interface MarkdownOptions {
   hyphenate?: string;
   /** Render lone images as numbered figures, captioned with their alt text. */
   figures?: boolean;
+  /** Turn labelled paragraphs next to tables and diagrams into their captions. */
+  captions?: boolean;
 }
 
 export function createMarkdown(): MarkdownIt {
@@ -57,6 +60,7 @@ export function createMarkdown(): MarkdownIt {
   md.use(alerts);
   md.use(tocMarker);
   md.use(keepWithHeading);
+  md.use(captions);
   md.use(inlineChildLines);
   // Before images are embedded: it takes the #wide mark off their src.
   md.use(figures);
@@ -84,6 +88,7 @@ export function renderMarkdown(source: string, options: MarkdownOptions = {}): M
     hasTocMarker: false,
     hyphenate: options.hyphenate,
     figures: options.figures,
+    captions: options.captions,
   };
   const tokens = md.parse(source, env);
 

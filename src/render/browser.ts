@@ -52,8 +52,8 @@ export interface PrintOptions {
 }
 
 /**
- * Fit each figure on its page. Images are scaled down to the page's text height (theme.css); a
- * figure's caption must fit on the same page, or it lands alone on the next one. Each captioned
+ * Fit each figure on its page. Images and diagrams are scaled down to the page's text height
+ * (theme.css); a figure's caption must fit on the same page, or it lands alone on the next one. Each captioned
  * figure gets `--caption-room`: the caption's height with its top margin, plus the figure's
  * bottom margin (kept at the foot of a page when the figure spans the columns). Then an image
  * stretched to its column's width (magazine themes) but cut down in height gets the width of
@@ -66,7 +66,7 @@ export const FIGURE_FIT = `(width) => {
     let fitted = 0;
     for (const figure of document.querySelectorAll("figure")) {
       const caption = figure.querySelector(":scope > figcaption");
-      if (!caption || !figure.querySelector(":scope > img, :scope > a > img")) continue;
+      if (!caption || !figure.querySelector(":scope > img, :scope > a > img, :scope > svg")) continue;
       const px = (element, property) => parseFloat(getComputedStyle(element)[property]) || 0;
       const room =
         caption.getBoundingClientRect().height + px(caption, "marginTop") + px(figure, "marginBottom");

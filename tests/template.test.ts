@@ -85,6 +85,15 @@ describe("academic_basic theme", () => {
     expect(theme.join("\n")).toContain("columns: 2;");
     expect(builtinThemeCss("light").join("\n")).not.toContain("STIX Two Text");
   });
+
+  it("sets captions in Inter at 90 % of the text, tables' under them", () => {
+    const css = builtinThemeCss("academic_basic").join("\n");
+    expect(css).toMatch(
+      /\.figure figcaption,\s*table > caption,\s*\.mermaid-diagram figcaption,\s*\.markdown-body > p\.caption \{\s*font-family: var\(--font-text\);\s*font-size: 0\.9rem;/,
+    );
+    expect(css).toMatch(/table > caption \{\s*caption-side: bottom;/);
+    expect(css).toMatch(/table:has\(> caption\) \{\s*break-inside: avoid;/);
+  });
 });
 
 describe("tech_magazine theme", () => {

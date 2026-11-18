@@ -366,7 +366,9 @@ div.math-error {
   }
 
   .mermaid-diagram svg {
-    max-height: calc(var(--page-content-height) - 6mm - var(--diagram-frame));
+    max-height: calc(
+      var(--page-content-height) - 6mm - var(--diagram-frame) - var(--caption-room, 0px)
+    );
   }
 
   /* Next to its heading: leave room for it (HEADING_ALLOWANCE_EM in render/mermaid.ts). */
@@ -375,7 +377,9 @@ div.math-error {
   }
 
   .keep-with-heading .mermaid-diagram svg {
-    max-height: calc(var(--page-content-height) - 6mm - 5rem - var(--diagram-frame));
+    max-height: calc(
+      var(--page-content-height) - 6mm - 5rem - var(--diagram-frame) - var(--caption-room, 0px)
+    );
   }
 }
 

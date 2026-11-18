@@ -1,5 +1,19 @@
 # Cambios
 
+## Sin publicar
+
+- **Epígrafes en `academic_basic`**:
+  - un párrafo que empieza con «**Tabla N.**» justo antes o después de una tabla es su
+    epígrafe: se imprime debajo de la tabla, a todo el ancho, y no se separa de ella;
+  - un párrafo que empieza con «**Figura N.**» junto a un diagrama Mermaid se imprime debajo
+    del diagrama, también a todo el ancho;
+  - junto a una imagen, ese párrafo queda donde está, con el estilo de epígrafe;
+  - se reconocen también `Table`, `Cuadro`, `Tabela`, `Tableau`, `Tabelle`, `Figure`, `Fig.`,
+    `Gráfico`, `Gráfica`, `Diagrama`, `Abbildung`. El texto y el número quedan como se
+    escriben;
+  - todos los epígrafes, también los de las figuras, van en Inter al 90 % del tamaño del texto
+    (antes, los de figura al 80 %) y alineados a la izquierda.
+
 ## 2.15.0 — 2026-11-10
 
 - **Revista `Introspect`**: el paquete trae la carpeta `tech_magazine/Introspect/`, con las

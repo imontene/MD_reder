@@ -213,6 +213,14 @@ científica. Ejemplo: [`examples/articulo-academico.md`](examples/articulo-acade
   leyenda, que se imprime como «**Fig. 1.** …». Termina la ruta en `#wide` para que ocupe las
   dos columnas: `![Leyenda.](grafico.png#wide)`.
 - Tablas con tres líneas (arriba, bajo el encabezado y abajo), sin rejilla.
+- **Epígrafes de tablas y diagramas**: un párrafo que empieza con una etiqueta en negrita,
+  «**Tabla 1.** …» justo antes o después de una tabla, o «**Figura 2.** …» junto a un diagrama
+  Mermaid, pasa a ser su epígrafe: se imprime debajo, a todo el ancho y en la misma página. El
+  texto y el número quedan como los escribes. Valen también `Table`, `Cuadro`, `Figure`,
+  `Fig.`, `Gráfico`, `Diagrama`… Junto a una imagen, ese párrafo queda donde está, con el
+  estilo de epígrafe.
+- Los epígrafes (también los de las figuras) van en Inter, al 90 % del tamaño del texto y
+  alineados a la izquierda.
 - Por defecto: márgenes de 18 mm arriba y abajo y 8 mm a los lados, texto de 9,5 pt y
   `font: inter`; cualquier opción los cambia.
 

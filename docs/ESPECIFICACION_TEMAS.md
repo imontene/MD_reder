@@ -146,7 +146,9 @@ palabras según `lang`.
 | Imagen sola             | Figura numerada: «**Fig. 1.** leyenda»                                      | una columna  |
 | Imagen sola con `#wide` | Figura numerada                                                             | dos columnas |
 | Tabla                   | Tres líneas (arriba, bajo el encabezado, abajo), sin rejilla                | dos columnas |
+| «**Tabla N.** …»        | Epígrafe bajo la tabla que tiene justo antes o después                      | dos columnas |
 | Diagrama Mermaid        | Diagrama en tonos neutros                                                   | dos columnas |
+| «**Figura N.** …»       | Epígrafe bajo el diagrama Mermaid que tiene justo antes o después           | dos columnas |
 | Ecuación `$$…$$`        | Centrada en su columna                                                      | una columna  |
 | Bloque de código        | Fondo gris claro con una línea fina a la izquierda                          | una columna  |
 | Alerta `> [!NOTE]`      | Línea a la izquierda y rótulo pequeño                                       | una columna  |
@@ -157,8 +159,13 @@ Reglas:
 
 - Las figuras se numeran solas en el orden en que aparecen. Para citarlas en el texto se
   escribe el número a mano («como muestra la Fig. 2»).
-- Las tablas **no** se numeran ni llevan leyenda propia: si hace falta, se escribe
-  «Tabla 1» en el párrafo que la presenta.
+- Las tablas y los diagramas Mermaid **no** se numeran solos. Para darles un epígrafe se escribe,
+  justo antes o justo después, un párrafo que empieza con la etiqueta y el número en negrita:
+  `**Tabla 1.** Texto del epígrafe.` o `**Figura 2.** Texto.` (también `Table`, `Cuadro`,
+  `Figure`, `Fig.`, `Gráfico`, `Diagrama`…). El epígrafe se imprime debajo, a todo el ancho, en
+  Inter al 90 % del texto, y no se separa de su tabla o diagrama. Junto a una imagen sola, ese
+  párrafo queda donde está, con el estilo de epígrafe (la imagen ya toma su leyenda del texto
+  alternativo).
 - Las ecuaciones largas **deben** caber en una columna (unos 90 mm). Si no caben, conviene
   partirlas con `aligned` o `\\`.
 - Las referencias bibliográficas se escriben como notas al pie o como una lista numerada en una

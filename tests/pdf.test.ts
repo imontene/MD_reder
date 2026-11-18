@@ -540,3 +540,61 @@ describe.skipIf(!browser && !browserRequired)("page-tall figures", () => {
     for (const page of pages) expect(page.text.replace(/\d/g, "").trim()).not.toBe("");
   });
 });
+
+describe.skipIf(!browser && !browserRequired)("academic captions", () => {
+  const long =
+    "con un texto lo bastante largo como para ocupar más de una línea a todo el ancho de la página";
+  const document = [
+    "---",
+    "theme: academic_basic",
+    "---",
+    "",
+    "Un párrafo que presenta la tabla y el diagrama.",
+    "",
+    `**Tabla 1.** Epígrafe de la tabla ${long}.`,
+    "",
+    "| Columna | Valor |",
+    "| ------- | ----- |",
+    "| Alfa    | 1     |",
+    "| Omega   | 2     |",
+    "",
+    "```mermaid",
+    "flowchart LR",
+    "  N1[Nodo uno] --> N2[Nodo dos]",
+    "```",
+    "",
+    `**Figura 2.** Epígrafe del diagrama ${long}.`,
+    "",
+  ].join("\n");
+
+  it("print table and diagram captions under them, across both columns", async () => {
+    const dir = tempDir();
+    const input = path.join(dir, "doc.md");
+    writeFileSync(input, document);
+    const output = path.join(dir, "doc.pdf");
+    const result = await convertFile({ input, output, format: "pdf", config: false });
+    expect(result.diagnostics).toEqual([]);
+    const doc = await getDocument({ data: new Uint8Array(readFileSync(output)) }).promise;
+    expect(doc.numPages).toBe(1);
+    const page = await doc.getPage(1);
+    const { width } = page.getViewport({ scale: 1 });
+    const items = (await page.getTextContent()).items.flatMap((item) =>
+      "str" in item && item.str.trim()
+        ? [{ str: item.str, x: item.transform[4]!, y: item.transform[5]!, w: item.width }]
+        : [],
+    );
+    const find = (text: string) => items.find((i) => i.str.includes(text))!;
+    // PDF y grows upwards: a caption under its table or diagram has a smaller y.
+    expect(find("Epígrafe de la tabla").y).toBeLessThan(find("Omega").y);
+    expect(find("Epígrafe del diagrama").y).toBeLessThan(find("Nodo dos").y);
+    // Across both columns: the first line of each caption runs past the middle of the page.
+    for (const label of ["Epígrafe de la tabla", "Epígrafe del diagrama"]) {
+      const line = items.filter((i) => Math.abs(i.y - find(label).y) < 1);
+      expect(Math.min(...line.map((i) => i.x))).toBeLessThan(width / 3);
+      expect(Math.max(...line.map((i) => i.x + i.w))).toBeGreaterThan((width * 2) / 3);
+    }
+    // In Inter, not in the text's serif.
+    expect(readFileSync(output).toString("latin1")).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-Bold/);
+    await doc.cleanup();
+  });
+});
