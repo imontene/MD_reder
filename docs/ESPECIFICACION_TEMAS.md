@@ -162,10 +162,10 @@ Reglas:
 - Las tablas y los diagramas Mermaid **no** se numeran solos. Para darles un epígrafe se escribe,
   justo antes o justo después, un párrafo que empieza con la etiqueta y el número en negrita:
   `**Tabla 1.** Texto del epígrafe.` o `**Figura 2.** Texto.` (también `Table`, `Cuadro`,
-  `Figure`, `Fig.`, `Gráfico`, `Diagrama`…). El epígrafe se imprime debajo, a todo el ancho, en
-  Inter al 90 % del texto, y no se separa de su tabla o diagrama. Junto a una imagen sola, ese
-  párrafo queda donde está, con el estilo de epígrafe (la imagen ya toma su leyenda del texto
-  alternativo).
+  `Figure`, `Fig.`, `Gráfico`, `Diagrama`…). El epígrafe se imprime debajo, a todo el ancho y
+  centrado, en Inter al 90 % del texto, y no se separa de su tabla o diagrama. Junto a una
+  imagen sola, ese párrafo queda donde está, con el estilo de epígrafe, centrado en su columna
+  (la imagen ya toma su leyenda del texto alternativo).
 - Las ecuaciones largas **deben** caber en una columna (unos 90 mm). Si no caben, conviene
   partirlas con `aligned` o `\\`.
 - Las referencias bibliográficas se escriben como notas al pie o como una lista numerada en una

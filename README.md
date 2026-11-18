@@ -220,7 +220,7 @@ científica. Ejemplo: [`examples/articulo-academico.md`](examples/articulo-acade
   `Fig.`, `Gráfico`, `Diagrama`… Junto a una imagen, ese párrafo queda donde está, con el
   estilo de epígrafe.
 - Los epígrafes (también los de las figuras) van en Inter, al 90 % del tamaño del texto y
-  alineados a la izquierda.
+  centrados: los de tablas y diagramas, en el ancho completo; los de figuras, en su columna.
 - Por defecto: márgenes de 18 mm arriba y abajo y 8 mm a los lados, texto de 9,5 pt y
   `font: inter`; cualquier opción los cambia.
 

@@ -91,6 +91,7 @@ describe("academic_basic theme", () => {
     expect(css).toMatch(
       /\.figure figcaption,\s*table > caption,\s*\.mermaid-diagram figcaption,\s*\.markdown-body > p\.caption \{\s*font-family: var\(--font-text\);\s*font-size: 0\.9rem;/,
     );
+    expect(css).toMatch(/font-size: 0\.9rem;\s*line-height: 1\.35;\s*text-align: center;/);
     expect(css).toMatch(/table > caption \{\s*caption-side: bottom;/);
     expect(css).toMatch(/table:has\(> caption\) \{\s*break-inside: avoid;/);
   });

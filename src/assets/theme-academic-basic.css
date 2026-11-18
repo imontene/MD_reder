@@ -236,7 +236,7 @@ blockquote {
   font-weight: 700;
 }
 
-/* Figures: "Fig. 1." in bold, the caption in the sans, aligned left. */
+/* Figures: "Fig. 1." in bold, the caption in the sans, centred under the image. */
 .figure {
   counter-increment: figure;
   margin: 0.9em 0 1.1em;
@@ -253,7 +253,9 @@ blockquote {
 
 /*
  * Captions of figures, tables and diagrams: Inter, a little smaller than the paragraphs (rem is
- * the text size here: tables set their own, smaller one), left-aligned and unhyphenated.
+ * the text size here: tables set their own, smaller one), centred and unhyphenated. Each is
+ * centred on what it captions: tables and diagrams across both columns, a figure on its column
+ * (or both, with #wide).
  * "**Tabla 1.** …" and "**Figura 2.** …" paragraphs become captions (markdown/captions.ts).
  */
 .figure figcaption,
@@ -263,7 +265,7 @@ table > caption,
   font-family: var(--font-text);
   font-size: 0.9rem;
   line-height: 1.35;
-  text-align: left;
+  text-align: center;
   text-indent: 0;
   hyphens: none;
   color: var(--ac-ink);

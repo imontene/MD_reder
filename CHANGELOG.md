@@ -12,7 +12,8 @@
     `Gráfico`, `Gráfica`, `Diagrama`, `Abbildung`. El texto y el número quedan como se
     escriben;
   - todos los epígrafes, también los de las figuras, van en Inter al 90 % del tamaño del texto
-    (antes, los de figura al 80 %) y alineados a la izquierda.
+    (antes, los de figura al 80 %) y centrados: los de tablas y diagramas en el ancho
+    completo, los de figuras en su columna (o en el ancho completo con `#wide`).
 
 ## 2.15.0 — 2026-11-10
 
