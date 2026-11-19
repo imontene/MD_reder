@@ -69,4 +69,21 @@ describe("diagram and figure captions", () => {
     );
     expect(html.indexOf("<figure")).toBeLessThan(html.indexOf('<p class="caption">'));
   });
+
+  it("make an image with its caption on the next line a figure captioned as written", () => {
+    // With a hard break (backslash) or a plain line break between them.
+    for (const gap of ["\\\n", "\n"]) {
+      const html = render(`![Paseo](img/gradiente.png)${gap}**Figura 2.** El *modelo*.\n`);
+      expect(html).toMatch(
+        /^<figure class="figure figure-labelled">\n<img src="data:image\/png;base64,[^"]+" alt="Paseo">\n<figcaption><strong>Figura 2\.<\/strong> El <em>modelo<\/em>\.<\/figcaption>\n<\/figure>/,
+      );
+    }
+    // #wide still spans both columns.
+    expect(render("![x](img/gradiente.png#wide)\\\n**Figure 3.** Wide.\n")).toContain(
+      '<figure class="figure figure-wide figure-labelled">',
+    );
+    // Not a label, or without the option: an ordinary paragraph, as before.
+    expect(render("![x](img/gradiente.png)\\\nTexto suelto.\n")).toContain("<p><img");
+    expect(render("![x](img/gradiente.png)\\\n**Figura 2.** Texto.\n", false)).toContain("<p><img");
+  });
 });

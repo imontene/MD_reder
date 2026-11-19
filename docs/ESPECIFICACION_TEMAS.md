@@ -163,9 +163,12 @@ Reglas:
   justo antes o justo después, un párrafo que empieza con la etiqueta y el número en negrita:
   `**Tabla 1.** Texto del epígrafe.` o `**Figura 2.** Texto.` (también `Table`, `Cuadro`,
   `Figure`, `Fig.`, `Gráfico`, `Diagrama`…). El epígrafe se imprime debajo, a todo el ancho y
-  centrado, en Inter al 90 % del texto, y no se separa de su tabla o diagrama. Junto a una
-  imagen sola, ese párrafo queda donde está, con el estilo de epígrafe, centrado en su columna
-  (la imagen ya toma su leyenda del texto alternativo).
+  centrado, en Inter al 90 % del texto, y no se separa de su tabla o diagrama.
+- Una imagen seguida, en la línea siguiente del mismo párrafo, de «**Figura N.** …»
+  (`![alt](img.png)\` y debajo el epígrafe) es una figura con ese epígrafe bajo la imagen,
+  impreso tal como se escribe, sin «Fig. N.». Un párrafo de epígrafe aparte, junto a una imagen
+  sola, queda donde está, con el estilo de epígrafe, centrado en su columna (la imagen toma su
+  leyenda del texto alternativo).
 - Las ecuaciones largas **deben** caber en una columna (unos 90 mm). Si no caben, conviene
   partirlas con `aligned` o `\\`.
 - Las referencias bibliográficas se escriben como notas al pie o como una lista numerada en una

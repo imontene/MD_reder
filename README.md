@@ -217,7 +217,10 @@ científica. Ejemplo: [`examples/articulo-academico.md`](examples/articulo-acade
   «**Tabla 1.** …» justo antes o después de una tabla, o «**Figura 2.** …» junto a un diagrama
   Mermaid, pasa a ser su epígrafe: se imprime debajo, a todo el ancho y en la misma página. El
   texto y el número quedan como los escribes. Valen también `Table`, `Cuadro`, `Figure`,
-  `Fig.`, `Gráfico`, `Diagrama`… Junto a una imagen, ese párrafo queda donde está, con el
+  `Fig.`, `Gráfico`, `Diagrama`… Para una imagen, escribe el epígrafe en la línea siguiente,
+  en el mismo párrafo (`![alt](grafico.png)\` y debajo `**Figura 3.** …`): la imagen pasa a ser
+  una figura con ese epígrafe, tal como lo escribes, en lugar de «Fig. N.» y su texto
+  alternativo. En un párrafo aparte junto a la imagen, el epígrafe queda donde está, con el
   estilo de epígrafe.
 - Los epígrafes (también los de las figuras) van en Inter, al 90 % del tamaño del texto y
   centrados: los de tablas y diagramas, en el ancho completo; los de figuras, en su columna.

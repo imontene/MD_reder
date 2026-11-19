@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- **Epígrafes de figuras en `academic_basic`**: una imagen seguida, en la línea siguiente del
+  mismo párrafo, de «**Figura N.** …» (`![alt](img.png)\` y debajo el epígrafe) se imprimía
+  como un párrafo normal, sin el estilo de epígrafe. Ahora es una figura con ese epígrafe debajo
+  de la imagen, tal como se escribe (sin el «Fig. N.» automático), en Inter al 90 % y centrado
+  en su columna (o en el ancho completo con `#wide`).
+
 ## 2.16.0 — 2026-11-19
 
 - **Epígrafes en `academic_basic`**:

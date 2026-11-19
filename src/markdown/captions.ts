@@ -29,6 +29,37 @@ function captionParagraph(tokens: Token[], i: number, label: RegExp): Token | un
   return label.test(text) ? tokens[i + 1] : undefined;
 }
 
+/**
+ * An image and its caption in one paragraph, split by a line break:
+ * `![alt](img.png)\` then `**Figura 2.** …` on the next line. Returns the caption's tokens (from
+ * the bold label on) and leaves the paragraph holding the image alone, so that figures.ts makes
+ * it a figure.
+ */
+function splitImageCaption(tokens: Token[], i: number): Token[] | undefined {
+  if (tokens[i]?.type !== "paragraph_open" || tokens[i + 2]?.type !== "paragraph_close") {
+    return undefined;
+  }
+  const inline = tokens[i + 1]!;
+  const children = (inline.children ?? []).filter(
+    (child) => !(child.type === "text" && child.content.trim() === ""),
+  );
+  const [image, lineBreak, open, label, close] = children;
+  if (
+    image?.type !== "image" ||
+    (lineBreak?.type !== "hardbreak" && lineBreak?.type !== "softbreak") ||
+    open?.type !== "strong_open" ||
+    label?.type !== "text" ||
+    !FIGURE_LABEL.test(label.content.trim()) ||
+    close?.type !== "strong_close"
+  ) {
+    return undefined;
+  }
+  const all = inline.children!;
+  const caption = all.slice(all.indexOf(open));
+  inline.children = [image];
+  return caption;
+}
+
 const isMermaid = (token: Token | undefined) =>
   token?.type === "fence" && token.info.trim().toLowerCase() === "mermaid";
 
@@ -61,7 +92,10 @@ function tableEndingAt(tokens: Token[], i: number): Token | undefined {
  * - "**Tabla 1.** …" right before or after a table becomes its `<caption>`, printed under it;
  * - "**Figura 2.** …" right before or after a Mermaid diagram becomes the diagram's
  *   `<figcaption>`, under it and as wide as it;
- * - "**Figura 2.** …" next to a lone image stays where it is, styled as a caption.
+ * - an image followed, in the same paragraph after a line break, by "**Figura 2.** …" becomes a
+ *   figure with that caption under it (in place of its alt text, and without "Fig. N.");
+ * - "**Figura 2.** …" in a paragraph of its own next to a lone image stays where it is, styled
+ *   as a caption.
  *
  * The caption keeps its text and label as written: tables and diagrams are not numbered.
  * Runs before `keep_with_heading`, so a diagram keeps its caption when grouped with its heading.
@@ -71,6 +105,12 @@ export function captions(md: MarkdownIt): void {
     if (!(state.env as RenderEnv).captions) return;
     const tokens = state.tokens;
     for (let i = 0; i < tokens.length; i++) {
+      const imageCaption = splitImageCaption(tokens, i);
+      if (imageCaption) {
+        tokens[i]!.meta = { ...tokens[i]!.meta, imageCaption };
+        i += 2;
+        continue;
+      }
       const table = captionParagraph(tokens, i, TABLE_LABEL);
       if (table) {
         const target =

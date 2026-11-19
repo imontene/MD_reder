@@ -30,8 +30,10 @@ export function figures(md: MarkdownIt): void {
       const src = String(image.attrGet("src") ?? "");
       const wide = WIDE.test(src);
       if (wide) image.attrSet("src", src.replace(WIDE, ""));
-      tokens[i]!.meta = { ...tokens[i]!.meta, figure: { wide } };
-      tokens[i + 2]!.meta = { ...tokens[i + 2]!.meta, figure: { image } };
+      // A caption written under the image (captions.ts) replaces its alt text and its "Fig. N.".
+      const caption = tokens[i]!.meta?.imageCaption as Token[] | undefined;
+      tokens[i]!.meta = { ...tokens[i]!.meta, figure: { wide, labelled: caption !== undefined } };
+      tokens[i + 2]!.meta = { ...tokens[i + 2]!.meta, figure: { image, caption } };
       i += 2;
     }
   });
@@ -39,18 +41,27 @@ export function figures(md: MarkdownIt): void {
   const open = md.renderer.rules.paragraph_open;
   const close = md.renderer.rules.paragraph_close;
   md.renderer.rules.paragraph_open = (tokens, idx, options, env, self) => {
-    const figure = tokens[idx]!.meta?.figure as { wide: boolean } | undefined;
-    if (figure) return `<figure class="figure${figure.wide ? " figure-wide" : ""}">\n`;
+    const figure = tokens[idx]!.meta?.figure as { wide: boolean; labelled: boolean } | undefined;
+    if (figure) {
+      const classes = [
+        "figure",
+        figure.wide && "figure-wide",
+        figure.labelled && "figure-labelled",
+      ];
+      return `<figure class="${classes.filter(Boolean).join(" ")}">\n`;
+    }
     return open ? open(tokens, idx, options, env, self) : self.renderToken(tokens, idx, options);
   };
   md.renderer.rules.paragraph_close = (tokens, idx, options, env, self) => {
-    const figure = tokens[idx]!.meta?.figure as { image: Token } | undefined;
+    const figure = tokens[idx]!.meta?.figure as { image: Token; caption?: Token[] } | undefined;
     if (!figure) {
       return close
         ? close(tokens, idx, options, env, self)
         : self.renderToken(tokens, idx, options);
     }
-    const caption = self.renderInline(figure.image.children ?? [], options, env).trim();
+    const caption = self
+      .renderInline(figure.caption ?? figure.image.children ?? [], options, env)
+      .trim();
     return `${caption ? `\n<figcaption>${caption}</figcaption>` : ""}\n</figure>\n`;
   };
 }

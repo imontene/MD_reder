@@ -295,6 +295,11 @@ table:has(> caption) {
   font-weight: 700;
 }
 
+/* A caption written with its own label ("**Figura 2.** …") is printed as written. */
+.figure-labelled figcaption::before {
+  content: none;
+}
+
 /* Tables: three rules (top, under the header, bottom), no grid and no stripes. */
 table {
   width: 100%;
