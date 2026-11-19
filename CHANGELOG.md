@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.16.0 — 2026-11-19
 
 - **Epígrafes en `academic_basic`**:
   - un párrafo que empieza con «**Tabla N.**» justo antes o después de una tabla es su
