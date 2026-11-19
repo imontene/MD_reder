@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.16.1 — 2026-11-19
 
 - **Epígrafes de figuras en `academic_basic`**: una imagen seguida, en la línea siguiente del
   mismo párrafo, de «**Figura N.** …» (`![alt](img.png)\` y debajo el epígrafe) se imprimía
