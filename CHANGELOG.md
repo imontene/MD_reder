@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.16.2 — 2026-11-20
 
 - **Marca de agua**: el texto de `--watermark` se imprime tal como se escribe, respetando
   mayúsculas y minúsculas (antes se pasaba siempre a mayúsculas). El tamaño de la letra tiene
