@@ -1,5 +1,11 @@
 # Cambios
 
+## Sin publicar
+
+- **Marca de agua**: el texto de `--watermark` se imprime tal como se escribe, respetando
+  mayúsculas y minúsculas (antes se pasaba siempre a mayúsculas). El tamaño de la letra tiene
+  en cuenta que las minúsculas son más estrechas, así que el texto sigue ocupando la diagonal.
+
 ## 2.16.1 — 2026-11-19
 
 - **Epígrafes de figuras en `academic_basic`**: una imagen seguida, en la línea siguiente del

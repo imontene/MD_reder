@@ -29,10 +29,11 @@ describe("watermark HTML", () => {
     expect(watermarkHtml({ ...page, text: "  ", field: false })).toBe("");
   });
 
-  it("holds the text, escaped and in capitals, and/or the field", () => {
+  it("holds the text, escaped and as written, and/or the field", () => {
     const html = watermarkHtml({ ...page, text: "Borrador <b>1</b>", field: true });
     expect(html).toContain('aria-hidden="true"');
-    expect(html).toContain("BORRADOR &lt;B&gt;1&lt;/B&gt;");
+    expect(html).toContain(">Borrador &lt;b&gt;1&lt;/b&gt;</span>");
+    expect(html).not.toContain("BORRADOR");
     expect(html).not.toContain("<b>");
     // Fields in the top-left and bottom-right corners, both with the field image.
     expect(
@@ -51,6 +52,8 @@ describe("watermark HTML", () => {
     expect(portrait.angle).toBeCloseTo(52.9, 1);
     expect(landscape.angle).toBeCloseTo(37.1, 1);
     expect(diagonalText("CONFIDENCIAL", 740, 980).fontSize).toBeLessThan(portrait.fontSize);
+    // Lowercase letters are narrower: the same word written that way is set larger.
+    expect(diagonalText("Borrador", 740, 980).fontSize).toBeGreaterThan(portrait.fontSize);
     // A short word is capped instead of filling the page.
     expect(diagonalText("OK", 740, 980).fontSize).toBe(Math.round(980 * 0.2));
   });

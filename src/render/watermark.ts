@@ -26,9 +26,13 @@ export interface WatermarkOptions {
 export function diagonalText(text: string, widthPx: number, heightPx: number) {
   const angle = (Math.atan2(heightPx, widthPx) * 180) / Math.PI;
   const diagonal = Math.hypot(widthPx, heightPx);
-  // Manrope 600 capitals average about 0.68 em; the text takes ~70% of the diagonal.
-  const chars = Math.max(1, [...text].length);
-  const fontSize = Math.min(heightPx * 0.2, (diagonal * 0.7) / (chars * 0.68));
+  // Manrope 600 averages about 0.68 em for capitals and digits, 0.56 em for lowercase letters
+  // and 0.3 em for spaces; the text takes ~70% of the diagonal.
+  const ems = [...text].reduce(
+    (sum, char) => sum + (char === " " ? 0.3 : /\p{Ll}/u.test(char) ? 0.56 : 0.68),
+    0,
+  );
+  const fontSize = Math.min(heightPx * 0.2, (diagonal * 0.7) / Math.max(ems, 0.68));
   return { angle, fontSize: Math.round(fontSize) };
 }
 
@@ -36,7 +40,7 @@ function textMark(text: string, widthPx: number, heightPx: number, dark: boolean
   const { angle, fontSize } = diagonalText(text, widthPx, heightPx);
   // HTML rather than SVG text: Chrome paints the SVG text of a fixed element on the first page
   // only, while HTML is repeated on every page like the rest of the element.
-  return `<div class="mdr-watermark-text" style="opacity: ${dark ? 0.14 : 0.1}"><span style="font-size: ${fontSize}px; transform: rotate(${(-angle).toFixed(2)}deg)">${escapeHtml(text.toUpperCase())}</span></div>`;
+  return `<div class="mdr-watermark-text" style="opacity: ${dark ? 0.14 : 0.1}"><span style="font-size: ${fontSize}px; transform: rotate(${(-angle).toFixed(2)}deg)">${escapeHtml(text)}</span></div>`;
 }
 
 function fieldMark(dark: boolean): string {
