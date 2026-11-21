@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.16.5 — 2026-11-21
 
 - **Marca de agua visible en todas las páginas**: aun con la 2.16.3, la marca iba debajo del
   contenido, así que las figuras y las tablas la tapaban y en las páginas de texto denso se
