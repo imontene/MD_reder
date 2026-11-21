@@ -4,7 +4,7 @@ import { FIELD_COLORS, fieldImage } from "./field.js";
 /**
  * Watermarks in the Anti-Gravity gradient (field-blue → field-cyan → field-violet), PDF only:
  * a text set diagonally across every page, and soft fields of light in the top-left and
- * bottom-right corners of every page. Both sit behind the content. Chrome repeats a `position: fixed` element on every
+ * bottom-right corners of every page. Chrome repeats a `position: fixed` element on every
  * printed page, at the same place in the text area, so pagination is left alone.
  */
 
@@ -75,13 +75,18 @@ export function watermarkHtml(options: WatermarkOptions): string {
     options.field ? fieldMark(options.dark) : "",
     text ? textMark(text, options.widthPx, options.heightPx, options.dark) : "",
   ].filter(Boolean);
-  return `<div class="mdr-watermark" aria-hidden="true">\n${parts.join("\n")}\n</div>`;
+  const classes = options.dark ? "mdr-watermark mdr-watermark-dark" : "mdr-watermark";
+  return `<div class="${classes}" aria-hidden="true">\n${parts.join("\n")}\n</div>`;
 }
 
 /**
- * Print-only placement: fixed over the text area of every page, under the content (the body
- * becomes a stacking layer above it). Hidden on screen. With the field on every page, the title
- * block's own field (Anti-Gravity) is dropped so the first page does not get two.
+ * Print-only placement: fixed over the text area of every page, above the content and blended
+ * into it. Under the content, the marks were hidden by every figure, table and card, and lost
+ * in dense text, so the word looked cut or missing. Blended above it (multiply on light pages,
+ * screen on dark ones) they tint the paper, figures and tables alike while the text keeps its
+ * own colour. A magazine's cover stays above them, clean. Hidden on screen. With the field on
+ * every page, the title block's own field (Anti-Gravity) is dropped so the first page does not
+ * get two.
  */
 export const WATERMARK_CSS = `.mdr-watermark { display: none; }
 @media print {
@@ -89,10 +94,12 @@ export const WATERMARK_CSS = `.mdr-watermark { display: none; }
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 0;
+    z-index: 2;
     pointer-events: none;
+    mix-blend-mode: multiply;
   }
-  .markdown-body { position: relative; z-index: 1; }
+  .mdr-watermark-dark { mix-blend-mode: screen; }
+  .doc-header:is(.cover-ink-light, .cover-ink-dark) { position: relative; z-index: 3; }
   .mdr-watermark-text {
     position: absolute;
     inset: 0;

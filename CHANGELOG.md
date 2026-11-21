@@ -1,5 +1,14 @@
 # Cambios
 
+## Sin publicar
+
+- **Marca de agua visible en todas las páginas**: aun con la 2.16.3, la marca iba debajo del
+  contenido, así que las figuras y las tablas la tapaban y en las páginas de texto denso se
+  perdía: parecía cortada o no aparecía. Ahora va por encima, fundida con el contenido
+  (`multiply` en las páginas claras, `screen` en las oscuras): tiñe el papel, las figuras y las
+  tablas sin tapar el texto, que conserva su color. La portada de los temas de revista sigue
+  limpia. El PDF sigue siendo vectorial.
+
 ## 2.16.4 — 2026-11-21
 
 - **Tablas anchas en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): desde la

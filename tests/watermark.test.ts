@@ -63,6 +63,25 @@ describe("watermark HTML", () => {
     expect(diagonalText("OK", 740, 980).fontSize).toBe(Math.round(980 * 0.2));
   });
 
+  it("is blended over the content, under a magazine's cover", () => {
+    // Under the content, figures, tables and dense text hid the marks; blended above, they tint
+    // everything while the text keeps its colour (multiply on light pages, screen on dark ones).
+    expect(WATERMARK_CSS).toMatch(
+      /\.mdr-watermark \{[^}]*z-index: 2;[^}]*mix-blend-mode: multiply;/,
+    );
+    expect(WATERMARK_CSS).toContain(".mdr-watermark-dark { mix-blend-mode: screen; }");
+    expect(WATERMARK_CSS).toMatch(
+      /\.doc-header:is\(\.cover-ink-light, \.cover-ink-dark\) \{[^}]*z-index: 3;/,
+    );
+    expect(WATERMARK_CSS).not.toContain(".markdown-body {");
+    expect(watermarkHtml({ ...page, text: "X", field: false })).toMatch(
+      /^<div class="mdr-watermark" /,
+    );
+    expect(watermarkHtml({ ...page, dark: true, text: "X", field: false })).toMatch(
+      /^<div class="mdr-watermark mdr-watermark-dark" /,
+    );
+  });
+
   it("is legible: stronger than before, bold, its gradient's stops of even lightness", () => {
     const light = watermarkHtml({ ...page, text: "X", field: false });
     expect(light).toContain('style="opacity: 0.18"');
@@ -108,7 +127,9 @@ describe("watermarks in the document", () => {
 });
 
 /** Pattern fills (gradients) and text of each page. */
-async function pages(file: string): Promise<{ patterns: number; text: string }[]> {
+async function pages(
+  file: string,
+): Promise<{ patterns: number; text: string; multiply: boolean }[]> {
   const task = getDocument({ data: new Uint8Array(readFileSync(file)) });
   const doc = await task.promise;
   const result = [];
@@ -119,8 +140,12 @@ async function pages(file: string): Promise<{ patterns: number; text: string }[]
     result.push({
       patterns: ops.fnArray.filter((fn) => fn === OPS.setFillColorN).length,
       text: content.items.map((item) => ("str" in item ? item.str : "")).join(" "),
+      multiply: false,
     });
   }
+  // The blend survives as a PDF blend mode (vector), not as a picture.
+  const multiply = readFileSync(file).toString("latin1").includes("/BM /Multiply");
+  for (const page of result) page.multiply = multiply;
   await task.destroy();
   return result;
 }
@@ -148,6 +173,7 @@ describe.skipIf(!browser && !browserRequired)("watermarked PDF", () => {
     // Each page carries the gradient. (Whether the mark's own text reaches the PDF's text
     // layer depends on the Chrome version, so it is not checked.)
     for (const page of result) expect(page.patterns).toBeGreaterThan(0);
+    expect(result[0]!.multiply).toBe(true);
     expect(result[0]!.text).toContain("Primera página.");
     expect(result[1]!.text).toContain("Segunda página.");
   });
