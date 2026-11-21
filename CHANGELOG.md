@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.16.6 — 2026-11-21
 
 - **Marca de agua en Adobe Acrobat**: el texto de `--watermark` se veía la primera vez que se
   mostraba una página y desaparecía al volver a ella. Su degradado, recortado a la forma de las
