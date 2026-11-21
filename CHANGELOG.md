@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.16.4 — 2026-11-21
 
 - **Tablas anchas en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): desde la
   2.14.0, una tabla más ancha que su columna (por ejemplo, con rutas de código largas) se salía
