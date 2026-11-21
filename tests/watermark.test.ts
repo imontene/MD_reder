@@ -7,6 +7,7 @@ import { DEFAULT_OPTIONS, normalizeOptions, OptionsError } from "../src/options.
 import { FIELD_COLORS, fieldImage, fieldSvg } from "../src/render/field.js";
 import {
   diagonalText,
+  gradientColors,
   WATERMARK_CSS,
   WATERMARK_TEXT,
   watermarkHtml,
@@ -37,7 +38,8 @@ describe("watermark HTML", () => {
   it("holds the text, escaped and as written, and/or the field", () => {
     const html = watermarkHtml({ ...page, text: "Borrador <b>1</b>", field: true });
     expect(html).toContain('aria-hidden="true"');
-    expect(html).toContain(">Borrador &lt;b&gt;1&lt;/b&gt;</span>");
+    // One span per letter: the text reads back once the tags are removed.
+    expect(html.replace(/<[^>]+>/g, "")).toContain("Borrador &lt;b&gt;1&lt;/b&gt;");
     expect(html).not.toContain("BORRADOR");
     expect(html).not.toContain("<b>");
     // Fields in the top-left and bottom-right corners, both with the field image.
@@ -83,14 +85,25 @@ describe("watermark HTML", () => {
   });
 
   it("is legible: stronger than before, bold, its gradient's stops of even lightness", () => {
-    const light = watermarkHtml({ ...page, text: "X", field: false });
+    // Each letter in a solid colour along the gradient, from the first stop to the last.
+    const light = watermarkHtml({ ...page, text: "ABC", field: false });
     expect(light).toContain('style="opacity: 0.18"');
-    expect(light).toContain("background-image: linear-gradient(90deg, #4f7cff, #118fb0, #8c6cf0)");
-    const dark = watermarkHtml({ ...page, dark: true, text: "X", field: false });
+    expect(light).toContain(
+      '<span style="color: #4f7cff">A</span><span style="color: #118fb0">B</span><span style="color: #8c6cf0">C</span>',
+    );
+    const dark = watermarkHtml({ ...page, dark: true, text: "ABC", field: false });
     expect(dark).toContain('style="opacity: 0.22"');
-    expect(dark).toContain("background-image: linear-gradient(90deg, #4f7cff, #22c3e6, #8c6cf0)");
+    expect(dark).toContain('<span style="color: #22c3e6">B</span>');
+    expect(gradientColors(["#000000", "#ffffff"], 5)).toEqual([
+      "#000000",
+      "#404040",
+      "#808080",
+      "#bfbfbf",
+      "#ffffff",
+    ]);
     expect(WATERMARK_CSS).toContain("font-weight: 700;");
-    expect(WATERMARK_CSS).toContain("background-clip: text;");
+    // No gradient clipped to the text: Chrome writes it as soft masks, which Acrobat drops.
+    expect(WATERMARK_CSS).not.toContain("background-clip");
     // On light pages the three stops have about the same relative luminance.
     const luminance = (hex: string) => {
       const [r, g, b] = [1, 3, 5].map((k) => {
@@ -113,7 +126,7 @@ describe("watermarks in the document", () => {
     try {
       const pdf = await renderDocument(input, { config: false }, pool, true);
       expect(pdf.html).toMatch(/<body>\n<div class="mdr-watermark" aria-hidden="true">/);
-      expect(pdf.html).toContain(".mdr-watermark-text span");
+      expect(pdf.html).toContain(".mdr-watermark-text > span");
       const html = await renderDocument(input, { config: false }, pool, false);
       expect(html.html).not.toContain("mdr-watermark");
 
@@ -127,9 +140,16 @@ describe("watermarks in the document", () => {
 });
 
 /** Pattern fills (gradients) and text of each page. */
-async function pages(
-  file: string,
-): Promise<{ patterns: number; text: string; multiply: boolean }[]> {
+async function pages(file: string): Promise<
+  {
+    patterns: number;
+    colors: Set<string>;
+    text: string;
+    multiply: boolean;
+    softMasks: boolean;
+  }[]
+> {
+  const raw = readFileSync(file).toString("latin1");
   const task = getDocument({ data: new Uint8Array(readFileSync(file)) });
   const doc = await task.promise;
   const result = [];
@@ -137,15 +157,19 @@ async function pages(
     const page = await doc.getPage(i);
     const ops = await page.getOperatorList();
     const content = await page.getTextContent();
+    const colors = new Set<string>();
+    ops.fnArray.forEach((fn, k) => {
+      if (fn === OPS.setFillRGBColor) colors.add(String(ops.argsArray[k]![0]));
+    });
     result.push({
       patterns: ops.fnArray.filter((fn) => fn === OPS.setFillColorN).length,
+      colors,
       text: content.items.map((item) => ("str" in item ? item.str : "")).join(" "),
-      multiply: false,
+      // The blend survives as a PDF blend mode (vector), not as a picture.
+      multiply: raw.includes("/BM /Multiply"),
+      softMasks: raw.includes("/SMask"),
     });
   }
-  // The blend survives as a PDF blend mode (vector), not as a picture.
-  const multiply = readFileSync(file).toString("latin1").includes("/BM /Multiply");
-  for (const page of result) page.multiply = multiply;
   await task.destroy();
   return result;
 }
@@ -164,14 +188,27 @@ describe.skipIf(!browser && !browserRequired)("watermarked PDF", () => {
     return pages(output);
   };
 
-  it.each([
-    ["the text", { watermark: "Borrador" }],
-    ["the field", { watermarkField: true }],
-  ])("repeats %s on every page, keeping the document's text", async (_, marks) => {
-    const result = await render({ theme: "light", ...marks });
+  it("repeats the text on every page in solid colours, with no soft masks", async () => {
+    const result = await render({ theme: "light", watermark: "Borrador" });
     expect(result).toHaveLength(2);
-    // Each page carries the gradient. (Whether the mark's own text reaches the PDF's text
-    // layer depends on the Chrome version, so it is not checked.)
+    // Each page carries the letters' colours, from the gradient's first stop to its last.
+    // (Whether the mark's own text reaches the PDF's text layer depends on the Chrome version,
+    // so it is not checked.)
+    for (const page of result) {
+      expect(page.colors).toContain("#4f7cff");
+      expect(page.colors).toContain("#8c6cf0");
+    }
+    expect(result[0]!.multiply).toBe(true);
+    // A gradient clipped to the text was written as soft masks, which Adobe Acrobat paints the
+    // first time a page is shown and then drops: the mark vanished on coming back to a page.
+    expect(result[0]!.softMasks).toBe(false);
+    expect(result[0]!.text).toContain("Primera página.");
+    expect(result[1]!.text).toContain("Segunda página.");
+  });
+
+  it("repeats the field on every page, keeping the document's text", async () => {
+    const result = await render({ theme: "light", watermarkField: true });
+    expect(result).toHaveLength(2);
     for (const page of result) expect(page.patterns).toBeGreaterThan(0);
     expect(result[0]!.multiply).toBe(true);
     expect(result[0]!.text).toContain("Primera página.");

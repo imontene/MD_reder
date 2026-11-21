@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- **Marca de agua en Adobe Acrobat**: el texto de `--watermark` se veía la primera vez que se
+  mostraba una página y desaparecía al volver a ella. Su degradado, recortado a la forma de las
+  letras (`background-clip: text`), quedaba escrito en el PDF como una cadena de máscaras
+  suaves, que Acrobat no conserva en su caché. Ahora cada letra lleva un color sólido del
+  degradado (azul → cian → violeta, igual que antes): el PDF ya no tiene máscaras para la marca.
+
 ## 2.16.5 — 2026-11-21
 
 - **Marca de agua visible en todas las páginas**: aun con la 2.16.3, la marca iba debajo del

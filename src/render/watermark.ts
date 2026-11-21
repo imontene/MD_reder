@@ -23,7 +23,8 @@ export interface WatermarkOptions {
 }
 
 /**
- * Look of the diagonal text, by page tone: its opacity and the stops of its gradient. On light
+ * Look of the diagonal text, by page tone: its opacity and the stops of its gradient (spread over
+ * its letters, see textMark). On light
  * pages the cyan stop is darkened to the lightness of the blue and the violet (relative luminance
  * about 0.23 each): the design system's cyan is twice as light, and at this opacity the middle of
  * the word faded into the paper. On dark pages the light cyan already reads best.
@@ -47,14 +48,46 @@ export function diagonalText(text: string, widthPx: number, heightPx: number) {
   return { angle, fontSize: Math.round(fontSize) };
 }
 
+/**
+ * `count` colours spread evenly along the gradient through `stops` (#rrggbb), one per letter of
+ * the mark.
+ */
+export function gradientColors(stops: string[], count: number): string[] {
+  const rgb = stops.map((hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)));
+  return Array.from({ length: count }, (_, k) => {
+    const t = count === 1 ? 0.5 : k / (count - 1);
+    const at = t * (rgb.length - 1);
+    const i = Math.min(Math.floor(at), rgb.length - 2);
+    const f = at - i;
+    const [a, b] = [rgb[i]!, rgb[i + 1]!];
+    return (
+      "#" +
+      a
+        .map((c, j) =>
+          Math.round(c + (b[j]! - c) * f)
+            .toString(16)
+            .padStart(2, "0"),
+        )
+        .join("")
+    );
+  });
+}
+
 function textMark(text: string, widthPx: number, heightPx: number, dark: boolean): string {
   const { angle, fontSize } = diagonalText(text, widthPx, heightPx);
   // HTML rather than SVG text: Chrome paints the SVG text of a fixed element on the first page
   // only, while HTML is repeated on every page like the rest of the element.
+  // Each letter in a solid colour of the gradient, rather than a gradient clipped to the text
+  // (background-clip: text): Chrome writes that clip as a chain of soft masks, which Adobe
+  // Acrobat paints the first time a page is shown and then drops from its cache.
   const look = dark ? WATERMARK_TEXT.dark : WATERMARK_TEXT.light;
-  const gradient = `linear-gradient(90deg, ${look.stops.join(", ")})`;
-  const style = `font-size: ${fontSize}px; transform: rotate(${(-angle).toFixed(2)}deg); background-image: ${gradient}`;
-  return `<div class="mdr-watermark-text" style="opacity: ${look.opacity}"><span style="${style}">${escapeHtml(text)}</span></div>`;
+  const letters = [...text];
+  const colors = gradientColors(look.stops, letters.length);
+  const html = letters
+    .map((letter, k) => `<span style="color: ${colors[k]}">${escapeHtml(letter)}</span>`)
+    .join("");
+  const style = `font-size: ${fontSize}px; transform: rotate(${(-angle).toFixed(2)}deg)`;
+  return `<div class="mdr-watermark-text" style="opacity: ${look.opacity}"><span style="${style}">${html}</span></div>`;
 }
 
 function fieldMark(dark: boolean): string {
@@ -107,16 +140,12 @@ export const WATERMARK_CSS = `.mdr-watermark { display: none; }
     align-items: center;
     justify-content: center;
   }
-  .mdr-watermark-text span {
+  .mdr-watermark-text > span {
     font-family: var(--font-text);
     font-weight: 700;
     letter-spacing: 0.02em;
     line-height: 1;
     white-space: nowrap;
-    color: transparent;
-    /* The gradient is set on the text itself (WATERMARK_TEXT), by page tone. */
-    -webkit-background-clip: text;
-    background-clip: text;
   }
   .mdr-watermark-field {
     position: absolute;
