@@ -5,7 +5,12 @@ import { describe, expect, it } from "vitest";
 import { BrowserPool, convertFile, renderDocument } from "../src/convert.js";
 import { DEFAULT_OPTIONS, normalizeOptions, OptionsError } from "../src/options.js";
 import { FIELD_COLORS, fieldImage, fieldSvg } from "../src/render/field.js";
-import { diagonalText, watermarkHtml } from "../src/render/watermark.js";
+import {
+  diagonalText,
+  WATERMARK_CSS,
+  WATERMARK_TEXT,
+  watermarkHtml,
+} from "../src/render/watermark.js";
 import { browserRequired, tempDir, testBrowser } from "./helpers.js";
 
 const browser = testBrowser();
@@ -58,11 +63,25 @@ describe("watermark HTML", () => {
     expect(diagonalText("OK", 740, 980).fontSize).toBe(Math.round(980 * 0.2));
   });
 
-  it("is stronger on dark pages", () => {
-    expect(watermarkHtml({ ...page, text: "X", field: true })).toContain("opacity: 0.1");
-    expect(watermarkHtml({ ...page, dark: true, text: "X", field: true })).toContain(
-      "opacity: 0.14",
-    );
+  it("is legible: stronger than before, bold, its gradient's stops of even lightness", () => {
+    const light = watermarkHtml({ ...page, text: "X", field: false });
+    expect(light).toContain('style="opacity: 0.18"');
+    expect(light).toContain("background-image: linear-gradient(90deg, #4f7cff, #118fb0, #8c6cf0)");
+    const dark = watermarkHtml({ ...page, dark: true, text: "X", field: false });
+    expect(dark).toContain('style="opacity: 0.22"');
+    expect(dark).toContain("background-image: linear-gradient(90deg, #4f7cff, #22c3e6, #8c6cf0)");
+    expect(WATERMARK_CSS).toContain("font-weight: 700;");
+    expect(WATERMARK_CSS).toContain("background-clip: text;");
+    // On light pages the three stops have about the same relative luminance.
+    const luminance = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((k) => {
+        const c = parseInt(hex.slice(k, k + 2), 16) / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+    };
+    const values = WATERMARK_TEXT.light.stops.map(luminance);
+    expect(Math.max(...values) - Math.min(...values)).toBeLessThan(0.02);
   });
 });
 

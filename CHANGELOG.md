@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- **Marca de agua legible**: el texto de `--watermark` quedaba tan tenue (10 % de opacidad) que
+  parecía cortado o no se veía: el cian del centro del degradado casi no se distinguía del
+  papel. Ahora va al 18 % (22 % en los temas oscuros) y en negrita, y en las páginas claras el
+  cian del degradado se oscurece hasta la luminosidad del azul y del violeta, de modo que la
+  palabra se lee entera y pareja. Los campos de luz no cambian.
+
 ## 2.16.2 — 2026-11-20
 
 - **Marca de agua**: el texto de `--watermark` se imprime tal como se escribe, respetando

@@ -22,11 +22,22 @@ export interface WatermarkOptions {
   dark: boolean;
 }
 
+/**
+ * Look of the diagonal text, by page tone: its opacity and the stops of its gradient. On light
+ * pages the cyan stop is darkened to the lightness of the blue and the violet (relative luminance
+ * about 0.23 each): the design system's cyan is twice as light, and at this opacity the middle of
+ * the word faded into the paper. On dark pages the light cyan already reads best.
+ */
+export const WATERMARK_TEXT = {
+  light: { opacity: 0.18, stops: [FIELD.blue, "#118fb0", FIELD.violet] },
+  dark: { opacity: 0.22, stops: [FIELD.blue, FIELD.cyan, FIELD.violet] },
+};
+
 /** Angle (degrees, counter-clockwise) and font size (px) that fit `text` on the diagonal. */
 export function diagonalText(text: string, widthPx: number, heightPx: number) {
   const angle = (Math.atan2(heightPx, widthPx) * 180) / Math.PI;
   const diagonal = Math.hypot(widthPx, heightPx);
-  // Manrope 600 averages about 0.68 em for capitals and digits, 0.56 em for lowercase letters
+  // Manrope 700 averages about 0.68 em for capitals and digits, 0.56 em for lowercase letters
   // and 0.3 em for spaces; the text takes ~70% of the diagonal.
   const ems = [...text].reduce(
     (sum, char) => sum + (char === " " ? 0.3 : /\p{Ll}/u.test(char) ? 0.56 : 0.68),
@@ -40,7 +51,10 @@ function textMark(text: string, widthPx: number, heightPx: number, dark: boolean
   const { angle, fontSize } = diagonalText(text, widthPx, heightPx);
   // HTML rather than SVG text: Chrome paints the SVG text of a fixed element on the first page
   // only, while HTML is repeated on every page like the rest of the element.
-  return `<div class="mdr-watermark-text" style="opacity: ${dark ? 0.14 : 0.1}"><span style="font-size: ${fontSize}px; transform: rotate(${(-angle).toFixed(2)}deg)">${escapeHtml(text)}</span></div>`;
+  const look = dark ? WATERMARK_TEXT.dark : WATERMARK_TEXT.light;
+  const gradient = `linear-gradient(90deg, ${look.stops.join(", ")})`;
+  const style = `font-size: ${fontSize}px; transform: rotate(${(-angle).toFixed(2)}deg); background-image: ${gradient}`;
+  return `<div class="mdr-watermark-text" style="opacity: ${look.opacity}"><span style="${style}">${escapeHtml(text)}</span></div>`;
 }
 
 function fieldMark(dark: boolean): string {
@@ -88,12 +102,12 @@ export const WATERMARK_CSS = `.mdr-watermark { display: none; }
   }
   .mdr-watermark-text span {
     font-family: var(--font-text);
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.02em;
     line-height: 1;
     white-space: nowrap;
     color: transparent;
-    background: linear-gradient(90deg, ${FIELD.blue}, ${FIELD.cyan}, ${FIELD.violet});
+    /* The gradient is set on the text itself (WATERMARK_TEXT), by page tone. */
     -webkit-background-clip: text;
     background-clip: text;
   }
