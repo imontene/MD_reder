@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.16.3 — 2026-11-21
 
 - **Marca de agua legible**: el texto de `--watermark` quedaba tan tenue (10 % de opacidad) que
   parecía cortado o no se veía: el cian del centro del degradado casi no se distinguía del
