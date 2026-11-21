@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- **Tablas anchas en los temas de revista** (`tech_magazine` y `tech_magazine-dark`): desde la
+  2.14.0, una tabla más ancha que su columna (por ejemplo, con rutas de código largas) se salía
+  por el borde de la página. Ahora se mide al imprimir: si no cabe en su columna, ocupa las dos,
+  como un diagrama; las que caben siguen en su columna. Si una tabla no cabe ni a todo el ancho,
+  el código de sus celdas se parte en varias líneas, y las palabras sólo si no hay otro remedio.
+
 ## 2.16.3 — 2026-11-21
 
 - **Marca de agua legible**: el texto de `--watermark` quedaba tan tenue (10 % de opacidad) que

@@ -383,6 +383,25 @@ div.math-error {
   }
 }
 
+/*
+ * Tables too wide for their column (marked when printing, render/browser.ts): across the columns
+ * in a document set in columns; and, if even the whole width is too narrow, with their words and
+ * code allowed to break.
+ */
+@media print {
+  .markdown-body > table.table-wide {
+    column-span: all;
+  }
+
+  table.table-wrap code {
+    overflow-wrap: anywhere;
+  }
+
+  table.table-wrap :is(th, td) {
+    overflow-wrap: break-word;
+  }
+}
+
 /* A heading and the diagram or image right after it go to the same page. */
 .keep-with-heading {
   break-inside: avoid;

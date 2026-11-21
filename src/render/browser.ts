@@ -43,13 +43,53 @@ export interface PrintOptions {
   allowRemote?: boolean;
   /**
    * Width of the page's text area in CSS px. When set, the page is laid out at that width with
-   * print styles before printing, to fit each figure's image above its caption (see
-   * FIGURE_FIT) and, with `cleanSoftHyphens`, to drop the soft hyphens that do not fall
-   * at the end of a line (see SOFT_HYPHEN_CLEANUP).
+   * print styles before printing, to let tables too wide for their column span the columns
+   * (see WIDE_TABLES), to fit each figure's image above its caption (see FIGURE_FIT) and, with
+   * `cleanSoftHyphens`, to drop the soft hyphens that do not fall at the end of a line (see
+   * SOFT_HYPHEN_CLEANUP).
    */
   textWidthPx?: number;
   cleanSoftHyphens?: boolean;
 }
+
+/**
+ * Tables too wide for their column. In a document set in columns (magazine themes), a table
+ * stays in its column unless it does not fit there: then it gets `table-wide` and spans the
+ * columns (theme.css), like a diagram. A table wider than the whole text area, even then, gets
+ * `table-wrap`, which lets the code in its cells break anywhere (and long words, if need be). Runs as our own code in the
+ * print page, before FIGURE_FIT (a spanning table moves what follows it).
+ */
+export const WIDE_TABLES = `(width) => {
+  const root = document.documentElement;
+  root.style.width = width + "px";
+  try {
+    const body = document.querySelector(".markdown-body");
+    if (!body) return 0;
+    const style = getComputedStyle(body);
+    const inner = body.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const count = parseInt(style.columnCount, 10);
+    const gap = parseFloat(style.columnGap) || 0;
+    const column = count > 1 ? (inner - gap * (count - 1)) / count : inner;
+    const tables = [...body.querySelectorAll(":scope > table")];
+    let changed = 0;
+    for (const table of tables) {
+      if (count > 1 && getComputedStyle(table).columnSpan !== "all" &&
+          table.getBoundingClientRect().width > column + 1) {
+        table.classList.add("table-wide");
+        changed++;
+      }
+    }
+    for (const table of tables) {
+      if (table.getBoundingClientRect().width > inner + 1) {
+        table.classList.add("table-wrap");
+        changed++;
+      }
+    }
+    return changed;
+  } finally {
+    root.style.width = "";
+  }
+}`;
 
 /**
  * Fit each figure on its page. Images and diagrams are scaled down to the page's text height
@@ -225,6 +265,7 @@ export class BrowserSession {
         const width = options.textWidthPx;
         await page.emulateMediaType("print");
         await page.setViewport({ width: Math.ceil(width), height: 1000 });
+        await page.evaluate(`(${WIDE_TABLES})(${width})`);
         await page.evaluate(`(${FIGURE_FIT})(${width})`);
         if (options.cleanSoftHyphens) await page.evaluate(`(${SOFT_HYPHEN_CLEANUP})(${width})`);
       }

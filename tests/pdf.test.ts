@@ -598,3 +598,66 @@ describe.skipIf(!browser && !browserRequired)("academic captions", () => {
     await doc.cleanup();
   });
 });
+
+describe.skipIf(!browser && !browserRequired)("wide tables in the magazine's columns", () => {
+  const path_ = "checkpoints/bds01/cont/reinforcement/iter_0803.pt";
+  const document = [
+    "Texto antes de las tablas.",
+    "",
+    "| Corta | Valor |",
+    "| ----- | ----- |",
+    "| Alfa  | 1     |",
+    "",
+    "| Campo | Ruta                | Nota |",
+    "| ----- | ------------------- | ---- |",
+    `| Origen | \`${path_}\` | Ancha |`,
+    "",
+    `| A | B | C | D | E | F |`,
+    `| - | - | - | - | - | - |`,
+    `| \`${path_}\` | \`${path_}\` | \`${path_}\` | \`${path_}\` | \`${path_}\` | ULTIMA |`,
+    "",
+  ].join("\n");
+
+  it("keep narrow tables in their column and spread wide ones across the page", async () => {
+    const dir = tempDir();
+    const input = path.join(dir, "doc.md");
+    writeFileSync(input, document);
+    const output = path.join(dir, "doc.pdf");
+    const result = await convertFile({
+      input,
+      output,
+      format: "pdf",
+      config: false,
+      overrides: { theme: "tech_magazine" },
+    });
+    expect(result.diagnostics).toEqual([]);
+    const doc = await getDocument({ data: new Uint8Array(readFileSync(output)) }).promise;
+    const items: { str: string; x: number; right: number }[] = [];
+    let width = 0;
+    for (let n = 1; n <= doc.numPages; n++) {
+      const page = await doc.getPage(n);
+      width = page.getViewport({ scale: 1 }).width;
+      for (const item of (await page.getTextContent()).items) {
+        if ("str" in item && item.str.trim()) {
+          items.push({
+            str: item.str,
+            x: item.transform[4]!,
+            right: item.transform[4]! + item.width,
+          });
+        }
+      }
+    }
+    await doc.cleanup();
+    const find = (text: string) =>
+      items.find((i) => i.str.toLowerCase().includes(text.toLowerCase()))!;
+    // The narrow table stays in one column: none of its cells crosses the middle of the page.
+    for (const cell of ["Corta", "Valor", "Alfa"]) {
+      const { x, right } = find(cell);
+      expect(right < width / 2 || x > width / 2, cell).toBe(true);
+    }
+    // The wide one spans the columns: its last cell sits in the right half.
+    expect(find("Ancha").x).toBeGreaterThan(width / 2);
+    // The widest wraps its cells rather than running off the page: its last column is printed.
+    expect(find("ULTIMA").right).toBeLessThan(width);
+  });
+});

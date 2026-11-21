@@ -222,9 +222,9 @@ Ejemplo completo: [`examples/articulo-academico.md`](../examples/articulo-academ
 ### 4.1 Uso previsto
 
 Reportajes y artículos de divulgación con aspecto de revista de tecnología: portada a sangre
-con una imagen, Inter de 300 a 800 a dos columnas justificadas en el PDF, y la serifa Newsreader
-en la bajada, la letra capitular y las citas destacadas. `tech_magazine-dark` imprime el
-artículo sobre fondo negro.
+con una imagen, Inter de 300 a 800 a dos columnas justificadas en el PDF (una tabla que no cabe
+en su columna pasa a ocupar las dos), y la serifa Newsreader en la bajada, la letra capitular y
+las citas destacadas. `tech_magazine-dark` imprime el artículo sobre fondo negro.
 
 ### 4.2 Front matter
 
