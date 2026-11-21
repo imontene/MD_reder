@@ -7,6 +7,9 @@
   letras (`background-clip: text`), quedaba escrito en el PDF como una cadena de máscaras
   suaves, que Acrobat no conserva en su caché. Ahora cada letra lleva un color sólido del
   degradado (azul → cian → violeta, igual que antes): el PDF ya no tiene máscaras para la marca.
+- **Marca de agua con su color y transparencia originales**: ahora que va por encima del
+  contenido (2.16.5) se ve en todas las páginas, así que el texto vuelve al aspecto anterior a la
+  2.16.3: 10 % de opacidad (14 % en los temas oscuros) y el cian original del degradado.
 
 ## 2.16.5 — 2026-11-21
 

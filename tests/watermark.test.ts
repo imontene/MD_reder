@@ -9,7 +9,6 @@ import {
   diagonalText,
   gradientColors,
   WATERMARK_CSS,
-  WATERMARK_TEXT,
   watermarkHtml,
 } from "../src/render/watermark.js";
 import { browserRequired, tempDir, testBrowser } from "./helpers.js";
@@ -84,15 +83,15 @@ describe("watermark HTML", () => {
     );
   });
 
-  it("is legible: stronger than before, bold, its gradient's stops of even lightness", () => {
+  it("colours each letter along the gradient, a little stronger on dark pages", () => {
     // Each letter in a solid colour along the gradient, from the first stop to the last.
     const light = watermarkHtml({ ...page, text: "ABC", field: false });
-    expect(light).toContain('style="opacity: 0.18"');
+    expect(light).toContain('style="opacity: 0.1"');
     expect(light).toContain(
-      '<span style="color: #4f7cff">A</span><span style="color: #118fb0">B</span><span style="color: #8c6cf0">C</span>',
+      '<span style="color: #4f7cff">A</span><span style="color: #22c3e6">B</span><span style="color: #8c6cf0">C</span>',
     );
     const dark = watermarkHtml({ ...page, dark: true, text: "ABC", field: false });
-    expect(dark).toContain('style="opacity: 0.22"');
+    expect(dark).toContain('style="opacity: 0.14"');
     expect(dark).toContain('<span style="color: #22c3e6">B</span>');
     expect(gradientColors(["#000000", "#ffffff"], 5)).toEqual([
       "#000000",
@@ -104,16 +103,6 @@ describe("watermark HTML", () => {
     expect(WATERMARK_CSS).toContain("font-weight: 700;");
     // No gradient clipped to the text: Chrome writes it as soft masks, which Acrobat drops.
     expect(WATERMARK_CSS).not.toContain("background-clip");
-    // On light pages the three stops have about the same relative luminance.
-    const luminance = (hex: string) => {
-      const [r, g, b] = [1, 3, 5].map((k) => {
-        const c = parseInt(hex.slice(k, k + 2), 16) / 255;
-        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-      });
-      return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
-    };
-    const values = WATERMARK_TEXT.light.stops.map(luminance);
-    expect(Math.max(...values) - Math.min(...values)).toBeLessThan(0.02);
   });
 });
 

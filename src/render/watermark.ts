@@ -24,14 +24,12 @@ export interface WatermarkOptions {
 
 /**
  * Look of the diagonal text, by page tone: its opacity and the stops of its gradient (spread over
- * its letters, see textMark). On light
- * pages the cyan stop is darkened to the lightness of the blue and the violet (relative luminance
- * about 0.23 each): the design system's cyan is twice as light, and at this opacity the middle of
- * the word faded into the paper. On dark pages the light cyan already reads best.
+ * its letters, see textMark): the design system's blue, cyan and violet, a little stronger on
+ * dark pages.
  */
 export const WATERMARK_TEXT = {
-  light: { opacity: 0.18, stops: [FIELD.blue, "#118fb0", FIELD.violet] },
-  dark: { opacity: 0.22, stops: [FIELD.blue, FIELD.cyan, FIELD.violet] },
+  light: { opacity: 0.1, stops: [FIELD.blue, FIELD.cyan, FIELD.violet] },
+  dark: { opacity: 0.14, stops: [FIELD.blue, FIELD.cyan, FIELD.violet] },
 };
 
 /** Angle (degrees, counter-clockwise) and font size (px) that fit `text` on the diagonal. */
