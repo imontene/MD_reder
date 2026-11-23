@@ -60,6 +60,25 @@ function splitImageCaption(tokens: Token[], i: number): Token[] | undefined {
   return caption;
 }
 
+/** Pandoc's table caption: "Table: …" or ": …", the number left to the theme. */
+const PANDOC_TABLE_CAPTION = /^(?:table|tabla|cuadro|tabela|tableau|tabelle)?:\s+/i;
+
+/**
+ * The inline token of a paragraph that starts with "Table: " (or ": "), or undefined. Its
+ * caption is numbered by the theme ("Tabla 1:"), not written by the author.
+ */
+function pandocCaption(tokens: Token[], i: number): Token | undefined {
+  if (tokens[i]?.type !== "paragraph_open" || tokens[i + 2]?.type !== "paragraph_close") {
+    return undefined;
+  }
+  const inline = tokens[i + 1]!;
+  const first = inline.children?.[0];
+  return first?.type === "text" && PANDOC_TABLE_CAPTION.test(first.content) ? inline : undefined;
+}
+
+/** Class of a caption the theme numbers itself ("Tabla 1:" before the text). */
+export const NUMBERED_CAPTION_CLASS = "caption-numbered";
+
 const isMermaid = (token: Token | undefined) =>
   token?.type === "fence" && token.info.trim().toLowerCase() === "mermaid";
 
@@ -97,7 +116,10 @@ function tableEndingAt(tokens: Token[], i: number): Token | undefined {
  * - "**Figura 2.** …" in a paragraph of its own next to a lone image stays where it is, styled
  *   as a caption.
  *
- * The caption keeps its text and label as written: tables and diagrams are not numbered.
+ * - "Table: …" (or ": …", as in Pandoc) right before or after a table becomes its caption
+ *   without a written label: the theme numbers it ("Tabla 1:").
+ *
+ * A caption with a bold label keeps its text and label as written: it is not numbered.
  * Runs before `keep_with_heading`, so a diagram keeps its caption when grouped with its heading.
  */
 export function captions(md: MarkdownIt): void {
@@ -111,11 +133,17 @@ export function captions(md: MarkdownIt): void {
         i += 2;
         continue;
       }
-      const table = captionParagraph(tokens, i, TABLE_LABEL);
+      const numbered = pandocCaption(tokens, i);
+      const table = numbered ?? captionParagraph(tokens, i, TABLE_LABEL);
       if (table) {
         const target =
           tokens[i + 3]?.type === "table_open" ? tokens[i + 3] : tableEndingAt(tokens, i);
         if (target && !target.meta?.caption) {
+          if (numbered) {
+            const first = numbered.children![0]!;
+            first.content = first.content.replace(PANDOC_TABLE_CAPTION, "");
+            numbered.meta = { ...numbered.meta, numbered: true };
+          }
           target.meta = { ...target.meta, caption: table };
           tokens.splice(i, 3);
           i--;
@@ -143,6 +171,7 @@ export function captions(md: MarkdownIt): void {
     const caption = tokens[idx]!.meta?.caption as Token | undefined;
     const open = self.renderToken(tokens, idx, options);
     if (!caption) return open;
-    return `${open}<caption>${self.renderInline(caption.children ?? [], options, env)}</caption>\n`;
+    const numbered = caption.meta?.numbered ? ` class="${NUMBERED_CAPTION_CLASS}"` : "";
+    return `${open}<caption${numbered}>${self.renderInline(caption.children ?? [], options, env)}</caption>\n`;
   };
 }

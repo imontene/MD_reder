@@ -312,9 +312,9 @@ entregarlo por partes.
 | Paquete `computer-modern` sin mantenimiento activo                                      | Las fuentes son archivos estáticos OFL; si hiciera falta, se copian al repositorio con su licencia    |
 | Diferencias de Chrome en cajas de margen giradas                                        | Probado en Chrome 153; la prueba de PDF lo vigila en CI (Windows y Linux)                             |
 
-## 10. Preguntas abiertas (no bloquean el inicio)
+## 10. Decisiones sobre las preguntas abiertas (23 de noviembre de 2026)
 
-1. ¿Numerar también las secciones en `open_access` por defecto? El prototipo lo hace; el plan
-   lo mantiene así.
-2. ¿Publicar `preprint` primero, por separado, o ambos temas juntos en la 2.17.0?
-3. Estilo de la cita generada en `open_access`: el plan usa Vancouver; ¿otro preferido (APA)?
+1. `open_access` numera las secciones por defecto, como el prototipo.
+2. `preprint` se publica primero, en la 2.17.0 (pasos 0, 1a–1c, 2 y 4). `open_access` y el
+   campo `authors` estructurado (1d, 3) van en una versión posterior.
+3. La cita generada de `open_access` usa el estilo Vancouver.

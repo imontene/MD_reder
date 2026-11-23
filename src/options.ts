@@ -25,6 +25,7 @@ export const BUILTIN_THEMES = [
   "academic_basic",
   "tech_magazine",
   "tech_magazine-dark",
+  "preprint",
 ] as const;
 export type BuiltinTheme = (typeof BUILTIN_THEMES)[number];
 
@@ -116,6 +117,10 @@ export interface DocumentOptions {
   coverInk?: CoverInk;
   /** Magazine themes: accent colour (drop cap, small headings, rules), e.g. "#2f6bff". */
   accent?: string;
+  /** Number the `##` and `###` sections ("1 Introducción", "1.1 …"); on by default in preprint. */
+  numberSections?: boolean;
+  /** Preprint theme: text set sideways in the left margin of page 1, e.g. an arXiv identifier. */
+  preprintStamp?: string;
 }
 
 export const DEFAULT_OPTIONS: DocumentOptions = {
@@ -143,6 +148,15 @@ const MAGAZINE_DEFAULTS: Partial<DocumentOptions> = {
   font: "inter",
 };
 
+/** The preprint theme: a LaTeX article, numbered sections, justified on wide margins. */
+const PREPRINT_DEFAULTS: Partial<DocumentOptions> = {
+  margin: "30mm 32mm 28mm",
+  fontSize: "10pt",
+  font: "inter",
+  justify: true,
+  numberSections: true,
+};
+
 /**
  * Defaults of a built-in theme, applied under every other layer: the academic theme sets its
  * two columns in smaller type on wider margins, with Inter for titles, captions and labels.
@@ -151,6 +165,7 @@ export const THEME_DEFAULTS: Partial<Record<BuiltinTheme, Partial<DocumentOption
   academic_basic: { margin: "18mm 8mm", fontSize: "9.5pt", font: "inter" },
   tech_magazine: MAGAZINE_DEFAULTS,
   "tech_magazine-dark": MAGAZINE_DEFAULTS,
+  preprint: PREPRINT_DEFAULTS,
 };
 
 export class OptionsError extends MdRenderError {
@@ -319,6 +334,8 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   coverText: oneOf(COVER_TEXT_POSITIONS),
   coverInk: oneOf(COVER_INKS),
   accent: color,
+  numberSections: bool,
+  preprintStamp: text,
 };
 
 /**

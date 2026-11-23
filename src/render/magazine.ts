@@ -3,7 +3,9 @@ import path from "node:path";
 import { listAssets, MAGAZINES_KEY, readAsset } from "../assets.js";
 import type { Diagnostic } from "../diagnostics.js";
 import type { CoverInk, CoverTextPosition, DocumentOptions, Margins } from "../options.js";
-import { columns } from "./header-footer.js";
+import { cssString, pageCss, type PageValues } from "./page-css.js";
+
+export { cssString };
 import { paperSizeMm } from "./page.js";
 
 /**
@@ -140,15 +142,10 @@ function pickCover(
   return folder.covers[Math.floor(random() * folder.covers.length)]!;
 }
 
-/** A CSS string literal. */
-export const cssString = (value: string): string =>
-  `"${value.replace(/[\\"]/g, "\\$&").replace(/[\r\n]+/g, " ")}"`;
-
-export interface PageValues {
+export interface MagazineValues {
   title: string;
   author?: string;
   date?: string;
-  magazine: string;
 }
 
 /** Default veil behind the cover text for each ink (theme-tech-magazine.css has the same). */
@@ -163,41 +160,6 @@ const VEILS: Record<CoverInk, string> = {
  */
 const veil = (colour: string, position: CoverTextPosition) =>
   `linear-gradient(${position === "top" ? "to bottom" : "to top"}, ${colour} 0%, transparent 50%)`;
-
-const COUNTERS: Record<string, string> = { page: "counter(page)", pages: "counter(pages)" };
-
-/** A header/footer column ("{magazine} · {date}") as a CSS `content` value. */
-function marginContent(text: string, values: PageValues): string | undefined {
-  const parts: string[] = [];
-  let literal = "";
-  for (const piece of text.trim().split(/(\{\w+\})/)) {
-    const name = /^\{(\w+)\}$/.exec(piece)?.[1];
-    const counter = name ? COUNTERS[name] : undefined;
-    if (counter) {
-      if (literal) parts.push(cssString(literal));
-      parts.push(counter);
-      literal = "";
-      continue;
-    }
-    const value = name ? values[name as keyof PageValues] : undefined;
-    literal += value ?? piece;
-  }
-  if (literal) parts.push(cssString(literal));
-  return parts.length ? parts.join(" ") : undefined;
-}
-
-const SIDES = ["left", "center", "right"] as const;
-
-/** `@top-left { content: … }` and so on for a header or footer spec. */
-function marginBoxes(spec: string | undefined, edge: "top" | "bottom", values: PageValues): string {
-  if (!spec) return "";
-  return columns(spec)
-    .map((column, i) => {
-      const content = marginContent(column, values);
-      return content ? `  @${edge}-${SIDES[i]} { content: ${content}; }\n` : "";
-    })
-    .join("");
-}
 
 export interface MagazinePage {
   /** Stylesheet: cover picture, accent, masthead, page margins, header and footer. */
@@ -215,7 +177,7 @@ export interface MagazineInput {
   baseDir: string;
   /** The document has a title block, which becomes the cover. */
   hasCover: boolean;
-  values: Omit<PageValues, "magazine">;
+  values: MagazineValues;
   /** Picks a cover when none is asked for (Math.random; tests pass their own). */
   random?: () => number;
 }
@@ -272,18 +234,15 @@ export function magazinePage(input: MagazineInput): MagazinePage {
     [options.date ? "{magazine} · {date}" : "{magazine}", options.pageNumbers ? "{page}" : ""].join(
       " | | ",
     );
-  const page = [
-    `  margin: ${margin.top} ${margin.right} ${margin.bottom} ${margin.left};\n`,
-    marginBoxes(options.header, "top", values),
-    marginBoxes(footer, "bottom", values),
-  ].join("");
-  rules.push(`@page {\n${page}}`);
-  if (hasCover) {
-    const none = ["top", "bottom"]
-      .flatMap((edge) => SIDES.map((side) => `  @${edge}-${side} { content: none; }\n`))
-      .join("");
-    rules.push(`@page :first {\n  margin: 0;\n${none}}`);
-  }
+  rules.push(
+    pageCss({
+      margin,
+      header: options.header,
+      footer,
+      values,
+      first: hasCover ? { margin: "0", noHeaderFooter: true } : undefined,
+    }),
+  );
 
   if (root.length) rules.unshift(`:root { ${root.join(" ")} }`);
   return {

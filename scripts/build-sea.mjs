@@ -88,7 +88,7 @@ for (const dir of listing.split(/\r?\n/).filter(Boolean).slice(1).sort()) {
   const id = `${pkg.name}@${pkg.version}`;
   if (seen.has(id)) continue;
   seen.add(id);
-  const licenseFile = readdirSync(dir).find((f) => /^(licen[cs]e|copying)(\.|$)/i.test(f));
+  const licenseFile = readdirSync(dir).find((f) => /^(licen[cs]e|copying|ofl)(\.|$)/i.test(f));
   const text = licenseFile ? readFileSync(path.join(dir, licenseFile), "utf8").trim() : "";
   notices.push(`${id} (${pkg.license ?? "see package"})\n\n${text}`);
 }

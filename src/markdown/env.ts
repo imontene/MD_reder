@@ -1,5 +1,6 @@
 import type { Env, MarkdownIt, Token } from "markdown-it";
 import type { Diagnostic } from "../diagnostics.js";
+import type { SectionNumbering } from "./sections.js";
 
 export interface MermaidBlock {
   source: string;
@@ -30,6 +31,8 @@ export interface RenderEnv extends Env {
   figures?: boolean;
   /** Turn "**Tabla 1.** …" and "**Figura 2.** …" paragraphs into captions (see captions.ts). */
   captions?: boolean;
+  /** Number the `##` and `###` headings before the back matter (see sections.ts). */
+  numberSections?: SectionNumbering;
   /** Set when the document places its table of contents with a `[[toc]]` marker. */
   hasTocMarker: boolean;
 }

@@ -55,6 +55,9 @@ export function collectHeadings(md: MarkdownIt, tokens: Token[], env: RenderEnv)
             return escapeHtml(child.content);
           case "code_inline":
             return `<code>${escapeHtml(child.content)}</code>`;
+          case "html_inline":
+            // The section number added by sections.ts; other raw HTML stays out of the index.
+            return child.meta?.sectionNumber ? child.content : "";
           case "math_inline":
           case "softbreak":
             return md.renderer.renderInline([child], md.options, env);

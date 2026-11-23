@@ -108,6 +108,14 @@ function mathBlock(
 }
 
 /** Render TeX with KaTeX; on failure record an error and show the source highlighted instead. */
+/**
+ * Class of a display formula: "math-display", plus "math-tagged" when the formula numbers
+ * itself (\tag) or asks for no number (\notag, \nonumber), so that themes numbering equations
+ * leave it alone.
+ */
+export const displayClass = (tex: string): string =>
+  /\\(tag\*?|notag|nonumber)(?![a-z])/i.test(tex) ? "math-display math-tagged" : "math-display";
+
 export function renderTex(tex: string, displayMode: boolean, env: RenderEnv, token: Token): string {
   env.hasMath = true;
   try {
@@ -143,18 +151,19 @@ export function math(md: MarkdownIt): void {
   });
 
   const rules = md.renderer.rules;
+  const display = (token: Token, env: RenderEnv) =>
+    `<div class="${displayClass(token.content)}">${renderTex(token.content, true, env, token)}</div>\n`;
   rules.math_inline = (tokens, idx, _options, env) =>
     renderTex(tokens[idx]!.content, false, env as RenderEnv, tokens[idx]!);
   rules.math_inline_display = (tokens, idx, _options, env) =>
     renderTex(tokens[idx]!.content, true, env as RenderEnv, tokens[idx]!);
-  rules.math_block = (tokens, idx, _options, env) =>
-    `<div class="math-display">${renderTex(tokens[idx]!.content, true, env as RenderEnv, tokens[idx]!)}</div>\n`;
+  rules.math_block = (tokens, idx, _options, env) => display(tokens[idx]!, env as RenderEnv);
 
   const fence = rules.fence!;
   rules.fence = (tokens, idx, options, env, self) => {
     const token = tokens[idx]!;
     if (token.info.trim().toLowerCase() === "math") {
-      return `<div class="math-display">${renderTex(token.content, true, env as RenderEnv, token)}</div>\n`;
+      return display(token, env as RenderEnv);
     }
     return fence(tokens, idx, options, env, self);
   };

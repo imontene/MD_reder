@@ -156,6 +156,30 @@ describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
     expect(text.replaceAll(" ", "")).toContain("ALPHAZEROCHESS·NOVIEMBREDE2026");
   });
 
+  it("prints the preprint theme in Computer Modern, numbered, with the stamp on page 1", async () => {
+    const output = path.join(tempDir(), "preprint.pdf");
+    const result = await convertFile({ input: fixture("preprint.md"), output, format: "pdf" });
+    expect(result.diagnostics).toEqual([]);
+    const raw = readFileSync(output).toString("latin1");
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+CMUSerif-Roman/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+CMUSerif-Bold/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+KaTeX_Main-Regular/);
+    expect(raw).not.toMatch(/\/Subtype\s*\/Type3/);
+    expect(raw).not.toMatch(SYSTEM_FONT);
+
+    const { pages, text } = await pdfText(output);
+    expect(pages).toBe(1);
+    expect(text).toContain("1 Introducción");
+    expect(text).toContain("(1)");
+    expect(text).toContain("Tabla 1: Parámetros ajustados.");
+    // The "[1]" marker is placed apart, so it may come out after the item's text.
+    expect(text).toContain("Autor A. Título de ejemplo.");
+    expect(text).toContain("[1]");
+    expect(text).toContain("preprint:2026.0042v1");
+    // No running head on page 1.
+    expect(text.toUpperCase()).not.toContain("PREPRINT — 22");
+  });
+
   it("writes the document title into the PDF metadata", async () => {
     const output = path.join(tempDir(), "basic.pdf");
     await convertFile({ input: fixture("basic.md"), output, format: "pdf" });

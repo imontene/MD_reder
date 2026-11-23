@@ -1,5 +1,5 @@
 ---
-title: Especificación de Markdown para los temas academic_basic y tech_magazine
+title: Especificación de Markdown para los temas academic_basic, tech_magazine y preprint
 subtitle: Qué debe cumplir un documento para verse bien con cada tema
 author: mdrender
 date: 2026-11-04
@@ -10,18 +10,19 @@ date: 2026-11-04
 Este documento define cómo escribir un archivo Markdown (`.md`) para convertirlo con mdrender
 usando uno de estos temas:
 
-| Tema             | Aspecto                                                  | Variante oscura      |
-| ---------------- | -------------------------------------------------------- | -------------------- |
-| `academic_basic` | Artículo de revista científica, a dos columnas           | no                   |
-| `tech_magazine`  | Revista de divulgación tecnológica, con portada a sangre | `tech_magazine-dark` |
+| Tema             | Aspecto                                                     | Variante oscura      |
+| ---------------- | ----------------------------------------------------------- | -------------------- |
+| `academic_basic` | Artículo de revista científica, a dos columnas              | no                   |
+| `tech_magazine`  | Revista de divulgación tecnológica, con portada a sangre    | `tech_magazine-dark` |
+| `preprint`       | Preprint al estilo arXiv: artículo LaTeX en Computer Modern | no                   |
 
-Ninguno de los dos es el tema por defecto: hay que pedirlo con `theme:` en el front matter, con
+Ninguno de ellos es el tema por defecto: hay que pedirlo con `theme:` en el front matter, con
 `--theme` en la línea de comandos o en `mdrender.config.json`.
 
 Los términos **debe** y **no debe** indican requisitos: si no se cumplen, la conversión falla o
 el resultado no tiene el aspecto del tema. **Conviene** indica una recomendación.
 
-## 2. Reglas comunes a ambos temas
+## 2. Reglas comunes a los tres temas
 
 ### 2.1 Codificación y estructura del archivo
 
@@ -42,7 +43,7 @@ letra, tipografía) se aplican solo si nadie más los fija.
 
 ### 2.3 Campos del bloque de título
 
-Estos campos valen para ambos temas. El bloque de título (o la portada, en `tech_magazine`)
+Estos campos valen para los tres temas. El bloque de título (o la portada, en `tech_magazine`)
 **solo aparece si hay `title` en el front matter**.
 
 | Campo          | Tipo          | Uso                                                                                     |
@@ -76,7 +77,7 @@ página del pie por defecto.
 
 ### 2.5 Elementos de Markdown admitidos
 
-Ambos temas admiten todo lo que admite mdrender: párrafos, títulos `##` a `######`, énfasis,
+Los tres temas admiten todo lo que admite mdrender: párrafos, títulos `##` a `######`, énfasis,
 enlaces, listas (también de tareas), citas, alertas `> [!NOTE]` (`TIP`, `IMPORTANT`, `WARNING`,
 `CAUTION`), tablas GFM, código con resaltado, ecuaciones `$…$` y `$$…$$` (KaTeX), diagramas
 ` ```mermaid `, notas al pie `[^1]`, imágenes locales o en `data:` y `[[toc]]`. Cada tema da a
@@ -84,7 +85,7 @@ algunos de ellos un significado propio, descrito en las secciones 3 y 4.
 
 ### 2.6 Imágenes como figuras
 
-En ambos temas, **una imagen sola en su párrafo** (con una línea en blanco antes y después) se
+En los tres temas, **una imagen sola en su párrafo** (con una línea en blanco antes y después) se
 convierte en figura:
 
 ```markdown
@@ -99,6 +100,18 @@ convierte en figura:
   Las imágenes remotas (`https://…`) solo se cargan con `--allow-remote`.
 - Un SVG usado como imagen no puede usar las fuentes del documento: sus textos se dibujan con
   las fuentes del sistema.
+
+### 2.7 Secciones finales y referencias
+
+- Una línea con solo `[[backmatter]]` marca el comienzo de las secciones finales
+  (contribuciones, financiamiento, referencias…). Lo que sigue hasta el final del documento no se
+  numera, aunque el tema numere las secciones.
+- Una lista numerada bajo un título «Referencias» (también «References», «Bibliografía»,
+  «Bibliography», «Références», «Literatur» o «Referências») es la lista de referencias. En
+  `preprint` se imprime como «[1]», «[2]»…, y ese título no se numera.
+- `number-sections: true` numera los títulos `##` y `###` («1 Introducción», «1.1 …») con
+  cualquier tema; `preprint` lo hace por defecto y `number-sections: false` lo desactiva. El
+  número aparece también en el índice y en los marcadores del PDF.
 
 ## 3. Tema `academic_basic`
 
@@ -413,23 +426,128 @@ Más texto.
 
 Ejemplo completo: [`examples/revista-tecnologia.md`](../examples/revista-tecnologia.md).
 
-## 5. Lista de comprobación
+## 5. Tema `preprint`
+
+### 5.1 Uso previsto
+
+Preprints y artículos para repositorios como arXiv, con el aspecto de la clase `article` de
+LaTeX: CMU Serif (Computer Modern) en una columna justificada, la misma familia de las fórmulas
+de KaTeX, y secciones, ecuaciones, figuras y tablas numeradas.
+
+### 5.2 Front matter
+
+| Campo              | Requisito               | Notas                                                          |
+| ------------------ | ----------------------- | -------------------------------------------------------------- |
+| `theme`            | **debe** ser `preprint` | o `--theme preprint`                                           |
+| `title`            | **conviene**            | Título centrado; sin él no hay bloque de título                |
+| `author`           | conviene                | Con `^n^` para las afiliaciones                                |
+| `affiliations`     | conviene si hay `^n^`   | En cursiva, centradas                                          |
+| `date`             | conviene                | Junto a los autores y en el encabezado («PREPRINT — fecha»)    |
+| `abstract`         | conviene                | Rótulo «Resumen» centrado y texto más angosto                  |
+| `keywords`         | opcional                | Bajo el resumen                                                |
+| `preprint-stamp`   | opcional                | Texto del sello vertical en el margen izquierdo de la página 1 |
+| `number-sections`  | opcional                | `false` para no numerar las secciones                          |
+| `header`, `footer` | opcional                | Reemplazan el encabezado y el pie por defecto                  |
+
+Reglas:
+
+- `preprint-stamp` es texto libre del autor: mdrender no agrega ningún sello por su cuenta. Un
+  identificador de arXiv (`arXiv:2611.01234v1 [cs.LG] 22 Nov 2026`) **solo debe** usarse si el
+  trabajo de verdad tiene ese identificador.
+- Encabezado por defecto, desde la página 2: «PREPRINT — {date}» a la derecha (sin `date`, solo
+  «PREPRINT»). Pie por defecto: número de página centrado, también en la página 1.
+  `--no-page-numbers` lo quita.
+
+Valores por defecto del tema: márgenes de 30 mm arriba, 32 mm a los lados y 28 mm abajo, texto
+de 10 pt, párrafos justificados con partición de palabras y secciones numeradas.
+
+### 5.3 Qué hace el tema con cada elemento
+
+| Elemento                                            | Resultado en el PDF                                                                                  |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Bloque de título                                    | Centrado: título, autores, fecha, afiliaciones, resumen y palabras clave                             |
+| `## Título`, `### Título`                           | «1 Introducción», «1.1 …» en negrita; `####` en adelante sin número                                  |
+| Párrafos                                            | Justificados, sin espacio entre ellos; desde el segundo, con sangría                                 |
+| Ecuación `$$…$$`                                    | Centrada y numerada «(1)» a la derecha; con `\tag{…}`, `\notag` o `\nonumber`, sin número automático |
+| Imagen sola                                         | Figura centrada con «Figura 1: leyenda» debajo                                                       |
+| Imagen con `**Figura 2.** …` en la línea siguiente  | Figura con esa leyenda tal como está escrita, sin número automático                                  |
+| `Table: leyenda` antes o después de una tabla       | «Tabla 1: leyenda» sobre la tabla                                                                    |
+| `**Tabla 2.** leyenda` antes o después de una tabla | Leyenda sobre la tabla, tal como está escrita                                                        |
+| Tabla                                               | Tres líneas (arriba, bajo el encabezado, abajo), centrada                                            |
+| Lista bajo «Referencias»                            | «[1]», «[2]»… con sangría francesa                                                                   |
+| Notas al pie `[^1]`                                 | Al final, tras una línea corta                                                                       |
+| Código                                              | CMU Typewriter, sin recuadro                                                                         |
+| Alerta `> [!NOTE]`                                  | Línea fina a la izquierda y rótulo en cursiva                                                        |
+
+Los rótulos «Figura» y «Tabla» siguen el idioma del documento (`lang`): «Figure» y «Table» en
+inglés, por ejemplo.
+
+### 5.4 Limitaciones conocidas
+
+- Una ecuación con varias líneas (`aligned`, `align`) lleva un solo número para todo el bloque.
+- No hay referencias cruzadas automáticas: «ecuación (2)» o «Figura 1» se escriben a mano.
+- Chrome no ubica las figuras arriba o abajo de la página: quedan donde aparecen en el texto.
+- Un SVG usado como figura dibuja sus textos con las fuentes del sistema, no en Computer Modern.
+
+### 5.5 Plantilla mínima
+
+```markdown
+---
+theme: preprint
+title: Título del preprint
+author: Ana Pérez^1^, Luis Gómez^1,2^
+affiliations:
+  - Departamento de Química, Universidad de Ejemplo.
+  - Instituto de Materiales Avanzados.
+date: 22 de noviembre de 2026
+abstract: >
+  Resumen del trabajo.
+keywords: [palabra clave, otra palabra clave]
+preprint-stamp: "preprint:2026.0042v1 [química física] 22 nov 2026"
+---
+
+## Introducción
+
+Texto con una ecuación:
+
+$$
+X(t) = X_\infty \left(1 - e^{-k t}\right)
+$$
+
+![Leyenda de la figura.](img/figura1.png)
+
+Table: Leyenda de la tabla.
+
+| Muestra | Valor |
+| :------ | ----: |
+| A       |  1,00 |
+
+## Referencias
+
+1. Autor A, Autor B. Título del artículo citado. Revista. 2024;12:45–56.
+```
+
+Ejemplo completo: [`examples/preprint.md`](../examples/preprint.md).
+
+## 6. Lista de comprobación
 
 Antes de convertir, conviene revisar:
 
-| Comprobación                                                     | `academic_basic` | `tech_magazine` |
-| ---------------------------------------------------------------- | :--------------: | :-------------: |
-| `theme` en el front matter o en la línea de comandos             |        ✓         |        ✓        |
-| `title` presente (bloque de título o portada)                    |        ✓         |        ✓        |
-| Secciones con `##`, sin `#` en el cuerpo                         |        ✓         |        ✓        |
-| Cada `^n^` de `author` tiene su entrada en `affiliations`        |        ✓         |        —        |
-| Ecuaciones `$$…$$` que caben en una columna                      |        ✓         |        —        |
-| El cuerpo empieza con un párrafo de texto                        |        —         |        ✓        |
-| Existe `tech_magazine/<magazine-name>/` con imágenes numeradas   |        —         |        ✓        |
-| `cover` fijo si el PDF debe salir siempre igual                  |        —         |        ✓        |
-| Recuadros con la primera línea en negrita                        |        —         |        ✓        |
-| Imágenes solas en su párrafo, con texto alternativo como leyenda |        ✓         |        ✓        |
-| Cifras y unidades unidas con espacio irrompible (`90 %`)         |        ✓         |        ✓        |
+| Comprobación                                                     | `academic_basic` | `tech_magazine` | `preprint` |
+| ---------------------------------------------------------------- | :--------------: | :-------------: | :--------: |
+| `theme` en el front matter o en la línea de comandos             |        ✓         |        ✓        |     ✓      |
+| `title` presente (bloque de título o portada)                    |        ✓         |        ✓        |     ✓      |
+| Secciones con `##`, sin `#` en el cuerpo                         |        ✓         |        ✓        |     ✓      |
+| Cada `^n^` de `author` tiene su entrada en `affiliations`        |        ✓         |        —        |     ✓      |
+| Ecuaciones `$$…$$` que caben en una columna                      |        ✓         |        —        |     —      |
+| El cuerpo empieza con un párrafo de texto                        |        —         |        ✓        |     —      |
+| Existe `tech_magazine/<magazine-name>/` con imágenes numeradas   |        —         |        ✓        |     —      |
+| `cover` fijo si el PDF debe salir siempre igual                  |        —         |        ✓        |     —      |
+| Recuadros con la primera línea en negrita                        |        —         |        ✓        |     —      |
+| Imágenes solas en su párrafo, con texto alternativo como leyenda |        ✓         |        ✓        |     ✓      |
+| Cifras y unidades unidas con espacio irrompible (`90 %`)         |        ✓         |        ✓        |     ✓      |
+| Lista de referencias bajo un título «Referencias»                |        —         |        —        |     ✓      |
+| `preprint-stamp` solo con un identificador real                  |        —         |        —        |     ✓      |
 
 Avisos que puede dar la conversión con estos temas (salen por la consola y el PDF se genera
 igual): imagen no encontrada, número de portada inexistente, revista sin imágenes y

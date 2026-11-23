@@ -8,6 +8,7 @@ import { alerts } from "./alerts.js";
 import { codeBlocks } from "./code-blocks.js";
 import { inlineChildLines, type MermaidBlock, type RenderEnv } from "./env.js";
 import { captions } from "./captions.js";
+import { sections, type SectionNumbering } from "./sections.js";
 import { figures } from "./figures.js";
 import { highlightCode } from "./highlight.js";
 import { hyphenation } from "./hyphenate.js";
@@ -45,6 +46,8 @@ export interface MarkdownOptions {
   figures?: boolean;
   /** Turn labelled paragraphs next to tables and diagrams into their captions. */
   captions?: boolean;
+  /** Number the sections: "1", "1.1" (plain) or "1.", "1.1." (dotted). */
+  numberSections?: SectionNumbering;
 }
 
 export function createMarkdown(): MarkdownIt {
@@ -59,6 +62,7 @@ export function createMarkdown(): MarkdownIt {
   md.use(taskLists);
   md.use(alerts);
   md.use(tocMarker);
+  md.use(sections);
   md.use(keepWithHeading);
   md.use(captions);
   md.use(inlineChildLines);
@@ -89,6 +93,7 @@ export function renderMarkdown(source: string, options: MarkdownOptions = {}): M
     hyphenate: options.hyphenate,
     figures: options.figures,
     captions: options.captions,
+    numberSections: options.numberSections,
   };
   const tokens = md.parse(source, env);
 

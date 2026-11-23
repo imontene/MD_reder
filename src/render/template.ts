@@ -1,7 +1,12 @@
 import { readTextAsset } from "../assets.js";
 import { escapeHtml } from "../html.js";
 import { DEFAULT_LANG, strings } from "../i18n.js";
-import { fontFaceCss, magazineFontFaceCss, serifFontFaceCss } from "./fonts.js";
+import {
+  fontFaceCss,
+  magazineFontFaceCss,
+  preprintFontFaceCss,
+  serifFontFaceCss,
+} from "./fonts.js";
 import { isMagazineTheme, type BuiltinTheme, type TextFont } from "../options.js";
 import { katexCss } from "./katex.js";
 import { version } from "../version.js";
@@ -28,6 +33,7 @@ const THEME_FILES: Record<BuiltinTheme, string[]> = {
   academic_basic: ["theme.css", "theme-academic-basic.css"],
   tech_magazine: ["theme.css", "theme-tech-magazine.css"],
   "tech_magazine-dark": ["theme.css", "theme-tech-magazine.css", "theme-tech-magazine-dark.css"],
+  preprint: ["theme.css", "theme-preprint.css"],
 };
 
 /** Stylesheets of a built-in theme, with the fonts it adds to the text and code ones. */
@@ -35,6 +41,7 @@ export function builtinThemeCss(theme: BuiltinTheme): string[] {
   const css = THEME_FILES[theme].map(asset);
   if (theme === "academic_basic") return [serifFontFaceCss(), ...css];
   if (isMagazineTheme(theme)) return [magazineFontFaceCss(), ...css];
+  if (theme === "preprint") return [preprintFontFaceCss(), ...css];
   return css;
 }
 

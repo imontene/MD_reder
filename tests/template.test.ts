@@ -127,6 +127,25 @@ describe("tech_magazine theme", () => {
   });
 });
 
+describe("preprint theme", () => {
+  it("embeds CMU Serif and CMU Typewriter", () => {
+    const [fonts, ...css] = builtinThemeCss("preprint");
+    for (const [weight, style] of [
+      [400, "normal"],
+      [400, "italic"],
+      [700, "normal"],
+      [700, "italic"],
+    ]) {
+      expect(fonts).toMatch(
+        new RegExp(`font-family: "CMU Serif";\\s+font-style: ${style};\\s+font-weight: ${weight};`),
+      );
+    }
+    expect(fonts).toContain('font-family: "CMU Typewriter";');
+    expect(fonts).not.toMatch(/url\((?!data:font\/woff2)/);
+    expect(css.join("\n")).toContain("counter(equation)");
+  });
+});
+
 describe("title block", () => {
   const html = buildHtmlDocument({
     title: "Cinética",

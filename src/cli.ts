@@ -103,7 +103,7 @@ function addDocumentOptions(command: Command): Command {
     .option(
       "--theme <theme>",
       "antigravity, antigravity-dark, light, dark, academic_basic, tech_magazine, " +
-        "tech_magazine-dark, or a .css file replacing the theme (default: antigravity)",
+        "tech_magazine-dark, preprint, or a .css file replacing the theme (default: antigravity)",
     )
     .option("--css <file>", "extra stylesheet (repeatable)", collect)
     .option(

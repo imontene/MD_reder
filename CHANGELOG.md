@@ -1,5 +1,24 @@
 # Cambios
 
+## Sin publicar
+
+- **Tema `preprint`** (`--theme preprint`), que no se usa por defecto: un artículo como lo
+  imprime la clase `article` de LaTeX, el aspecto habitual de los preprints de arXiv.
+  - CMU Serif (Computer Modern Unicode) en texto, títulos y encabezado, la misma familia de las
+    fórmulas de KaTeX; CMU Typewriter en el código. Ambas van incrustadas en el PDF.
+  - Bloque de título centrado, resumen angosto, secciones y ecuaciones numeradas, «Figura 1:»
+    bajo las figuras, «Tabla 1:» sobre las tablas y referencias «[1]».
+  - Encabezado «PREPRINT — fecha» desde la página 2 y número de página centrado.
+  - Sello opcional en el margen izquierdo de la página 1, con el texto de `preprint-stamp`.
+- **Numeración de secciones** con `number-sections: true` en cualquier tema (por defecto en
+  `preprint`): «1 Introducción», «1.1 …», también en el índice y los marcadores del PDF.
+- **Leyendas de tabla de Pandoc** en `academic_basic` y `preprint`: una línea `Table: …` antes
+  o después de una tabla es su leyenda; `preprint` la numera («Tabla 1:»).
+- **Secciones finales**: una línea `[[backmatter]]` marca el comienzo de las secciones finales,
+  que no se numeran; una lista numerada bajo «Referencias» es la lista de referencias.
+- Las ecuaciones con `\tag`, `\notag` o `\nonumber` quedan fuera de la numeración automática.
+- Los avisos de licencias del ejecutable incluyen las licencias en archivos `OFL.txt`.
+
 ## 2.16.6 — 2026-11-21
 
 - **Marca de agua en Adobe Acrobat**: el texto de `--watermark` se veía la primera vez que se

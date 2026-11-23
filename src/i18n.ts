@@ -5,6 +5,9 @@ export interface Strings {
   /** Title-block labels (front matter `abstract` and `keywords`). */
   abstract: string;
   keywords: string;
+  /** Labels of numbered captions ("Figura 1:", "Tabla 2:"). */
+  figure: string;
+  table: string;
   alerts: Record<AlertType, string>;
 }
 
@@ -13,6 +16,8 @@ const STRINGS: Record<string, Strings> = {
     toc: "Contents",
     abstract: "Abstract",
     keywords: "Keywords",
+    figure: "Figure",
+    table: "Table",
     alerts: {
       note: "Note",
       tip: "Tip",
@@ -25,6 +30,8 @@ const STRINGS: Record<string, Strings> = {
     toc: "Contenido",
     abstract: "Resumen",
     keywords: "Palabras clave",
+    figure: "Figura",
+    table: "Tabla",
     alerts: {
       note: "Nota",
       tip: "Consejo",
@@ -37,6 +44,8 @@ const STRINGS: Record<string, Strings> = {
     toc: "Sumário",
     abstract: "Resumo",
     keywords: "Palavras-chave",
+    figure: "Figura",
+    table: "Tabela",
     alerts: {
       note: "Nota",
       tip: "Dica",
@@ -49,6 +58,8 @@ const STRINGS: Record<string, Strings> = {
     toc: "Sommaire",
     abstract: "Résumé",
     keywords: "Mots-clés",
+    figure: "Figure",
+    table: "Tableau",
     alerts: {
       note: "Remarque",
       tip: "Astuce",
@@ -61,6 +72,8 @@ const STRINGS: Record<string, Strings> = {
     toc: "Inhalt",
     abstract: "Zusammenfassung",
     keywords: "Schlüsselwörter",
+    figure: "Abbildung",
+    table: "Tabelle",
     alerts: {
       note: "Hinweis",
       tip: "Tipp",

@@ -34,6 +34,8 @@ import {
 } from "./render/antigravity.js";
 import { fieldImage } from "./render/field.js";
 import { magazinePage } from "./render/magazine.js";
+import { preprintPage } from "./render/preprint.js";
+import { cssString } from "./render/page-css.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
 import { WATERMARK_CSS, watermarkHtml } from "./render/watermark.js";
 import { contentHeightPx, contentWidthPx, lengthToPx, textWidthPx } from "./render/page.js";
@@ -181,12 +183,25 @@ const JUSTIFY_CSS = `@media print {
   }
 }`;
 
+/** Themes that lay out a paper: figures and captions, labelled or numbered. */
+const ARTICLE_THEMES = new Set(["academic_basic", "preprint"]);
+
+/**
+ * Themes whose stylesheet draws the page margins, header and footer (render/page-css.ts):
+ * Chrome then prints with no margins and without its own header and footer templates.
+ */
+export const drawsOwnPage = (theme: string): boolean =>
+  isMagazineTheme(theme) || theme === "preprint";
+
 /** Font size, if set, and the page's text height (used to fit images and diagrams). */
 function layoutCss(options: DocumentOptions, margin: Margins): string {
   const height = contentHeightPx(options.pageSize, options.orientation === "landscape", margin);
   const family = FONT_FAMILIES[options.font];
+  const labels = strings(options.lang);
   const rules = [
     `:root { --page-content-height: ${height}px; }`,
+    // Labels of the captions themes number themselves, in the document's language.
+    `:root { --label-figure: ${cssString(labels.figure)}; --label-table: ${cssString(labels.table)}; }`,
     `:root { --font-text: ${fontStack(options.font)}; ` +
       `--font-code: "JetBrains Mono", "${family}", "Inter", ui-monospace, monospace; }`,
   ];
@@ -278,8 +293,9 @@ export async function renderDocument(
     lang: options.lang,
     // Soft hyphens only where paragraphs are justified: in the PDF.
     hyphenate: paged && options.justify ? options.lang : undefined,
-    figures: options.theme === "academic_basic" || isMagazineTheme(options.theme),
-    captions: options.theme === "academic_basic",
+    figures: ARTICLE_THEMES.has(options.theme) || isMagazineTheme(options.theme),
+    captions: ARTICLE_THEMES.has(options.theme),
+    numberSections: options.numberSections ? "plain" : undefined,
   });
   const diagnostics: Diagnostic[] = [
     ...config.warnings.map((message) => ({ severity: "warning" as const, message })),
@@ -351,6 +367,18 @@ export async function renderDocument(
         },
       })
     : undefined;
+  const preprint =
+    options.theme === "preprint"
+      ? preprintPage({
+          options,
+          margin,
+          values: {
+            title,
+            author: options.author === undefined ? undefined : plainAuthor(options.author),
+            date: options.date,
+          },
+        })
+      : undefined;
   if (magazine) {
     diagnostics.push(...magazine.diagnostics);
     if (magazine.coverNumber !== undefined) {
@@ -379,6 +407,7 @@ export async function renderDocument(
       layoutCss(options, margin),
       ...(watermark ? [WATERMARK_CSS] : []),
       ...(magazine ? [magazine.css] : []),
+      ...(preprint ? [preprint] : []),
     ],
     extraCss,
   });
@@ -405,12 +434,12 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
       const margin = resolveMargins(options);
       const author = options.author === undefined ? undefined : plainAuthor(options.author);
       const values = { title: doc.title, author, date: options.date };
-      // The magazine themes draw margins, header and footer in their stylesheet (magazine.ts).
-      const magazine = isMagazineTheme(options.theme);
-      const footer = magazine
+      // Some themes draw margins, header and footer in their stylesheet (render/page-css.ts).
+      const ownPage = drawsOwnPage(options.theme);
+      const footer = ownPage
         ? undefined
         : (options.footer ?? (options.pageNumbers ? DEFAULT_FOOTER : undefined));
-      const header = magazine ? undefined : options.header;
+      const header = ownPage ? undefined : options.header;
       const hasHeaderFooter = header !== undefined || footer !== undefined;
       doc.diagnostics.push(
         ...headerFooterSpaceWarnings(margin, header !== undefined, footer !== undefined),
@@ -420,7 +449,7 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
       const { pdf, blocked } = await session.printPdf(doc.html, {
         format: options.pageSize,
         landscape: options.orientation === "landscape",
-        margin: magazine ? { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" } : margin,
+        margin: ownPage ? { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" } : margin,
         headerTemplate: hasHeaderFooter
           ? headerFooterTemplate(header, values, margin, options.font, pageLook)
           : undefined,

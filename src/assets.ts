@@ -97,6 +97,29 @@ export const NEWSREADER_STYLESHEETS = [
   "@fontsource/newsreader/600.css",
 ];
 /** Fraunces SemiBold: the key ideas (`> [!NOTE]`) of the magazine themes. */
+/**
+ * Computer Modern Unicode (package computer-modern, SIL OFL), the text and code of the preprint
+ * theme. Its "500" files are the regular weight.
+ */
+export const CMU_DIR = "computer-modern/fonts";
+export const CMU_FACES = [
+  { family: "CMU Serif", weight: 400, style: "normal", file: "cmu-serif-500-roman.woff2" },
+  { family: "CMU Serif", weight: 400, style: "italic", file: "cmu-serif-500-italic.woff2" },
+  { family: "CMU Serif", weight: 700, style: "normal", file: "cmu-serif-700-roman.woff2" },
+  { family: "CMU Serif", weight: 700, style: "italic", file: "cmu-serif-700-italic.woff2" },
+  {
+    family: "CMU Typewriter",
+    weight: 400,
+    style: "normal",
+    file: "cmu-typewriter-text-500-roman.woff2",
+  },
+  {
+    family: "CMU Typewriter",
+    weight: 400,
+    style: "italic",
+    file: "cmu-typewriter-text-500-italic.woff2",
+  },
+] as const;
 export const FRAUNCES_STYLESHEETS = ["@fontsource/fraunces/600.css"];
 /** Manrope faces in use (Fontsource, split into unicode-range subsets); it has no italics. */
 export const MANROPE_STYLESHEETS = [
@@ -126,6 +149,7 @@ export const THEMES = [
   "mdrender/assets/theme-academic-basic.css",
   "mdrender/assets/theme-tech-magazine.css",
   "mdrender/assets/theme-tech-magazine-dark.css",
+  "mdrender/assets/theme-preprint.css",
   "mdrender/assets/density-compact.css",
 ];
 export const PACKAGE_JSON = "mdrender/package.json";
@@ -172,6 +196,7 @@ export function woff2References(cssKey: string, css: string): string[] {
  */
 export function assetManifest(): Record<string, string> {
   const keys = new Set<string>([PACKAGE_JSON, ...THEMES, MERMAID_JS]);
+  for (const { file } of CMU_FACES) keys.add(`${CMU_DIR}/${file}`);
   for (const { file } of [...INTER_FACES, ...INTER_MAGAZINE_FACES]) {
     keys.add(`${INTER_DIR}/${file}`);
   }

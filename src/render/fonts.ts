@@ -1,4 +1,6 @@
 import {
+  CMU_DIR,
+  CMU_FACES,
   INTER_DIR,
   INTER_FACES,
   INTER_MAGAZINE_FACES,
@@ -113,6 +115,22 @@ export function magazineFontFaceCss(): string {
     ...FRAUNCES_STYLESHEETS.map(inlineFontStylesheet),
   ].join("\n");
   return magazine;
+}
+
+let preprint: string | undefined;
+
+/** @font-face rules of the preprint theme: CMU Serif and CMU Typewriter, files embedded. */
+export function preprintFontFaceCss(): string {
+  preprint ??= CMU_FACES.map(
+    ({ family, weight, style, file }) => `@font-face {
+  font-family: "${family}";
+  font-style: ${style};
+  font-weight: ${weight};
+  font-display: block;
+  src: url(${woff2DataUri(`${CMU_DIR}/${file}`)}) format("woff2");
+}`,
+  ).join("\n");
+  return preprint;
 }
 
 let monoRegular: string | undefined;
