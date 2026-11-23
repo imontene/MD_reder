@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.18.0 — 2026-11-23
 
 - **Tema `open_access`** (`--theme open_access`), que no se usa por defecto: un artículo de
   revista de acceso abierto.

@@ -322,4 +322,4 @@ entregarlo por partes.
 ## 11. Estado
 
 - `preprint`: publicado en la 2.17.0 (23 de noviembre de 2026).
-- `open_access` y `authors` estructurado: implementados para la versión siguiente.
+- `open_access` y `authors` estructurado: publicados en la 2.18.0 (23 de noviembre de 2026).
