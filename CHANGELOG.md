@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 2.17.0 — 2026-11-23
 
 - **Tema `preprint`** (`--theme preprint`), que no se usa por defecto: un artículo como lo
   imprime la clase `article` de LaTeX, el aspecto habitual de los preprints de arXiv.
