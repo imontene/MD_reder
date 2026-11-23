@@ -4,10 +4,12 @@ import { DEFAULT_LANG, strings } from "../i18n.js";
 import {
   fontFaceCss,
   magazineFontFaceCss,
+  openAccessFontFaceCss,
   preprintFontFaceCss,
   serifFontFaceCss,
 } from "./fonts.js";
-import { isMagazineTheme, type BuiltinTheme, type TextFont } from "../options.js";
+import { isMagazineTheme, type Author, type BuiltinTheme, type TextFont } from "../options.js";
+import { authorsHtml } from "./authors.js";
 import { katexCss } from "./katex.js";
 import { version } from "../version.js";
 
@@ -34,6 +36,7 @@ const THEME_FILES: Record<BuiltinTheme, string[]> = {
   tech_magazine: ["theme.css", "theme-tech-magazine.css"],
   "tech_magazine-dark": ["theme.css", "theme-tech-magazine.css", "theme-tech-magazine-dark.css"],
   preprint: ["theme.css", "theme-preprint.css"],
+  open_access: ["theme.css", "theme-open-access.css"],
 };
 
 /** Stylesheets of a built-in theme, with the fonts it adds to the text and code ones. */
@@ -42,6 +45,7 @@ export function builtinThemeCss(theme: BuiltinTheme): string[] {
   if (theme === "academic_basic") return [serifFontFaceCss(), ...css];
   if (isMagazineTheme(theme)) return [magazineFontFaceCss(), ...css];
   if (theme === "preprint") return [preprintFontFaceCss(), ...css];
+  if (theme === "open_access") return [openAccessFontFaceCss(), ...css];
   return css;
 }
 
@@ -63,9 +67,13 @@ export interface DocumentParts {
   date?: string;
   kicker?: string;
   affiliations?: string[];
-  abstract?: string;
+  /** Structured authors; replace `author` in the title block. */
+  authors?: Author[];
+  abstract?: string | Record<string, string>;
   keywords?: string[];
   showTitle?: boolean;
+  /** A title block of the theme's own (the open_access first page), in place of the standard one. */
+  titleHtml?: string;
   /** Extra classes of the title block (the magazine cover's ink and text position). */
   headerClass?: string;
   /** Theme stylesheet contents. Defaults to the built-in light theme. */
@@ -96,6 +104,15 @@ const paragraphs = (value: string): string[] =>
     .filter(Boolean)
     .map((p) => `<p>${escapeHtml(p)}</p>`);
 
+/** The abstract's paragraphs: plain text, or labelled parts ("<strong>Métodos:</strong> …"). */
+export const abstractParagraphs = (abstract: string | Record<string, string>): string[] =>
+  typeof abstract === "string"
+    ? paragraphs(abstract)
+    : Object.entries(abstract).map(
+        ([label, text]) =>
+          `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(text.trim())}</p>`,
+      );
+
 function titleBlock(parts: DocumentParts): string {
   const {
     title,
@@ -108,7 +125,12 @@ function titleBlock(parts: DocumentParts): string {
     keywords = [],
   } = parts;
   const labels = strings(parts.lang ?? DEFAULT_LANG);
-  const meta = [author ? withSuperscripts(author) : undefined, date ? escapeHtml(date) : undefined];
+  const { authors } = parts;
+  const people = authors?.length ? authorsHtml(authors) : author ? withSuperscripts(author) : "";
+  const meta = [people || undefined, date ? escapeHtml(date) : undefined];
+  const corresponding = authors?.some((a) => a.corresponding)
+    ? `<li class="doc-corresponding"><sup>*</sup>${escapeHtml(labels.correspondingAuthor)}</li>`
+    : "";
   const metaText = meta.filter(Boolean).join(" · ");
   return [
     `<header class="doc-header${parts.headerClass ? ` ${escapeHtml(parts.headerClass)}` : ""}">`,
@@ -116,14 +138,15 @@ function titleBlock(parts: DocumentParts): string {
     `<h1 class="doc-title">${escapeHtml(title)}</h1>`,
     subtitle ? `<p class="doc-subtitle">${escapeHtml(subtitle)}</p>` : "",
     metaText ? `<p class="doc-meta">${metaText}</p>` : "",
-    affiliations.length
+    affiliations.length || corresponding
       ? `<ol class="doc-affiliations">` +
         affiliations.map((a, i) => `<li><sup>${i + 1}</sup>${escapeHtml(a)}</li>`).join("") +
+        corresponding +
         `</ol>`
       : "",
     abstract
       ? `<section class="doc-abstract">\n<p class="doc-abstract-title">${labels.abstract}</p>\n` +
-        paragraphs(abstract).join("\n") +
+        abstractParagraphs(abstract).join("\n") +
         `\n</section>`
       : "",
     keywords.length
@@ -160,7 +183,7 @@ ${styles.map((css) => `<style>\n${css}\n</style>`).join("\n")}
 </head>
 <body>
 ${parts.beforeBody ? parts.beforeBody + "\n" : ""}<main class="markdown-body">
-${parts.showTitle ? titleBlock(parts) + "\n" : ""}${body}
+${parts.showTitle ? (parts.titleHtml ?? titleBlock(parts)) + "\n" : ""}${body}
 </main>
 </body>
 </html>

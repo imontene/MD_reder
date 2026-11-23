@@ -10,6 +10,7 @@ import {
   FRAUNCES_STYLESHEETS,
   readAsset,
   SERIF_STYLESHEETS,
+  SOURCE_SERIF_STYLESHEETS,
   readTextAsset,
   woff2References,
 } from "../assets.js";
@@ -131,6 +132,14 @@ export function preprintFontFaceCss(): string {
 }`,
   ).join("\n");
   return preprint;
+}
+
+let openAccess: string | undefined;
+
+/** @font-face rules of the open_access theme: Source Serif 4, files embedded. */
+export function openAccessFontFaceCss(): string {
+  openAccess ??= SOURCE_SERIF_STYLESHEETS.map(inlineFontStylesheet).join("\n");
+  return openAccess;
 }
 
 let monoRegular: string | undefined;

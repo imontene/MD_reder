@@ -34,6 +34,7 @@ import {
 } from "./render/antigravity.js";
 import { fieldImage } from "./render/field.js";
 import { magazinePage } from "./render/magazine.js";
+import { openAccessFront, openAccessPage } from "./render/open-access.js";
 import { preprintPage } from "./render/preprint.js";
 import { cssString } from "./render/page-css.js";
 import { FONT_FAMILIES, fontStack } from "./render/fonts.js";
@@ -183,15 +184,21 @@ const JUSTIFY_CSS = `@media print {
   }
 }`;
 
+/** The authors as plain text: `author` without its ^1^ marks, or the names of `authors`. */
+const authorText = (options: DocumentOptions): string | undefined =>
+  options.author !== undefined
+    ? plainAuthor(options.author)
+    : options.authors?.map((author) => author.name).join(", ");
+
 /** Themes that lay out a paper: figures and captions, labelled or numbered. */
-const ARTICLE_THEMES = new Set(["academic_basic", "preprint"]);
+const ARTICLE_THEMES = new Set(["academic_basic", "preprint", "open_access"]);
 
 /**
  * Themes whose stylesheet draws the page margins, header and footer (render/page-css.ts):
  * Chrome then prints with no margins and without its own header and footer templates.
  */
 export const drawsOwnPage = (theme: string): boolean =>
-  isMagazineTheme(theme) || theme === "preprint";
+  isMagazineTheme(theme) || theme === "preprint" || theme === "open_access";
 
 /** Font size, if set, and the page's text height (used to fit images and diagrams). */
 function layoutCss(options: DocumentOptions, margin: Margins): string {
@@ -295,7 +302,11 @@ export async function renderDocument(
     hyphenate: paged && options.justify ? options.lang : undefined,
     figures: ARTICLE_THEMES.has(options.theme) || isMagazineTheme(options.theme),
     captions: ARTICLE_THEMES.has(options.theme),
-    numberSections: options.numberSections ? "plain" : undefined,
+    numberSections: options.numberSections
+      ? options.theme === "open_access"
+        ? "dotted"
+        : "plain"
+      : undefined,
   });
   const diagnostics: Diagnostic[] = [
     ...config.warnings.map((message) => ({ severity: "warning" as const, message })),
@@ -362,7 +373,7 @@ export async function renderDocument(
         hasCover: showTitle,
         values: {
           title,
-          author: options.author === undefined ? undefined : plainAuthor(options.author),
+          author: authorText(options),
           date: options.date,
         },
       })
@@ -374,10 +385,17 @@ export async function renderDocument(
           margin,
           values: {
             title,
-            author: options.author === undefined ? undefined : plainAuthor(options.author),
+            author: authorText(options),
             date: options.date,
           },
         })
+      : undefined;
+  const openAccess =
+    options.theme === "open_access"
+      ? {
+          front: openAccessFront(options, title),
+          css: openAccessPage({ options, margin, title }),
+        }
       : undefined;
   if (magazine) {
     diagnostics.push(...magazine.diagnostics);
@@ -391,13 +409,15 @@ export async function renderDocument(
     math: md.hasMath,
     lang: options.lang,
     subtitle: options.subtitle,
-    author: options.author,
+    author: options.author ?? authorText(options),
     date: options.date,
     kicker: options.kicker,
     affiliations: options.affiliations,
     abstract: options.abstract,
     keywords: options.keywords,
     showTitle,
+    titleHtml: openAccess?.front,
+    authors: options.authors,
     headerClass: magazine?.headerClass,
     themeCss,
     font: options.font,
@@ -408,6 +428,7 @@ export async function renderDocument(
       ...(watermark ? [WATERMARK_CSS] : []),
       ...(magazine ? [magazine.css] : []),
       ...(preprint ? [preprint] : []),
+      ...(openAccess ? [openAccess.css] : []),
     ],
     extraCss,
   });
@@ -432,7 +453,7 @@ export async function convertFile(convert: ConvertOptions): Promise<ConvertResul
 
     if (convert.format === "pdf") {
       const margin = resolveMargins(options);
-      const author = options.author === undefined ? undefined : plainAuthor(options.author);
+      const author = authorText(options);
       const values = { title: doc.title, author, date: options.date };
       // Some themes draw margins, header and footer in their stylesheet (render/page-css.ts).
       const ownPage = drawsOwnPage(options.theme);

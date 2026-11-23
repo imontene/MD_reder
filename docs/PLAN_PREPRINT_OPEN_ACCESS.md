@@ -318,3 +318,8 @@ entregarlo por partes.
 2. `preprint` se publica primero, en la 2.17.0 (pasos 0, 1a–1c, 2 y 4). `open_access` y el
    campo `authors` estructurado (1d, 3) van en una versión posterior.
 3. La cita generada de `open_access` usa el estilo Vancouver.
+
+## 11. Estado
+
+- `preprint`: publicado en la 2.17.0 (23 de noviembre de 2026).
+- `open_access` y `authors` estructurado: implementados para la versión siguiente.

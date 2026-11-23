@@ -1,5 +1,5 @@
 ---
-title: Especificación de Markdown para los temas academic_basic, tech_magazine y preprint
+title: Especificación de Markdown para los temas academic_basic, tech_magazine, preprint y open_access
 subtitle: Qué debe cumplir un documento para verse bien con cada tema
 author: mdrender
 date: 2026-11-04
@@ -10,11 +10,12 @@ date: 2026-11-04
 Este documento define cómo escribir un archivo Markdown (`.md`) para convertirlo con mdrender
 usando uno de estos temas:
 
-| Tema             | Aspecto                                                     | Variante oscura      |
-| ---------------- | ----------------------------------------------------------- | -------------------- |
-| `academic_basic` | Artículo de revista científica, a dos columnas              | no                   |
-| `tech_magazine`  | Revista de divulgación tecnológica, con portada a sangre    | `tech_magazine-dark` |
-| `preprint`       | Preprint al estilo arXiv: artículo LaTeX en Computer Modern | no                   |
+| Tema             | Aspecto                                                       | Variante oscura      |
+| ---------------- | ------------------------------------------------------------- | -------------------- |
+| `academic_basic` | Artículo de revista científica, a dos columnas                | no                   |
+| `tech_magazine`  | Revista de divulgación tecnológica, con portada a sangre      | `tech_magazine-dark` |
+| `preprint`       | Preprint al estilo arXiv: artículo LaTeX en Computer Modern   | no                   |
+| `open_access`    | Artículo de revista de acceso abierto, con barra de metadatos | no                   |
 
 Ninguno de ellos es el tema por defecto: hay que pedirlo con `theme:` en el front matter, con
 `--theme` en la línea de comandos o en `mdrender.config.json`.
@@ -22,7 +23,7 @@ Ninguno de ellos es el tema por defecto: hay que pedirlo con `theme:` en el fron
 Los términos **debe** y **no debe** indican requisitos: si no se cumplen, la conversión falla o
 el resultado no tiene el aspecto del tema. **Conviene** indica una recomendación.
 
-## 2. Reglas comunes a los tres temas
+## 2. Reglas comunes a todos los temas
 
 ### 2.1 Codificación y estructura del archivo
 
@@ -43,7 +44,7 @@ letra, tipografía) se aplican solo si nadie más los fija.
 
 ### 2.3 Campos del bloque de título
 
-Estos campos valen para los tres temas. El bloque de título (o la portada, en `tech_magazine`)
+Estos campos valen para todos los temas. El bloque de título (o la portada, en `tech_magazine`)
 **solo aparece si hay `title` en el front matter**.
 
 | Campo          | Tipo          | Uso                                                                                     |
@@ -77,7 +78,7 @@ página del pie por defecto.
 
 ### 2.5 Elementos de Markdown admitidos
 
-Los tres temas admiten todo lo que admite mdrender: párrafos, títulos `##` a `######`, énfasis,
+Todos los temas admiten todo lo que admite mdrender: párrafos, títulos `##` a `######`, énfasis,
 enlaces, listas (también de tareas), citas, alertas `> [!NOTE]` (`TIP`, `IMPORTANT`, `WARNING`,
 `CAUTION`), tablas GFM, código con resaltado, ecuaciones `$…$` y `$$…$$` (KaTeX), diagramas
 ` ```mermaid `, notas al pie `[^1]`, imágenes locales o en `data:` y `[[toc]]`. Cada tema da a
@@ -85,7 +86,7 @@ algunos de ellos un significado propio, descrito en las secciones 3 y 4.
 
 ### 2.6 Imágenes como figuras
 
-En los tres temas, **una imagen sola en su párrafo** (con una línea en blanco antes y después) se
+En todos los temas, **una imagen sola en su párrafo** (con una línea en blanco antes y después) se
 convierte en figura:
 
 ```markdown
@@ -112,6 +113,26 @@ convierte en figura:
 - `number-sections: true` numera los títulos `##` y `###` («1 Introducción», «1.1 …») con
   cualquier tema; `preprint` lo hace por defecto y `number-sections: false` lo desactiva. El
   número aparece también en el índice y en los marcadores del PDF.
+
+### 2.8 Autores estructurados y resumen estructurado
+
+En lugar de `author` (texto), `authors` describe a cada autor; vale en todos los temas:
+
+```yaml
+authors:
+  - name: Ana Pérez # obligatorio
+    affiliations: [1] # números de la lista affiliations
+    orcid: 0000-0000-0000-0001 # 0000-0000-0000-000X, o con https://orcid.org/
+    email: ana.perez@ejemplo.org
+    corresponding: true # «*» y la nota «Autor para correspondencia.»
+  - Luis Gómez # o solo el nombre
+```
+
+Un `orcid` o unas `affiliations` mal escritas detienen la conversión con un error. El ORCID se
+imprime como un enlace «ORCID» a `https://orcid.org/<id>`.
+
+`abstract` puede ser un **resumen estructurado**: un mapa de apartados, en el orden escrito,
+cada uno impreso como «**Apartado:** texto».
 
 ## 3. Tema `academic_basic`
 
@@ -529,25 +550,135 @@ Table: Leyenda de la tabla.
 
 Ejemplo completo: [`examples/preprint.md`](../examples/preprint.md).
 
-## 6. Lista de comprobación
+## 6. Tema `open_access`
+
+### 6.1 Uso previsto
+
+Artículos con el aspecto de una revista de acceso abierto: primera página con franja de la
+revista y barra lateral con el registro del artículo, Source Serif 4 en una columna
+justificada, Inter en títulos y metadatos, secciones numeradas en el color de acento.
+
+### 6.2 Front matter
+
+| Campo                               | Tipo                             | Uso                                                                   |
+| ----------------------------------- | -------------------------------- | --------------------------------------------------------------------- |
+| `theme`                             | **debe** ser `open_access`       | o `--theme open_access`                                               |
+| `title`                             | **debe**, para la primera página | Sin él, el documento empieza con el cuerpo                            |
+| `journal`                           | texto                            | Franja de la página 1, encabezado, pie y cita                         |
+| `article-type`                      | texto                            | A la derecha de la franja: «Artículo de investigación»                |
+| `authors`                           | lista                            | Autores con afiliaciones, ORCID, correo y `corresponding` (2.8)       |
+| `affiliations`                      | lista                            | Numeradas en el orden de la lista                                     |
+| `abstract`                          | texto o mapa                     | Con un mapa, resumen estructurado (2.8)                               |
+| `keywords`                          | lista                            | Separadas por «;»                                                     |
+| `volume`, `article-number`          | texto                            | Cita y pie: «2026;4:e0042»                                            |
+| `doi`                               | texto                            | Barra lateral y pie («doi.org/…»), sin `https://`                     |
+| `license`                           | texto                            | Por defecto `CC BY 4.0`; vacío (`""`) quita la insignia y la licencia |
+| `received`, `accepted`, `published` | texto                            | Fechas de la barra lateral; el año de `published` va en la cita       |
+| `editor`                            | texto                            | Barra lateral                                                         |
+| `correspondence`                    | texto                            | Si falta, el `email` del autor con `corresponding: true`              |
+| `citation`                          | texto                            | Reemplaza la cita generada                                            |
+| `short-title`, `short-authors`      | texto                            | Encabezado: «Pérez et al. · Título abreviado»                         |
+| `accent`                            | color CSS                        | Por defecto `#00677f`                                                 |
+
+Reglas:
+
+- Cada dato de la barra lateral aparece **solo** si su campo existe.
+- La cita sugerida sigue el estilo Vancouver: «Pérez A, Gómez L, Ruiz M. Título. Revista.
+  2026;4:e0042.», con hasta seis autores y luego «et al.». Solo se abrevian los nombres de dos
+  palabras («Ana Pérez» → «Pérez A»): con más, el apellido no se distingue con seguridad y el
+  nombre se escribe tal cual. Para otro formato, se usa `citation`.
+- Los autores abreviados del encabezado son «Pérez», «Pérez y Gómez» o «Pérez et al.», según
+  haya uno, dos o más; `short-authors` los reemplaza.
+- **No conviene** usar el nombre, el logotipo ni un DOI de una revista real si el artículo no
+  está publicado en ella.
+
+Valores por defecto del tema: márgenes de 20 mm, texto de 10 pt, párrafos justificados con
+partición de palabras, secciones numeradas («1.», «1.1.») y licencia `CC BY 4.0`.
+
+### 6.3 Qué hace el tema con cada elemento
+
+| Elemento                  | Resultado en el PDF                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Bloque de título          | Franja, barra lateral, título, autores con «*» y ORCID, afiliaciones, resumen en una caja de color, palabras clave |
+| `## Título`, `### Título` | «1. Introducción», «1.1. …» en Inter; `##` en el color de acento                                                   |
+| Párrafos                  | Source Serif 4, justificados, con espacio entre ellos                                                              |
+| Ecuación `$$…$$`          | Numerada «(1)» a la derecha, como en `preprint`                                                                    |
+| Imagen sola               | Figura a todo el ancho en un marco fino, con «**Figura 1.** leyenda» debajo                                        |
+| `Table: leyenda`          | «**Tabla 1.** leyenda» sobre la tabla; encabezado sombreado y líneas finas                                         |
+| Tras `[[backmatter]]`     | Secciones pequeñas sin numerar, sobre una línea                                                                    |
+| Lista bajo «Referencias»  | Lista numerada pequeña                                                                                             |
+
+### 6.4 Limitaciones conocidas
+
+- La barra lateral solo acompaña al título y al resumen: el cuerpo empieza debajo, a todo el
+  ancho.
+- Si la barra lateral es más larga que el título y el resumen, deja espacio libre bajo ellos.
+- Las limitaciones de ecuaciones y figuras de `preprint` (5.4) valen también aquí.
+
+### 6.5 Plantilla mínima
+
+```markdown
+---
+theme: open_access
+journal: Nombre de la revista
+article-type: Artículo de investigación
+title: Título del artículo
+authors:
+  - name: Ana Pérez
+    affiliations: [1]
+    email: ana.perez@ejemplo.org
+    corresponding: true
+affiliations:
+  - Departamento de Química, Universidad de Ejemplo.
+abstract:
+  Antecedentes: …
+  Métodos: …
+  Resultados: …
+  Conclusiones: …
+keywords: [palabra clave, otra]
+volume: 4
+article-number: e0042
+doi: 10.0000/ejemplo.2026.0042
+published: 22 de noviembre de 2026
+---
+
+## Introducción
+
+Texto del artículo.
+
+[[backmatter]]
+
+## Financiamiento
+
+Fuente de financiamiento.
+
+## Referencias
+
+1. Autor A, Autor B. Título del artículo citado. Revista. 2024;12:45–56.
+```
+
+Ejemplo completo: [`examples/acceso-abierto.md`](../examples/acceso-abierto.md).
+
+## 7. Lista de comprobación
 
 Antes de convertir, conviene revisar:
 
-| Comprobación                                                     | `academic_basic` | `tech_magazine` | `preprint` |
-| ---------------------------------------------------------------- | :--------------: | :-------------: | :--------: |
-| `theme` en el front matter o en la línea de comandos             |        ✓         |        ✓        |     ✓      |
-| `title` presente (bloque de título o portada)                    |        ✓         |        ✓        |     ✓      |
-| Secciones con `##`, sin `#` en el cuerpo                         |        ✓         |        ✓        |     ✓      |
-| Cada `^n^` de `author` tiene su entrada en `affiliations`        |        ✓         |        —        |     ✓      |
-| Ecuaciones `$$…$$` que caben en una columna                      |        ✓         |        —        |     —      |
-| El cuerpo empieza con un párrafo de texto                        |        —         |        ✓        |     —      |
-| Existe `tech_magazine/<magazine-name>/` con imágenes numeradas   |        —         |        ✓        |     —      |
-| `cover` fijo si el PDF debe salir siempre igual                  |        —         |        ✓        |     —      |
-| Recuadros con la primera línea en negrita                        |        —         |        ✓        |     —      |
-| Imágenes solas en su párrafo, con texto alternativo como leyenda |        ✓         |        ✓        |     ✓      |
-| Cifras y unidades unidas con espacio irrompible (`90 %`)         |        ✓         |        ✓        |     ✓      |
-| Lista de referencias bajo un título «Referencias»                |        —         |        —        |     ✓      |
-| `preprint-stamp` solo con un identificador real                  |        —         |        —        |     ✓      |
+| Comprobación                                                     | `academic_basic` | `tech_magazine` | `preprint` | `open_access` |
+| ---------------------------------------------------------------- | :--------------: | :-------------: | :--------: | :-----------: |
+| `theme` en el front matter o en la línea de comandos             |        ✓         |        ✓        |     ✓      |       ✓       |
+| `title` presente (bloque de título o portada)                    |        ✓         |        ✓        |     ✓      |       ✓       |
+| Secciones con `##`, sin `#` en el cuerpo                         |        ✓         |        ✓        |     ✓      |       ✓       |
+| Cada `^n^` de `author` tiene su entrada en `affiliations`        |        ✓         |        —        |     ✓      |       ✓       |
+| Ecuaciones `$$…$$` que caben en una columna                      |        ✓         |        —        |     —      |       —       |
+| El cuerpo empieza con un párrafo de texto                        |        —         |        ✓        |     —      |       —       |
+| Existe `tech_magazine/<magazine-name>/` con imágenes numeradas   |        —         |        ✓        |     —      |       —       |
+| `cover` fijo si el PDF debe salir siempre igual                  |        —         |        ✓        |     —      |       —       |
+| Recuadros con la primera línea en negrita                        |        —         |        ✓        |     —      |       —       |
+| Imágenes solas en su párrafo, con texto alternativo como leyenda |        ✓         |        ✓        |     ✓      |       ✓       |
+| Cifras y unidades unidas con espacio irrompible (`90 %`)         |        ✓         |        ✓        |     ✓      |       ✓       |
+| Lista de referencias bajo un título «Referencias»                |        —         |        —        |     ✓      |       ✓       |
+| `preprint-stamp` solo con un identificador real                  |        —         |        —        |     ✓      |       —       |
+| Nombre, logotipo y DOI que no imiten a una revista real          |        —         |        —        |     —      |       ✓       |
 
 Avisos que puede dar la conversión con estos temas (salen por la consola y el PDF se genera
 igual): imagen no encontrada, número de portada inexistente, revista sin imágenes y

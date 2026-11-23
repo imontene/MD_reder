@@ -120,6 +120,13 @@ export const CMU_FACES = [
     file: "cmu-typewriter-text-500-italic.woff2",
   },
 ] as const;
+/** Source Serif 4, the text of the open_access theme: regular, italic, semibold and bold. */
+export const SOURCE_SERIF_STYLESHEETS = [
+  "@fontsource/source-serif-4/400.css",
+  "@fontsource/source-serif-4/400-italic.css",
+  "@fontsource/source-serif-4/600.css",
+  "@fontsource/source-serif-4/700.css",
+];
 export const FRAUNCES_STYLESHEETS = ["@fontsource/fraunces/600.css"];
 /** Manrope faces in use (Fontsource, split into unicode-range subsets); it has no italics. */
 export const MANROPE_STYLESHEETS = [
@@ -150,6 +157,7 @@ export const THEMES = [
   "mdrender/assets/theme-tech-magazine.css",
   "mdrender/assets/theme-tech-magazine-dark.css",
   "mdrender/assets/theme-preprint.css",
+  "mdrender/assets/theme-open-access.css",
   "mdrender/assets/density-compact.css",
 ];
 export const PACKAGE_JSON = "mdrender/package.json";
@@ -207,6 +215,7 @@ export function assetManifest(): Record<string, string> {
     ...SERIF_STYLESHEETS,
     ...NEWSREADER_STYLESHEETS,
     ...FRAUNCES_STYLESHEETS,
+    ...SOURCE_SERIF_STYLESHEETS,
     KATEX_CSS,
   ]) {
     keys.add(cssKey);

@@ -26,6 +26,7 @@ export const BUILTIN_THEMES = [
   "tech_magazine",
   "tech_magazine-dark",
   "preprint",
+  "open_access",
 ] as const;
 export type BuiltinTheme = (typeof BUILTIN_THEMES)[number];
 
@@ -104,8 +105,11 @@ export interface DocumentOptions {
   kicker?: string;
   /** Affiliations, numbered 1, 2… under the authors. */
   affiliations?: string[];
-  /** Summary shown under the title block (paragraphs separated by blank lines). */
-  abstract?: string;
+  /**
+   * Summary shown under the title block: text (paragraphs separated by blank lines), or a
+   * structured abstract, label → text ({ Antecedentes: …, Métodos: … }).
+   */
+  abstract?: string | Record<string, string>;
   keywords?: string[];
   /** Magazine themes: folder of cover pictures under tech_magazine/, and the masthead. */
   magazineName?: string;
@@ -115,12 +119,40 @@ export interface DocumentOptions {
   coverText?: CoverTextPosition;
   /** Magazine themes: colour of the cover text; the magazine's own setting for a cover wins. */
   coverInk?: CoverInk;
-  /** Magazine themes: accent colour (drop cap, small headings, rules), e.g. "#2f6bff". */
+  /** Magazine and open_access themes: accent colour (headings, rules, labels), e.g. "#2f6bff". */
   accent?: string;
   /** Number the `##` and `###` sections ("1 Introducción", "1.1 …"); on by default in preprint. */
   numberSections?: boolean;
   /** Preprint theme: text set sideways in the left margin of page 1, e.g. an arXiv identifier. */
   preprintStamp?: string;
+  /** Authors with their affiliations, ORCID and e-mail; replaces `author` in the title block. */
+  authors?: Author[];
+  /** Open access theme: the journal, its issue and the article's record. */
+  journal?: string;
+  articleType?: string;
+  volume?: string;
+  articleNumber?: string;
+  doi?: string;
+  license?: string;
+  received?: string;
+  accepted?: string;
+  published?: string;
+  editor?: string;
+  correspondence?: string;
+  /** Open access theme: suggested citation; generated in Vancouver style when unset. */
+  citation?: string;
+  /** Short title and authors of the running head (and the citation's authors). */
+  shortTitle?: string;
+  shortAuthors?: string;
+}
+
+/** An author of `authors:`; `affiliations` are numbers in the `affiliations` list. */
+export interface Author {
+  name: string;
+  affiliations?: number[];
+  orcid?: string;
+  email?: string;
+  corresponding?: boolean;
 }
 
 export const DEFAULT_OPTIONS: DocumentOptions = {
@@ -157,6 +189,16 @@ const PREPRINT_DEFAULTS: Partial<DocumentOptions> = {
   numberSections: true,
 };
 
+/** The open_access theme: one justified column, numbered sections. */
+const OPEN_ACCESS_DEFAULTS: Partial<DocumentOptions> = {
+  margin: "20mm",
+  fontSize: "10pt",
+  font: "inter",
+  justify: true,
+  numberSections: true,
+  license: "CC BY 4.0",
+};
+
 /**
  * Defaults of a built-in theme, applied under every other layer: the academic theme sets its
  * two columns in smaller type on wider margins, with Inter for titles, captions and labels.
@@ -166,6 +208,7 @@ export const THEME_DEFAULTS: Partial<Record<BuiltinTheme, Partial<DocumentOption
   tech_magazine: MAGAZINE_DEFAULTS,
   "tech_magazine-dark": MAGAZINE_DEFAULTS,
   preprint: PREPRINT_DEFAULTS,
+  open_access: OPEN_ACCESS_DEFAULTS,
 };
 
 export class OptionsError extends MdRenderError {
@@ -234,6 +277,60 @@ const coverNumber: Validator = (value, describe) => {
   const number = Number(value);
   if (Number.isInteger(number) && number >= 0) return number;
   throw new OptionsError(`${describe} must be the number of a cover picture, e.g. 2 or "02"`);
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof Date);
+
+/** Text, or a map of labelled texts (a structured abstract). */
+const abstract: Validator = (value, describe, baseDir) => {
+  if (!isRecord(value)) return text(value, describe, baseDir);
+  return Object.fromEntries(
+    Object.entries(value).map(([label, part]) => [
+      label,
+      text(part, `${describe} (${label})`, baseDir) as string,
+    ]),
+  );
+};
+
+const ORCID = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
+
+/** A list of authors: names, or { name, affiliations, orcid, email, corresponding }. */
+const authors: Validator = (value, describe, baseDir) => {
+  if (!Array.isArray(value)) throw new OptionsError(`${describe} must be a list of authors`);
+  return value.map((entry, i) => {
+    const where = `${describe} #${i + 1}`;
+    if (!isRecord(entry)) return { name: text(entry, where, baseDir) as string };
+    const author: Author = { name: text(entry.name, `${where}: name`, baseDir) as string };
+    if (entry.affiliations !== undefined && entry.affiliations !== null) {
+      const list = Array.isArray(entry.affiliations) ? entry.affiliations : [entry.affiliations];
+      author.affiliations = list.map((n) => {
+        const number = Number(n);
+        if (Number.isInteger(number) && number >= 1) return number;
+        throw new OptionsError(`${where}: affiliations must be numbers of the affiliations list`);
+      });
+    }
+    if (entry.orcid !== undefined && entry.orcid !== null) {
+      const orcid = String(entry.orcid)
+        .trim()
+        .replace(/^https?:\/\/orcid\.org\//, "");
+      if (!ORCID.test(orcid)) {
+        throw new OptionsError(`${where}: orcid must look like 0000-0002-1825-0097`);
+      }
+      author.orcid = orcid;
+    }
+    if (entry.email !== undefined && entry.email !== null) {
+      author.email = text(entry.email, `${where}: email`, baseDir) as string;
+    }
+    if (entry.corresponding !== undefined) {
+      author.corresponding = bool(
+        entry.corresponding,
+        `${where}: corresponding`,
+        baseDir,
+      ) as boolean;
+    }
+    return author;
+  });
 };
 
 /** Text, or a list of texts (`keywords: [a, b]`). */
@@ -327,7 +424,7 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   date: text,
   kicker: text,
   affiliations: textList,
-  abstract: text,
+  abstract,
   keywords: textList,
   magazineName: folderName,
   cover: coverNumber,
@@ -336,6 +433,21 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   accent: color,
   numberSections: bool,
   preprintStamp: text,
+  authors,
+  journal: text,
+  articleType: text,
+  volume: text,
+  articleNumber: text,
+  doi: text,
+  license: text,
+  received: text,
+  accepted: text,
+  published: text,
+  editor: text,
+  correspondence: text,
+  citation: text,
+  shortTitle: text,
+  shortAuthors: text,
 };
 
 /**

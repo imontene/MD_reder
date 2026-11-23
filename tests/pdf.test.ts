@@ -180,6 +180,25 @@ describe.skipIf(!browser && !browserRequired)("PDF rendering", () => {
     expect(text.toUpperCase()).not.toContain("PREPRINT — 22");
   });
 
+  it("prints the open_access theme with its record on page 1", async () => {
+    const output = path.join(tempDir(), "open-access.pdf");
+    const result = await convertFile({ input: fixture("open-access.md"), output, format: "pdf" });
+    expect(result.diagnostics).toEqual([]);
+    const raw = readFileSync(output).toString("latin1");
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+SourceSerif4\w*-Regular/);
+    expect(raw).toMatch(/\/BaseFont \/[A-Z]{6}\+Inter-Bold/);
+    expect(raw).not.toMatch(/\/Subtype\s*\/Type3/);
+    expect(raw).not.toMatch(SYSTEM_FONT);
+
+    const { pages, text } = await pdfText(output);
+    expect(pages).toBe(1);
+    expect(text.replaceAll(" ", "")).toContain("ACCESOABIERTO");
+    expect(text).toContain("Pérez A. Cinética de conversión. Ciencia Abierta. 2026.");
+    expect(text).toContain("1. Introducción");
+    expect(text).toContain("1 de 1");
+    expect(text).not.toContain("2. Financiamiento");
+  });
+
   it("writes the document title into the PDF metadata", async () => {
     const output = path.join(tempDir(), "basic.pdf");
     await convertFile({ input: fixture("basic.md"), output, format: "pdf" });

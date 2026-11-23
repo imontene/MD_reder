@@ -26,7 +26,8 @@ Ejemplo: [`examples/ejemplo.md`](examples/ejemplo.md) → [`examples/ejemplo.pdf
 - 🎨 Estilo **Anti-Gravity** por defecto (con variante oscura), los temas clásicos **claro** y
   **oscuro**, el tema **académico** a dos columnas (`academic_basic`), el de **revista de
   tecnología** con portada (`tech_magazine`, con variante oscura), el de **preprint** al estilo
-  arXiv en Computer Modern (`preprint`), o tu propio CSS.
+  arXiv en Computer Modern (`preprint`), el de **revista de acceso abierto** (`open_access`), o
+  tu propio CSS.
 - 🔌 **Sin conexión**: todo va empaquetado; por defecto no descarga nada de internet.
 - 💻 **Windows 10/11 y Linux** (x64; arm64 en Linux), probado en ambos en cada cambio.
 
@@ -139,43 +140,43 @@ equipo); `--port` fija el puerto y `--no-open` no abre el navegador.
 
 ### Opciones
 
-| Opción                         | Descripción                                                                                                                                     | Por defecto           |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `-o, --output <ruta>`          | Archivo de salida, o carpeta con varios archivos                                                                                                | junto al `.md`        |
-| `-f, --format <pdf\|html>`     | Formato de salida                                                                                                                               | `pdf`                 |
-| `--page-size <tamaño>`         | `Letter`, `A4`, `Legal` (también `A3`, `A5`, `Tabloid`)                                                                                         | `Letter`              |
-| `--margin <valor>`             | Las cuatro márgenes como en CSS: `10mm`, `15mm 20mm`…                                                                                           | `10mm`                |
-| `--margin-top <medida>`        | Margen superior, p. ej. `15mm` (prevalece sobre `--margin`)                                                                                     | `10mm`                |
-| `--margin-right <medida>`      | Margen derecho                                                                                                                                  | `10mm`                |
-| `--margin-bottom <medida>`     | Margen inferior                                                                                                                                 | `10mm`                |
-| `--margin-left <medida>`       | Margen izquierdo                                                                                                                                | `10mm`                |
-| `--orientation <orientación>`  | `portrait` (vertical) o `landscape` (horizontal)                                                                                                | `portrait`            |
-| `--landscape`                  | Atajo de `--orientation landscape`                                                                                                              | —                     |
-| `--toc`                        | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)                                                                                        | —                     |
-| `--toc-depth <n>`              | Nivel de título más profundo en la tabla de contenidos                                                                                          | `3`                   |
-| `--header <texto>`             | Encabezado de página (ver abajo)                                                                                                                | —                     |
-| `--footer <texto>`             | Pie de página (ver abajo)                                                                                                                       | `{page} / {pages}`    |
-| `--no-page-numbers`            | Sin el pie con números de página                                                                                                                | —                     |
-| `--font <manrope\|inter>`      | Tipografía del texto (ver abajo)                                                                                                                | `manrope`             |
-| `--no-justify`                 | Párrafos alineados a la izquierda en el PDF (ver abajo)                                                                                         | justificado           |
-| `--watermark <texto>`          | Marca de agua en diagonal en cada página del PDF, con el degradado Anti-Gravity                                                                 | —                     |
-| `--watermark-field`            | Campos de luz con el degradado arriba a la izquierda y abajo a la derecha de cada página del PDF                                                | —                     |
-| `--density <densidad>`         | `normal` o `compact` (menos espacio entre líneas y bloques)                                                                                     | `normal`              |
-| `--font-size <tamaño>`         | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt`                                                                                    | `10.5pt`              |
-| `--theme <tema\|css>`          | `antigravity`, `antigravity-dark`, `light`, `dark`, `academic_basic`, `tech_magazine`, `tech_magazine-dark`, `preprint` o un `.css` (ver abajo) | `antigravity`         |
-| `--css <archivo.css>`          | CSS adicional (se puede repetir)                                                                                                                | —                     |
-| `--mermaid-theme <tema>`       | `default`, `neutral`, `dark`, `forest`, `base`                                                                                                  | el del tema de página |
-| `--mermaid-flip <auto\|never>` | Si el autoajuste puede girar un diagrama de flujo de eje (ver abajo)                                                                            | `auto`                |
-| `--no-mermaid-autofit`         | Dibujar los diagramas de flujo tal como están escritos                                                                                          | —                     |
-| `--lang <código>`              | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…)                                                                                      | `es`                  |
-| `--title <texto>`              | Título del documento (muestra un bloque de título)                                                                                              | primer `# título`     |
-| `--config <archivo>`           | Archivo de configuración                                                                                                                        | el más cercano        |
-| `--no-config`                  | Ignorar `mdrender.config.json`                                                                                                                  | —                     |
-| `--browser <ruta>`             | Ruta a Chrome/Edge/Chromium (o variable `MDRENDER_BROWSER`)                                                                                     | autodetección         |
-| `--allow-remote`               | Permitir que el PDF descargue imágenes/CSS de internet                                                                                          | bloqueado             |
-| `-w, --watch`                  | Regenerar al guardar                                                                                                                            | —                     |
-| `-q, --quiet`                  | Mostrar solo advertencias y errores                                                                                                             | —                     |
-| `-v, --verbose`                | Mostrar también configuración, navegador y tiempos                                                                                              | —                     |
+| Opción                         | Descripción                                                                                                                                                    | Por defecto           |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `-o, --output <ruta>`          | Archivo de salida, o carpeta con varios archivos                                                                                                               | junto al `.md`        |
+| `-f, --format <pdf\|html>`     | Formato de salida                                                                                                                                              | `pdf`                 |
+| `--page-size <tamaño>`         | `Letter`, `A4`, `Legal` (también `A3`, `A5`, `Tabloid`)                                                                                                        | `Letter`              |
+| `--margin <valor>`             | Las cuatro márgenes como en CSS: `10mm`, `15mm 20mm`…                                                                                                          | `10mm`                |
+| `--margin-top <medida>`        | Margen superior, p. ej. `15mm` (prevalece sobre `--margin`)                                                                                                    | `10mm`                |
+| `--margin-right <medida>`      | Margen derecho                                                                                                                                                 | `10mm`                |
+| `--margin-bottom <medida>`     | Margen inferior                                                                                                                                                | `10mm`                |
+| `--margin-left <medida>`       | Margen izquierdo                                                                                                                                               | `10mm`                |
+| `--orientation <orientación>`  | `portrait` (vertical) o `landscape` (horizontal)                                                                                                               | `portrait`            |
+| `--landscape`                  | Atajo de `--orientation landscape`                                                                                                                             | —                     |
+| `--toc`                        | Tabla de contenidos al inicio (o donde pongas `[[toc]]`)                                                                                                       | —                     |
+| `--toc-depth <n>`              | Nivel de título más profundo en la tabla de contenidos                                                                                                         | `3`                   |
+| `--header <texto>`             | Encabezado de página (ver abajo)                                                                                                                               | —                     |
+| `--footer <texto>`             | Pie de página (ver abajo)                                                                                                                                      | `{page} / {pages}`    |
+| `--no-page-numbers`            | Sin el pie con números de página                                                                                                                               | —                     |
+| `--font <manrope\|inter>`      | Tipografía del texto (ver abajo)                                                                                                                               | `manrope`             |
+| `--no-justify`                 | Párrafos alineados a la izquierda en el PDF (ver abajo)                                                                                                        | justificado           |
+| `--watermark <texto>`          | Marca de agua en diagonal en cada página del PDF, con el degradado Anti-Gravity                                                                                | —                     |
+| `--watermark-field`            | Campos de luz con el degradado arriba a la izquierda y abajo a la derecha de cada página del PDF                                                               | —                     |
+| `--density <densidad>`         | `normal` o `compact` (menos espacio entre líneas y bloques)                                                                                                    | `normal`              |
+| `--font-size <tamaño>`         | Tamaño del texto en `pt` o `px`, de 6 a 24 pt; p. ej. `10pt`                                                                                                   | `10.5pt`              |
+| `--theme <tema\|css>`          | `antigravity`, `antigravity-dark`, `light`, `dark`, `academic_basic`, `tech_magazine`, `tech_magazine-dark`, `preprint`, `open_access` o un `.css` (ver abajo) | `antigravity`         |
+| `--css <archivo.css>`          | CSS adicional (se puede repetir)                                                                                                                               | —                     |
+| `--mermaid-theme <tema>`       | `default`, `neutral`, `dark`, `forest`, `base`                                                                                                                 | el del tema de página |
+| `--mermaid-flip <auto\|never>` | Si el autoajuste puede girar un diagrama de flujo de eje (ver abajo)                                                                                           | `auto`                |
+| `--no-mermaid-autofit`         | Dibujar los diagramas de flujo tal como están escritos                                                                                                         | —                     |
+| `--lang <código>`              | Idioma del documento; `en` para inglés (`pt`, `fr`, `de`…)                                                                                                     | `es`                  |
+| `--title <texto>`              | Título del documento (muestra un bloque de título)                                                                                                             | primer `# título`     |
+| `--config <archivo>`           | Archivo de configuración                                                                                                                                       | el más cercano        |
+| `--no-config`                  | Ignorar `mdrender.config.json`                                                                                                                                 | —                     |
+| `--browser <ruta>`             | Ruta a Chrome/Edge/Chromium (o variable `MDRENDER_BROWSER`)                                                                                                    | autodetección         |
+| `--allow-remote`               | Permitir que el PDF descargue imágenes/CSS de internet                                                                                                         | bloqueado             |
+| `-w, --watch`                  | Regenerar al guardar                                                                                                                                           | —                     |
+| `-q, --quiet`                  | Mostrar solo advertencias y errores                                                                                                                            | —                     |
+| `-v, --verbose`                | Mostrar también configuración, navegador y tiempos                                                                                                             | —                     |
 
 **Página**: por defecto hoja **Letter vertical con márgenes de 10 mm**. Las medidas aceptan
 `mm`, `cm`, `in` o `px`. `--margin` fija las cuatro márgenes a la vez y `--margin-top`,
@@ -253,6 +254,45 @@ el aspecto habitual de los preprints de arXiv. Ejemplo:
 - Encabezado «PREPRINT — fecha» desde la página 2 y número de página centrado.
 - **Sello lateral opcional** en el margen izquierdo de la página 1, de abajo hacia arriba, con
   el texto que des en `preprint-stamp` (por ejemplo, tu identificador de arXiv, si lo tienes).
+
+**Acceso abierto** (`--theme open_access`): un artículo de una revista de acceso abierto.
+Ejemplo: [`examples/acceso-abierto.md`](examples/acceso-abierto.md) →
+[`examples/acceso-abierto.pdf`](examples/acceso-abierto.pdf).
+
+- **Primera página** con una franja (revista y tipo de artículo) y, junto al título, los
+  autores y el resumen, una **barra lateral** con insignia «Acceso abierto», cita sugerida
+  (estilo Vancouver), editor, fechas, licencia, correspondencia y DOI. Cada dato aparece solo
+  si su campo existe.
+- Source Serif 4 en el texto e Inter en títulos, leyendas y metadatos; secciones numeradas
+  «1.», «1.1.» en el color de acento (`accent`); ecuaciones numeradas; «**Figura 1.**» y
+  «**Tabla 1.**» en negrita.
+- Secciones finales tras `[[backmatter]]` (contribuciones, financiamiento, datos, conflictos
+  de interés, referencias) en letra pequeña y sin numerar.
+- Encabezado desde la página 2 con la revista y «autores · título abreviado», y pie con la
+  revista, el año, el volumen, el número de artículo, el DOI y «n de N».
+
+Campos del front matter de `open_access`: `journal`, `article-type`, `volume`,
+`article-number`, `doi`, `license` (por defecto `CC BY 4.0`), `received`, `accepted`,
+`published`, `editor`, `correspondence`, `citation` (reemplaza la cita generada),
+`short-title`, `short-authors` y `accent`. Con cualquier tema, **`authors`** describe a cada
+autor con sus afiliaciones, ORCID, correo y si es el de correspondencia, y **`abstract`**
+puede ser un resumen estructurado:
+
+```yaml
+authors:
+  - name: Ana Pérez
+    affiliations: [1]
+    orcid: 0000-0000-0000-0001
+    email: ana.perez@ejemplo.org
+    corresponding: true
+  - name: Luis Gómez
+    affiliations: [1, 2]
+abstract:
+  Antecedentes: …
+  Métodos: …
+  Resultados: …
+  Conclusiones: …
+```
 
 **Revista de tecnología** (`--theme tech_magazine`, o `tech_magazine-dark` con la página en
 negro): el aspecto de una revista de divulgación tecnológica. Ejemplo:
@@ -527,8 +567,8 @@ El código, [MIT](LICENSE). Las portadas de revista que trae el paquete (`tech_m
 `AlphaZeroChess` e `Introspect`, imágenes y `magazine.json`) no son MIT: desde la 2.15.0 se
 distribuyen bajo [CC BY-NC-ND 4.0](tech_magazine/LICENSE.md), con uso no comercial y sin
 modificarlas; para tu propia revista, pon tus portadas en una carpeta `tech_magazine/` junto al
-`.md`. Manrope, Inter, JetBrains Mono, STIX Two Text, Newsreader, Fraunces y CMU (Computer
-Modern Unicode) se distribuyen bajo
+`.md`. Manrope, Inter, JetBrains Mono, STIX Two Text, Newsreader, Fraunces, CMU (Computer
+Modern Unicode) y Source Serif 4 se distribuyen bajo
 la [SIL Open Font License 1.1](https://openfontlicense.org); los ejecutables incluyen
 `THIRD-PARTY-NOTICES.txt` con las licencias de todos los componentes y
 `LICENSE-tech_magazine.md` con la de las portadas.

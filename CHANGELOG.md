@@ -1,5 +1,24 @@
 # Cambios
 
+## Sin publicar
+
+- **Tema `open_access`** (`--theme open_access`), que no se usa por defecto: un artículo de
+  revista de acceso abierto.
+  - Primera página con franja de la revista y barra lateral con insignia «Acceso abierto», cita
+    sugerida en estilo Vancouver, editor, fechas, licencia, correspondencia y DOI.
+  - Source Serif 4 (incrustada en el PDF) en el texto e Inter en títulos y metadatos; secciones
+    numeradas «1.», «1.1.» en el color de acento; ecuaciones numeradas; «**Figura 1.**» y
+    «**Tabla 1.**»; secciones finales pequeñas tras `[[backmatter]]`.
+  - Encabezado con la revista y «autores · título abreviado»; pie con el registro del artículo
+    y «n de N».
+  - Front matter: `journal`, `article-type`, `volume`, `article-number`, `doi`, `license`,
+    `received`, `accepted`, `published`, `editor`, `correspondence`, `citation`, `short-title`,
+    `short-authors` y `accent`.
+- **`authors` estructurado** en cualquier tema: nombre, afiliaciones, ORCID, correo y autor de
+  correspondencia, que se marca con «*» y una nota bajo las afiliaciones.
+- **Resumen estructurado** en cualquier tema: `abstract` como mapa de apartados (Antecedentes,
+  Métodos, Resultados, Conclusiones…).
+
 ## 2.17.0 — 2026-11-23
 
 - **Tema `preprint`** (`--theme preprint`), que no se usa por defecto: un artículo como lo

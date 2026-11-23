@@ -1,0 +1,461 @@
+/*
+ * mdrender open_access theme: loaded after theme.css. An article of an open access journal:
+ * Source Serif 4 for the text, Inter for titles, labels and captions, one justified column.
+ * Page 1 opens with a band (journal, article type) and a sidebar with the article's record
+ * beside the title, authors and abstract (render/open-access.ts writes them, and the running
+ * head and footer). Numbered sections ("1.", "1.1.") in the accent; small back matter.
+ */
+
+:root {
+  --oa-serif: "Source Serif 4", Georgia, serif;
+  --oa-sans: var(--font-text);
+  --oa-ink: #1b1f24;
+  --oa-muted: #57606a;
+  --oa-hairline: #d0d7de;
+  --oa-accent: #00677f;
+  --oa-accent-soft: color-mix(in srgb, var(--oa-accent) 9%, white);
+  --oa-badge: #e8711a;
+  --color-text: var(--oa-ink);
+  --color-heading: var(--oa-ink);
+  --color-muted: var(--oa-muted);
+  --color-link: var(--oa-accent);
+  --color-border: var(--oa-hairline);
+  --color-subtle-bg: #f6f8fa;
+  --color-accent: var(--oa-accent);
+  --color-bg: #ffffff;
+  --color-stripe: #ffffff;
+  --alert-note: var(--oa-accent);
+  --alert-tip: var(--oa-accent);
+  --alert-important: var(--oa-accent);
+}
+
+/* Running head and footer (their text comes from open-access.ts); none on page 1's head. */
+@page {
+  @top-left {
+    font:
+      700 7pt/1 "Inter",
+      sans-serif;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--oa-accent);
+    vertical-align: bottom;
+    padding-bottom: 5mm;
+  }
+
+  @top-center {
+    font:
+      7pt/1 "Inter",
+      sans-serif;
+    color: var(--oa-muted);
+    vertical-align: bottom;
+    padding-bottom: 5mm;
+  }
+
+  @top-right {
+    font:
+      7pt/1 "Inter",
+      sans-serif;
+    color: var(--oa-muted);
+    vertical-align: bottom;
+    padding-bottom: 5mm;
+  }
+
+  @bottom-left {
+    font:
+      7pt/1 "Inter",
+      sans-serif;
+    color: var(--oa-muted);
+    vertical-align: top;
+    padding-top: 5mm;
+  }
+
+  @bottom-center {
+    font:
+      7pt/1 "Inter",
+      sans-serif;
+    color: var(--oa-muted);
+    vertical-align: top;
+    padding-top: 5mm;
+  }
+
+  @bottom-right {
+    font:
+      600 7pt/1 "Inter",
+      sans-serif;
+    color: var(--oa-ink);
+    vertical-align: top;
+    padding-top: 5mm;
+  }
+}
+
+body {
+  font-family: var(--oa-serif);
+  line-height: 1.45;
+  counter-reset: figure table equation;
+}
+
+.markdown-body {
+  max-width: 720px;
+}
+
+@media print {
+  .markdown-body {
+    max-width: none;
+  }
+}
+
+/* Page 1: the band, then the record's sidebar beside title, authors and abstract. */
+.oa-front {
+  margin: 0 0 1.6em;
+  padding: 0;
+  font-family: var(--oa-sans);
+  border: 0;
+}
+
+.oa-band {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6mm;
+  padding: 0 0 2.5mm;
+  border-bottom: 2.5pt solid var(--oa-accent);
+}
+
+.oa-journal {
+  font-size: 17pt;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--oa-accent);
+}
+
+.oa-type {
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--oa-muted);
+}
+
+.oa-grid {
+  display: grid;
+  grid-template-columns: 44mm 1fr;
+  gap: 7mm;
+}
+
+.oa-side {
+  padding-right: 5mm;
+  font-size: 7pt;
+  line-height: 1.4;
+  color: var(--oa-muted);
+  border-right: 0.75pt solid var(--oa-hairline);
+}
+
+.oa-side p {
+  margin: 0 0 1.1em;
+  text-align: left;
+}
+
+.oa-label {
+  display: block;
+  font-size: 6.5pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--oa-ink);
+}
+
+.oa-side br + .oa-label {
+  margin-top: 0.5em;
+}
+
+.oa-side .oa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.35em 0.7em;
+  border-radius: 3px;
+  background: var(--oa-badge);
+  color: #ffffff;
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.oa-front .doc-title {
+  margin: 0 0 0.5em;
+  padding: 0;
+  font-family: var(--oa-sans);
+  font-size: 21pt;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  border: 0;
+}
+
+.oa-front .doc-subtitle {
+  margin: -0.2em 0 0.7em;
+  font-size: 11pt;
+  color: var(--oa-muted);
+}
+
+.oa-authors {
+  margin: 0 0 0.4em;
+  font-size: 10.5pt;
+  font-weight: 600;
+}
+
+a.orcid {
+  display: inline-block;
+  padding: 0 0.3em;
+  border-radius: 2px;
+  background: #a6ce39;
+  color: #ffffff;
+  font-size: 5.5pt;
+  font-weight: 700;
+  line-height: 1.5;
+  text-decoration: none;
+  vertical-align: 0.25em;
+}
+
+.oa-affiliations {
+  list-style: none;
+  margin: 0 0 1.2em;
+  padding: 0;
+  font-size: 7.5pt;
+  color: var(--oa-muted);
+}
+
+.oa-affiliations sup {
+  margin-right: 0.25em;
+}
+
+.oa-abstract {
+  padding: 0.9em 1.1em 0.4em;
+  font-family: var(--oa-serif);
+  font-size: 9pt;
+  line-height: 1.45;
+  background: var(--oa-accent-soft);
+  border-left: 2.5pt solid var(--oa-accent);
+}
+
+.oa-abstract-title {
+  margin: 0 0 0.5em;
+  font-family: var(--oa-sans);
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--oa-accent);
+}
+
+.oa-abstract p {
+  margin: 0 0 0.5em;
+}
+
+.oa-abstract strong {
+  font-family: var(--oa-sans);
+  font-size: 0.92em;
+  color: var(--oa-ink);
+}
+
+.oa-keywords {
+  margin: 0.8em 0 0;
+  font-size: 7.5pt;
+  color: var(--oa-muted);
+}
+
+.oa-keywords strong {
+  color: var(--oa-ink);
+}
+
+/* Body: section titles in the sans, numbered ("1.", "1.1.") in the accent. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--oa-sans);
+  color: var(--oa-ink);
+  border: 0;
+  padding: 0;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  margin: 1.5em 0 0.5em;
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--oa-accent);
+}
+
+h3 {
+  margin: 1.2em 0 0.4em;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+h4,
+h5,
+h6 {
+  margin: 1em 0 0.3em;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.markdown-body > p {
+  margin: 0 0 0.7em;
+}
+
+a {
+  color: var(--oa-accent);
+}
+
+blockquote {
+  color: var(--oa-muted);
+  border-left-color: var(--oa-hairline);
+}
+
+/* Equations numbered at the right, not those with \tag or \notag. */
+.math-display {
+  position: relative;
+}
+
+.math-display:not(.math-tagged) {
+  counter-increment: equation;
+}
+
+.math-display:not(.math-tagged)::after {
+  content: "(" counter(equation) ")";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--oa-sans);
+  font-size: 0.85em;
+  color: var(--oa-muted);
+}
+
+.math-display .katex-display {
+  padding-right: 2.5em;
+}
+
+/* Figures: full width in a hairline frame, "Figura 1." in bold, the caption in the sans. */
+.figure {
+  margin: 1.4em 0;
+  break-inside: avoid;
+}
+
+.figure:not(.figure-labelled) {
+  counter-increment: figure;
+}
+
+.figure img {
+  display: block;
+  width: 100%;
+  max-height: 90mm;
+  object-fit: contain;
+  padding: 3mm;
+  border: 0.75pt solid var(--oa-hairline);
+  border-radius: 4px;
+}
+
+.figure figcaption,
+.mermaid-diagram figcaption,
+p.caption {
+  margin-top: 0.6em;
+  font-family: var(--oa-sans);
+  font-size: 7.5pt;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--oa-muted);
+}
+
+.figure:not(.figure-labelled) figcaption::before {
+  content: var(--label-figure) " " counter(figure) ". ";
+  font-weight: 700;
+  color: var(--oa-ink);
+}
+
+/* Tables: caption above ("Tabla 1." in bold), shaded header, hairlines between rows. */
+table {
+  width: 100%;
+  margin: 1.2em 0 1.4em;
+  font-family: var(--oa-sans);
+  font-size: 8pt;
+  border-top: 1pt solid var(--oa-ink);
+  border-bottom: 1pt solid var(--oa-ink);
+  break-inside: avoid;
+}
+
+table:has(> caption.caption-numbered) {
+  counter-increment: table;
+}
+
+caption {
+  caption-side: top;
+  padding: 0 0 0.5em;
+  font-size: 7.5pt;
+  text-align: left;
+  color: var(--oa-muted);
+}
+
+caption.caption-numbered::before {
+  content: var(--label-table) " " counter(table) ". ";
+  font-weight: 700;
+  color: var(--oa-ink);
+}
+
+th,
+td {
+  padding: 0.45em 0.7em;
+  border: 0;
+}
+
+th {
+  font-weight: 700;
+  background: var(--oa-accent-soft);
+}
+
+tbody tr + tr td {
+  border-top: 0.5pt solid var(--oa-hairline);
+}
+
+tbody tr:nth-child(2n) {
+  background: none;
+}
+
+/* Back matter (after [[backmatter]]): small, unnumbered, on a rule. */
+.backmatter {
+  margin-top: 2em;
+  padding-top: 0.6em;
+  font-size: 0.86em;
+  border-top: 0.75pt solid var(--oa-hairline);
+}
+
+.backmatter h2,
+h2:has(+ ol.references) {
+  margin: 1.1em 0 0.3em;
+  font-size: 0.95em;
+  color: var(--oa-ink);
+}
+
+ol.references {
+  padding-left: 1.6em;
+  font-size: 0.9em;
+}
+
+ol.references > li {
+  margin-top: 0.3em;
+  text-align: left;
+}
+
+hr.footnotes-sep {
+  width: 25%;
+  margin: 1.6em 0 0.6em;
+}
+
+.footnotes {
+  font-size: 0.8em;
+}
