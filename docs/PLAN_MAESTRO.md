@@ -349,9 +349,15 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
 - [ ] **7.6 Motor general y rutas (L).** `engines/layered.ts` con `elkjs` en Node (puertos
       fijos, zócalo o carril para los `sidecar`) y `routing.ts` (rutas ortogonales, arcos,
       retornos por canal lateral, posición de las etiquetas de arista sin choques).
-- [ ] **7.7 Elección del candidato (M).** `score.ts` (puntuación en Node), búsqueda por ancho de
-      ajuste y eje según `--mermaid-autofit` y `--mermaid-flip`, piso `classic` medido sobre el
-      SVG real y trazas de `--verbose` (`Mermaid smart layout: …`, `kept classic (…)`).
+- [ ] **7.7 Criterio de elección (M).** El mejor entre `classic` y `smart` (§5.3 y §5.4 de la
+      especificación): `score.ts` con las medidas sobre el SVG final, condiciones obligatorias,
+      candidatos (`classic`, `classic` transpuesto, motores `smart` por ancho de ajuste y eje
+      según `--mermaid-autofit` y `--mermaid-flip`), directiva `%% @layout:`, calibración de
+      pesos y margen con los votos de la galería ciega (meta: 75 % de coincidencia en los pares
+      reservados) y trazas de `--verbose` (`Mermaid smart layout: …`, `kept classic (…)`).
+  - [x] Galería ciega para recoger votos desde ya, regenerable a medida que cambian los motores
+        (`docs/prototipos/galeria_ciega/`): primera versión publicada con 49 pares (§5.4).
+  - [ ] Votos del autor (meta: 40 pares o más) y calibración.
 - [ ] **7.8 Integración y entrega (M).** `tests/fixtures/mermaid-smart.md` (serpentina, ciclo,
       hub, bento, transversales, casos que vuelven a `classic`);
       `tests/mermaid-smart.test.ts` en `antigravity`, `antigravity-dark`, `academic_basic` y

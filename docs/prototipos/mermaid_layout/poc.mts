@@ -11,7 +11,7 @@
 // raster images, to the system's temporary folder).
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,9 +25,11 @@ import { renderMermaid } from "../../../src/render/mermaid.ts";
 import {
   authorConfigured,
   candidate,
+  flippedDirection,
   flowchartHeader,
   measureSvg,
   printScale,
+  withDirection,
   type Fit,
 } from "../../../src/render/mermaid-fit.ts";
 import {
@@ -923,7 +925,21 @@ function config(extra: Record<string, unknown> = {}, layout?: string, wrap?: num
 
 const session = await BrowserSession.open(findBrowser(process.env.MDRENDER_BROWSER));
 /** Optional argument: a Markdown file whose flowcharts are used instead of the corpus. */
-const input = process.argv[2];
+const args = process.argv.slice(2);
+const input = args.find((a) => !a.startsWith("--"));
+/** --dump: also write every candidate's SVG for the blind gallery (docs/prototipos/galeria_ciega). */
+const dump = args.includes("--dump");
+interface Dumped {
+  svg: string;
+  label: string;
+  scale: number;
+  height: number;
+}
+const dumped: { title: string; candidates: Record<string, Dumped> }[] = [];
+const dumpedOf = (svg: string, label: string): Dumped => {
+  const c = candidate(svg, undefined, false, FIT)!;
+  return { svg, label, scale: c.scale, height: Math.round(c.height * c.scale) };
+};
 const suffix = input ? `-${basename(input, ".md")}` : "";
 const cases = input ? fromFile(input) : corpus();
 if (!input) {
@@ -1026,6 +1042,35 @@ for (const [i, c] of cases.entries()) {
   }
   const classicSize = measureSvg(classicSvg)!;
   const classicScale = printScale(classicSize, FIT);
+  const turned = classicResult.layout?.turned;
+  const entry = dump ? { title: c.title, candidates: {} as Record<string, Dumped> } : undefined;
+  if (entry) {
+    dumped.push(entry);
+    entry.candidates.classic = dumpedOf(
+      classicSvg,
+      `classic${turned ? ` (autofit giró ${turned})` : ""}`,
+    );
+    const header = flowchartHeader(c.source);
+    if (header && !c.config) {
+      // The other axis than the one classic chose: written if autofit turned it, turned if not.
+      const source = turned
+        ? c.source
+        : withDirection(c.source, header, flippedDirection(header.direction));
+      const [other] = await renderMermaid(session, [{ source, line: 1 } as MermaidBlock], {
+        theme: "base",
+        themeVariables: mermaidThemeVariables("antigravity"),
+        widthPx: FIT.width,
+        fontPx: FONT_PX,
+        pageHeightPx: FIT.height,
+        flip: "never",
+      });
+      if (other && "svg" in other)
+        entry.candidates.classicAlt = dumpedOf(
+          other.svg,
+          turned ? "classic en su dirección escrita" : "classic girado",
+        );
+    }
+  }
   const row: Row = {
     title: c.title,
     archetype: "",
@@ -1177,6 +1222,43 @@ for (const [i, c] of cases.entries()) {
     scale: smartCandidate.scale,
     height: Math.round(smartCandidate.height * smartCandidate.scale),
   };
+  if (entry) {
+    entry.candidates.smart = dumpedOf(svg, row.archetype);
+    // Alternative smart: ELK on the other axis when the rule chose ELK, else ELK itself.
+    let alts: typeof tried = [];
+    if (plan.archetype.startsWith("layered (ELK"))
+      alts = tried.filter((t) => t.plan.archetype !== plan.archetype);
+    else if (!measured.clusters.length) {
+      const byWrap = new Map(tried.map((t) => [t.wrap, t.measured]));
+      for (const [w, m] of byWrap) {
+        const root = norm(m.direction, "TB");
+        for (const d of [root, FLIPPED_DIR[root]]) {
+          const alt = await composeElk(m, d);
+          alts.push({
+            plan: alt,
+            measured: m,
+            wrap: w,
+            scale: printScale(alt, FIT),
+            height: alt.height,
+          });
+        }
+      }
+    }
+    if (alts.length) {
+      const alt = best(alts);
+      const out = await render(
+        c.source,
+        `smart-alt-${i}`,
+        config(c.config, "mdr-place", alt.wrap),
+        alt.plan,
+      );
+      if (!("error" in out))
+        entry.candidates.smartAlt = dumpedOf(
+          finishDiagram(out.svg),
+          `${alt.plan.archetype}, wrap ${alt.wrap ?? "Mermaid"}`,
+        );
+    }
+  }
   gallery.push(`<section><h2>${c.title}</h2><p>${plan.archetype}</p><div class="pair">
 <figure><figcaption>classic · escala ${row.classic.scale.toFixed(2)} · alto ${row.classic.height} px</figcaption>${classicSvg}</figure>
 <figure><figcaption>smart · escala ${row.smart.scale.toFixed(2)} · alto ${row.smart.height} px</figcaption>${svg}</figure>
@@ -1264,4 +1346,9 @@ const lines = [
   "",
 ];
 writeFileSync(join(here, `resultados${suffix}.md`), lines.join("\n"));
+if (dump) {
+  const dir = join(repo, "docs/prototipos/galeria_ciega/candidatos");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `candidatos${suffix || "-corpus"}.json`), JSON.stringify(dumped));
+}
 console.log(lines.join("\n"));

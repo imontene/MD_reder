@@ -1,0 +1,581 @@
+<title>Galería ciega de diagramas</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<style>
+  /* Layout: one pair at a time, two print columns side by side (stacked on phones), vote bar under them. */
+  :root {
+    --bg: #eef0f3;
+    --surface: #ffffff;
+    --ink: #1c2230;
+    --muted: #5d6677;
+    --line: #d5d9e0;
+    --accent: #3b5bdb;
+    --accent-soft: #e3e9ff;
+    --done: #2f9e6e;
+    --paper: #ffffff;
+    --font-ui: "Manrope", "Inter", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    /* Width of a printed text column (642 px) and its usable page height (949 px). */
+    --col: min(642px, calc((100vw - 2 * max(16px, env(safe-area-inset-left, 0px)) - 24px) / 2));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151922;
+      --surface: #1e2430;
+      --ink: #e8ebf1;
+      --muted: #9aa3b5;
+      --line: #343c4c;
+      --accent: #8ea6ff;
+      --accent-soft: #28335a;
+      --done: #5cc79a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151922;
+    --surface: #1e2430;
+    --ink: #e8ebf1;
+    --muted: #9aa3b5;
+    --line: #343c4c;
+    --accent: #8ea6ff;
+    --accent-soft: #28335a;
+    --done: #5cc79a;
+    color-scheme: dark;
+  }
+  @media (max-width: 760px) {
+    :root {
+      --col: calc(100vw - 2 * max(16px, env(safe-area-inset-left, 0px)));
+    }
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 14px;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 10;
+    background: var(--surface);
+  }
+  .wrap {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  header {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 5;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding-block: 10px;
+  }
+  h1 {
+    font-size: 16px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .progress {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .nav {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  button:hover {
+    border-color: var(--accent);
+  }
+  button:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding-bottom: 10px;
+  }
+  .strip button {
+    width: 22px;
+    height: 14px;
+    padding: 0;
+    border-radius: 3px;
+    font-size: 0;
+  }
+  .strip button.voted {
+    background: var(--done);
+    border-color: var(--done);
+  }
+  .strip button.current {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  main {
+    padding-block: 16px 24px;
+    display: grid;
+    gap: 14px;
+  }
+  .pairhead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+  }
+  .pairhead h2 {
+    font-size: 15px;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .pairhead .id {
+    font-family: var(--font-mono);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .notice {
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .notice[hidden] {
+    display: none;
+  }
+
+  .panels {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  @media (max-width: 760px) {
+    .panels {
+      flex-direction: column;
+    }
+  }
+  figure {
+    margin: 0;
+    width: var(--col);
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+  }
+  figcaption {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  figure.chosen figcaption {
+    color: var(--accent);
+  }
+  .page {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 0;
+    text-align: center;
+    overflow: hidden;
+  }
+  figure.chosen .page {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .page svg {
+    max-width: 100%;
+    height: auto;
+    max-height: calc(var(--col) * 949 / 642);
+  }
+  .page foreignObject p {
+    margin: 0;
+  }
+
+  .vote {
+    display: grid;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    max-width: calc(2 * var(--col) + 24px);
+  }
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .choices button {
+    min-width: 120px;
+    font-weight: 600;
+  }
+  .choices button[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--surface);
+  }
+  .reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .reasons span {
+    color: var(--muted);
+    margin-right: 4px;
+  }
+  .reasons button {
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 13px;
+  }
+  .reasons button[aria-pressed="true"] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  textarea {
+    font: inherit;
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 10px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 2.4em;
+    resize: vertical;
+  }
+  .status {
+    color: var(--muted);
+    font-size: 12px;
+    min-height: 1.2em;
+  }
+  .keys {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  kbd {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0 4px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    button {
+      transition:
+        border-color 0.12s,
+        background 0.12s;
+    }
+  }
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="bar">
+      <h1>Galería ciega</h1>
+      <span class="progress" id="progress">Cargando pares…</span>
+      <div class="nav">
+        <button id="prev" type="button" aria-label="Par anterior">← Anterior</button>
+        <button id="next" type="button" aria-label="Par siguiente">Siguiente →</button>
+        <button id="nextOpen" type="button">Siguiente sin votar</button>
+      </div>
+    </div>
+    <div class="strip" id="strip" aria-label="Todos los pares"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="notice" id="notice" hidden></p>
+  <div class="pairhead">
+    <h2 id="title">Cargando…</h2>
+    <span class="id" id="pairId"></span>
+  </div>
+  <p class="keys">
+    Cada columna es el ancho de texto de una página A4, con el alto útil de la página como máximo.
+    Elige cuál prefieres; los motivos y el comentario son opcionales. Atajos: <kbd>A</kbd>
+    <kbd>I</kbd> <kbd>B</kbd> para votar, <kbd>←</kbd> <kbd>→</kbd> para moverte.
+  </p>
+  <div class="panels">
+    <figure id="figA">
+      <figcaption>A</figcaption>
+      <div class="page" id="svgA"></div>
+    </figure>
+    <figure id="figB">
+      <figcaption>B</figcaption>
+      <div class="page" id="svgB"></div>
+    </figure>
+  </div>
+  <section class="vote" aria-label="Tu voto">
+    <div class="choices" role="group" aria-label="Preferencia">
+      <button type="button" id="voteA" data-vote="A" aria-pressed="false">A es mejor</button>
+      <button type="button" id="voteI" data-vote="iguales" aria-pressed="false">Iguales</button>
+      <button type="button" id="voteB" data-vote="B" aria-pressed="false">B es mejor</button>
+    </div>
+    <div class="reasons" role="group" aria-label="Motivos">
+      <span>Motivos:</span>
+      <button type="button" data-reason="legibilidad" aria-pressed="false">Legibilidad</button>
+      <button type="button" data-reason="espacio" aria-pressed="false">Espacio</button>
+      <button type="button" data-reason="centrado" aria-pressed="false">Centrado</button>
+      <button type="button" data-reason="flechas" aria-pressed="false">Flechas</button>
+      <button type="button" data-reason="forma" aria-pressed="false">Forma</button>
+    </div>
+    <textarea id="comment" placeholder="Comentario (opcional)" aria-label="Comentario"></textarea>
+    <div class="status" id="status" role="status"></div>
+  </section>
+</main>
+
+<script>
+  (() => {
+    const $ = (id) => document.getElementById(id);
+    let pairs = [];
+    let index = 0;
+    const votes = {}; // pair id -> {voto, motivos, comentario}
+    let db = null;
+    const writing = {}; // pair id -> promise chain, one write at a time per document
+
+    const notice = (text) => {
+      $("notice").textContent = text;
+      $("notice").hidden = !text;
+    };
+    const status = (text) => {
+      $("status").textContent = text;
+    };
+
+    function voteOf(id) {
+      return votes[id] || { voto: null, motivos: [], comentario: "" };
+    }
+
+    function renderStrip() {
+      const strip = $("strip");
+      strip.textContent = "";
+      pairs.forEach((p, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = p.id;
+        b.title = p.id + (voteOf(p.id).voto ? " · votado" : "");
+        if (voteOf(p.id).voto) b.classList.add("voted");
+        if (i === index) b.classList.add("current");
+        b.addEventListener("click", () => show(i));
+        strip.appendChild(b);
+      });
+      const done = pairs.filter((p) => voteOf(p.id).voto).length;
+      $("progress").textContent = done + " de " + pairs.length + " votados";
+    }
+
+    function renderVote() {
+      const p = pairs[index];
+      if (!p) return;
+      const v = voteOf(p.id);
+      for (const b of document.querySelectorAll("[data-vote]"))
+        b.setAttribute("aria-pressed", String(b.dataset.vote === v.voto));
+      for (const b of document.querySelectorAll("[data-reason]"))
+        b.setAttribute("aria-pressed", String(v.motivos.includes(b.dataset.reason)));
+      if (document.activeElement !== $("comment")) $("comment").value = v.comentario || "";
+      $("figA").classList.toggle("chosen", v.voto === "A");
+      $("figB").classList.toggle("chosen", v.voto === "B");
+    }
+
+    function show(i) {
+      if (!pairs.length) return;
+      index = Math.max(0, Math.min(pairs.length - 1, i));
+      const p = pairs[index];
+      $("title").textContent = p.titulo;
+      $("pairId").textContent = p.id + " · par " + (index + 1) + " de " + pairs.length;
+      // The SVGs are mdrender's own renders of the diagrams, published with this page.
+      $("svgA").innerHTML = p.a;
+      $("svgB").innerHTML = p.b;
+      $("prev").disabled = index === 0;
+      $("next").disabled = index === pairs.length - 1;
+      status("");
+      renderVote();
+      renderStrip();
+      try {
+        localStorage.setItem("galeria-ciega-par", p.id);
+      } catch (e) {}
+    }
+
+    function save(id, next) {
+      votes[id] = next;
+      renderVote();
+      renderStrip();
+      if (!db) {
+        status("Guardado solo en esta vista: no hay base de datos aquí.");
+        return;
+      }
+      status("Guardando…");
+      const body = {
+        voto: next.voto,
+        motivos: next.motivos,
+        comentario: next.comentario,
+        fecha: new Date().toISOString(),
+      };
+      writing[id] = (writing[id] || Promise.resolve()).then(() =>
+        db
+          .collection("votos")
+          .doc(id)
+          .set(body)
+          .then(() => status("Guardado."))
+          .catch((e) =>
+            status(
+              "No se pudo guardar (" +
+                (e && e.code ? e.code : "error") +
+                "). Vuelve a intentarlo en un momento.",
+            ),
+          ),
+      );
+    }
+
+    function vote(value) {
+      const p = pairs[index];
+      if (!p) return;
+      const v = voteOf(p.id);
+      save(p.id, { ...v, voto: v.voto === value ? null : value });
+    }
+
+    function toggleReason(reason) {
+      const p = pairs[index];
+      if (!p) return;
+      const v = voteOf(p.id);
+      const motivos = v.motivos.includes(reason)
+        ? v.motivos.filter((r) => r !== reason)
+        : [...v.motivos, reason];
+      save(p.id, { ...v, motivos });
+    }
+
+    let commentTimer = null;
+    $("comment").addEventListener("input", () => {
+      clearTimeout(commentTimer);
+      const p = pairs[index];
+      if (!p) return;
+      const text = $("comment").value;
+      commentTimer = setTimeout(() => {
+        if (text !== (voteOf(p.id).comentario || ""))
+          save(p.id, { ...voteOf(p.id), comentario: text });
+      }, 700);
+    });
+
+    for (const b of document.querySelectorAll("[data-vote]"))
+      b.addEventListener("click", () => vote(b.dataset.vote));
+    for (const b of document.querySelectorAll("[data-reason]"))
+      b.addEventListener("click", () => toggleReason(b.dataset.reason));
+    $("prev").addEventListener("click", () => show(index - 1));
+    $("next").addEventListener("click", () => show(index + 1));
+    $("nextOpen").addEventListener("click", () => {
+      for (let k = 1; k <= pairs.length; k++) {
+        const j = (index + k) % pairs.length;
+        if (!voteOf(pairs[j].id).voto) return show(j);
+      }
+      status("Todos los pares tienen voto.");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.target instanceof HTMLTextAreaElement || e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "a") vote("A");
+      else if (k === "b") vote("B");
+      else if (k === "i") vote("iguales");
+      else if (e.key === "ArrowLeft") show(index - 1);
+      else if (e.key === "ArrowRight") show(index + 1);
+      else return;
+      e.preventDefault();
+    });
+
+    async function connectDb() {
+      try {
+        db = window.claude ? await window.claude.use("db") : null;
+      } catch (e) {
+        db = null;
+      }
+      if (!db) {
+        notice(
+          "En esta vista los votos no se guardan. Abre la galería en claude.ai con tu cuenta.",
+        );
+        return;
+      }
+      const timer = setTimeout(
+        () =>
+          notice("Todavía no se pudieron leer los votos guardados; los nuevos se guardarán igual."),
+        10000,
+      );
+      db.collection("votos").onSnapshot(
+        (snap) => {
+          if (!snap.metadata.fromCache) {
+            clearTimeout(timer);
+            notice("");
+          }
+          for (const d of snap.docs) {
+            const v = d.data() || {};
+            votes[d.id] = {
+              voto: v.voto ?? null,
+              motivos: Array.isArray(v.motivos)
+                ? v.motivos.filter((m) => typeof m === "string")
+                : [],
+              comentario: typeof v.comentario === "string" ? v.comentario : "",
+            };
+          }
+          renderVote();
+          renderStrip();
+        },
+        (e) => {
+          clearTimeout(timer);
+          notice("Los votos guardados no se pueden leer ahora (" + (e && e.code) + ").");
+        },
+      );
+    }
+
+    async function start() {
+      try {
+        const css = await fetch("fuentes.css").then((r) => r.text());
+        const style = document.createElement("style");
+        style.textContent = css;
+        document.head.appendChild(style);
+        await Promise.all(
+          ["400", "600", "700"].map((w) =>
+            document.fonts.load(w + ' 16px "Manrope"').catch(() => {}),
+          ),
+        );
+      } catch (e) {}
+      try {
+        pairs = await fetch("pares.json").then((r) => r.json());
+      } catch (e) {
+        $("title").textContent = "No se pudieron cargar los pares.";
+        return;
+      }
+      let first = 0;
+      try {
+        const saved = localStorage.getItem("galeria-ciega-par");
+        const k = pairs.findIndex((p) => p.id === saved);
+        if (k >= 0) first = k;
+      } catch (e) {}
+      show(first);
+    }
+
+    start();
+    connectDb();
+  })();
+</script>

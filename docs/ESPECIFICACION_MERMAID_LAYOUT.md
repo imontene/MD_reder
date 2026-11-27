@@ -16,6 +16,9 @@ date: 2026-11-27
 > 3. **El modo `ai` (antigua Fase 3) queda aplazado.** No se crea en esta fase. Al terminar el
 >    modo `smart` se evaluará si basta con la interpretación determinista o si conviene alguna
 >    opción con IA (§10).
+> 4. **Se elige el mejor entre `classic` y `smart`** con un criterio medible (§5.3), cuyos pesos
+>    se calibran con los juicios del autor en una galería ciega (§5.4). El autor puede decidir
+>    en cada diagrama con `%% @layout:` (§4.3).
 >
 > **Prueba de concepto (paso 7.1): el contrato se sostiene.** Resultados y ajustes en el §12.
 >
@@ -55,9 +58,10 @@ cambian.
    degradados con la opacidad en los `<stop>`, bandas de subgrafo). No se duplica ese código.
 5. **Sin red.** El modo `smart` no hace ninguna petición. La página de Mermaid sigue con la red
    bloqueada (`restrictNetwork(page, false)`).
-6. **Nunca peor que `classic`.** Si el modo `smart` no logra imprimir un diagrama al menos tan
-   legible como lo haría `classic` (§5.3), o si falla por cualquier motivo, ese diagrama se
-   dibuja con `classic`, sin interrumpir el documento.
+6. **`classic` siempre compite.** Cada diagrama se dibuja también con `classic`, y ese dibujo es
+   un candidato más. El modo `smart` solo se usa si gana por un margen con el criterio del
+   §5.3. Si falla por cualquier motivo, el diagrama se dibuja con `classic`, sin interrumpir el
+   documento.
 7. **Ejecutable independiente.** Todo el código se empaqueta en `mdrender(.exe)` mediante
    `scripts/build-sea.mjs`, y sus licencias aparecen en `THIRD-PARTY-NOTICES.txt`.
 
@@ -158,11 +162,12 @@ las reglas que el plan debe cumplir para que Mermaid lo dibuje tal cual (§12.2)
 
 Para cada bloque, `src/render/mermaid.ts` hace lo de hoy y, si corresponde, prueba `smart`:
 
-1. Renderiza con `classic`, con autofit si está activo, como hoy. Ese resultado es el **piso**.
+1. Renderiza con `classic`, con autofit si está activo, como hoy. Ese resultado es siempre un
+   candidato.
 2. Si el modo es `smart`, el diagrama es un `flowchart`/`graph` y no está configurado por el
-   autor (o trae `%% @archetype:`), llama a `composeDiagram()`.
-3. Si `composeDiagram()` devuelve un SVG que cumple el piso (§5.3), se usa ese; si no, se usa el
-   de `classic`, con la nota correspondiente en `--verbose`.
+   autor (o trae `%% @archetype:` o `%% @layout: smart`), llama a `composeDiagram()`, que
+   devuelve sus mejores candidatos ya dibujados.
+3. Elige entre todos con el criterio del §5.3 y anota en `--verbose` cuál ganó y por qué.
 
 Los dos layouts se registran una sola vez por página. Los nombres `mdr-measure` y `mdr-place`
 no chocan con los de Mermaid (`dagre`, `elk`, `swimlane`…).
@@ -279,8 +284,12 @@ Comentarios de Mermaid, ignorados por cualquier otro visor:
 - `%% @archetype: serpentine | flywheel | hub | bento | layered`
 - `%% @sidecar: ID1, ID2`
 - `%% @spine: A -> B -> C -> D`
+- `%% @layout: classic | smart`: fuerza el modo para ese diagrama, sin comparar. Con `smart` se
+  aplican igual las condiciones obligatorias del §5.3; si ningún candidato `smart` las cumple,
+  se usa `classic` con un aviso.
 
-Si están presentes, mandan sobre la heurística. Los IDs que no existan en el grafo se ignoran,
+Si están presentes, mandan sobre la heurística y sobre el criterio. `%% @archetype:` fuerza el
+motor, y el diagrama sale `smart` mientras cumpla las condiciones obligatorias. Los IDs que no existan en el grafo se ignoran,
 con un aviso en `--verbose`.
 
 ### 4.4 Analizador (`analyze.ts`)
@@ -373,22 +382,91 @@ centros de nodo; los tamaños vienen medidos y no se cambian.
   después como retoque del SVG, igual que `finishDiagram`. **Igualar el tamaño de nodos
   hermanos queda descartado** por ahora: Mermaid no respeta un tamaño dado (§12.3).
 
-### 5.3 Elección del candidato (`score.ts`)
+### 5.3 Elección: el mejor entre `classic` y `smart` (`score.ts`)
 
-Con autofit, para cada ancho de ajuste candidato (inicialmente el de Mermaid, 200 y 300 px; se
-calibra con `bench:mermaid`) y, si `flip` es `auto`, para el eje transpuesto en los arquetipos
-con eje, se calcula el plan y su puntuación **en Node**, a partir de las dimensiones del plan:
+No se elige con una sola regla, sino con un criterio que mide el dibujo. Su objetivo es
+coincidir con el juicio del autor; sus pesos se calibran con la galería ciega del §5.4.
 
-U(c) = 100·S(c) − 12·|ln((W_c/H_c)/R)| − 4·Cruces(c) − 6·Desbalance(c)
+**Candidatos.** Compiten todos con el mismo criterio:
 
-- _S(c)_ es la escala impresa, igual que en `mermaid-fit.ts`: el mínimo entre 1, el ancho de la
-  columna dividido por _W_c_ y el alto disponible dividido por _H_c_.
-- _R_ es la proporción del espacio disponible (ancho de columna / alto de página).
+- `classic` tal como hoy, con autofit;
+- `classic` con el eje transpuesto, si autofit no lo eligió ya (un diagrama vertical muy alto
+  puede leerse mejor en horizontal, y al revés);
+- cada motor `smart` cuyo arquetipo aplique, con sus variantes: anchos de ajuste (inicialmente
+  el de Mermaid, 200 y 300 px), eje escrito y transpuesto, proporciones del anillo. Las
+  variantes se puntúan primero en Node con las dimensiones del plan y solo se dibujan las dos
+  mejores.
 
-Solo el candidato de mayor _U_ se dibuja. Después se mide su SVG real con `candidate()` de
-`mermaid-fit.ts` y se compara con el resultado de `classic` (el piso). El candidato `smart` se
-usa solo si su escala impresa es al menos la de `classic` menos `SCALE_TOLERANCE` (0,05). Si no,
-se queda el de `classic`, con su motivo en `--verbose`.
+**Condiciones obligatorias.** Un candidato que no las cumple queda fuera:
+
+1. letra impresa no menor que `MIN_SCALE` (valor inicial 0,7, unos 7,5 pt con letra de 10,5 pt);
+2. sin solapes entre cajas, etiquetas de arista y cajas de subgrafo;
+3. ninguna arista atraviesa una caja que no sea su origen o su destino.
+
+Si ningún candidato las cumple, se usa el de mayor escala impresa, como hoy, con el aviso de
+diagrama pequeño que ya existe.
+
+**Medidas.** Se calculan sobre el SVG final, igual para `classic` y para `smart`, en px impresos.
+Cada una se normaliza para que 0 sea lo ideal y los valores negativos, peores:
+
+| Medida            | Definición inicial                                                                                                               | Origen                         |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------- | :----------------------------- |
+| Legibilidad       | ln(escala impresa)                                                                                                               | R1                             |
+| Economía          | −alto impreso / alto útil de la página                                                                                           | R5                             |
+| Proporción        | −\|ln((ancho/alto) / (ancho de columna/alto útil))\|                                                                             | Verticales muy altos           |
+| Equilibrio        | −media, por cada nodo con hijos, de la distancia entre su centro y el centro de sus hijos en el eje transversal, / su ancho      | R2 y R5: «más centrado»        |
+| Salidas limpias   | −(pares de aristas que salen del mismo punto o comparten el primer tramo + etiquetas que tocan otra etiqueta o una arista ajena) | R2: flechas del rombo          |
+| Retornos          | −suma de la longitud de las aristas que van contra el sentido principal / diagonal del dibujo                                    | R3: ciclos cerrados            |
+| Cruces y quiebres | −(cruces de aristas + 0,25 × codos por arista)                                                                                   | Literatura de dibujo de grafos |
+
+Q(c) = Σ wᵢ·mᵢ(c).
+
+**Decisión.** Se usa el mejor candidato `smart` solo si Q(smart) ≥ Q(`classic`) + `MARGEN`. En
+caso de duda gana `classic`, que es lo conocido. El mejor `classic` (escrito o transpuesto) se
+elige entre sí con el mismo Q.
+
+**Valores iniciales y calibración.** Mientras no haya calibración, los pesos son iguales y el
+`MARGEN` es 0,1. El paso 7.7 los ajusta con los votos de la galería ciega. Si una medida no
+mejora la coincidencia con el autor, se quita.
+
+### 5.4 Calibración con una galería ciega
+
+Lo subjetivo se trata como datos:
+
+1. **Galería.** Una página con pares de dibujos del mismo diagrama (A y B), en orden al azar y
+   sin decir cuál es `classic` y cuál `smart`. Para cada par, el autor marca «A», «B» o «iguales»,
+   y opcionalmente motivos (legibilidad, espacio, centrado, flechas, forma) y un comentario.
+   Los votos se guardan en la base de datos de la página. La correspondencia entre A/B y los
+   candidatos queda fuera de la página, en `docs/prototipos/galeria_ciega/`.
+2. **Pares.** Para cada diagrama: `classic` frente al mejor `smart`, `classic` frente a
+   `classic` transpuesto y, cuando hay otro motor aplicable, `smart` frente a `smart`.
+   Diagramas: el banco de pruebas, los casos reales y más diagramas reales del autor. Meta
+   inicial: 40 pares o más.
+3. **Ajuste.** Con las diferencias de medidas entre A y B, se ajustan los pesos para predecir
+   el voto (regresión logística, o a mano si los datos son pocos). Un 25 % de los pares se
+   reserva para comprobar. «Iguales» cuenta como acierto si |ΔQ| < `MARGEN`.
+4. **Meta.** Que el criterio coincida con el autor en al menos el 75 % de los pares reservados.
+   El resultado y los pesos se anotan en esta especificación.
+
+La galería se vuelve a generar cuando cambian los motores; los votos anteriores siguen
+sirviendo para los pares cuyos dibujos no cambiaron.
+
+**Primera galería (27-nov-2026).** 49 pares de los 25 diagramas del banco de pruebas y de los
+casos reales: 25 `classic` frente a `smart`, 13 `classic` frente a `classic` girado y 11 entre
+dos variantes de `smart`. Se omiten los candidatos con escala impresa menor que 0,5, que son
+peores a simple vista. Publicada como página privada del autor:
+<https://claude.ai/artifact/TVjphFGrVF8EDUwycsTkRC>. Los votos quedan en su base de datos
+(colección `votos`, un documento por par: `voto`, `motivos`, `comentario`, `fecha`). La clave
+de cada par está en [`clave.json`](prototipos/galeria_ciega/clave.json). Para regenerarla:
+
+```bash
+npx tsx docs/prototipos/mermaid_layout/poc.mts --dump
+npx tsx docs/prototipos/mermaid_layout/poc.mts docs/prototipos/mermaid_layout/casos-reales.md --dump
+npx tsx docs/prototipos/galeria_ciega/generar.mts
+```
+
+Una galería regenerada cambia los pares; antes de republicarla hay que guardar los votos y la
+clave de la anterior.
 
 ## 6. Contrato con el resto del pipeline
 
@@ -417,7 +495,9 @@ falta reproducirlo a mano.
    cobertura que exige `vitest.config.ts` (líneas, funciones y sentencias ≥ 80 %; ramas ≥ 70 %).
 2. Con `--mermaid-layout smart`, sobre `tests/fixtures/mermaid-autofit.md` y el nuevo
    `tests/fixtures/mermaid-smart.md`:
-   - ningún diagrama se imprime con menor escala que en `classic` (menos la tolerancia);
+   - el criterio del §5.3 coincide con el autor en al menos el 75 % de los pares reservados de
+     la galería ciega (§5.4);
+   - ningún diagrama queda por debajo de `MIN_SCALE`, salvo que `classic` también lo esté;
    - las cadenas lineales de 6 o más pasos se pliegan en serpentina y ocupan menos alto
      impreso que en `classic` (el objetivo inicial, a confirmar en la prueba de concepto, es
      un 35 % menos);
@@ -441,7 +521,7 @@ Los pasos, con su tamaño y dependencias, están en la **Fase 7** de
 | 7.4  | Analizador.                                                                                   |
 | 7.5  | Motores `serpentine`, `flywheel`, `hub`, `bento` y pulido.                                    |
 | 7.6  | Motor `layered` con `elkjs` y rutas.                                                          |
-| 7.7  | Puntuación, elección con piso `classic`, `--verbose` y `doctor`.                              |
+| 7.7  | Criterio de elección: medidas, galería ciega, calibración, `--verbose` y `doctor`.            |
 | 7.8  | Corpus, pruebas de integración, banco de pruebas, documentación, ejecutable y versión.        |
 | 7.9  | Evaluación de cierre y decisiones sobre el trabajo aplazado (§10).                            |
 
@@ -451,7 +531,8 @@ Los pasos, con su tamaño y dependencias, están en la **Fase 7** de
 | :------------------------------------------------------------------------------------------ | :-----: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Una versión nueva de Mermaid cambia las funciones que reciben los layouts o el `LayoutData` |  Medio  | Versión exacta en `package.json`, pruebas de contrato (`mermaid-layout-contract.test.ts`, §7.1) y vuelta automática a `classic` ante cualquier dato inesperado. |
 | Mermaid dibuja una arista o etiqueta distinta de lo que el plan supone (recortes, curvas)   |  Medio  | La prueba de concepto (paso 7.1 del plan) fija qué controla el plan y qué no; las pruebas de integración miden el SVG real.                                     |
-| Un arquetipo rinde peor que `classic` en un grafo atípico                                   |  Bajo   | Piso `classic` (§5.3): el diagrama se dibuja como hoy.                                                                                                          |
+| Un arquetipo rinde peor que `classic` en un grafo atípico                                   |  Bajo   | `classic` siempre compite y gana en la duda (`MARGEN`, §5.3).                                                                                                   |
+| El criterio se ajusta al gusto de una sola persona o a pocos casos                          |  Medio  | Pocas medidas, pares reservados para comprobar, galería reutilizable con más votantes o más diagramas, y `%% @layout:` para decidir a mano.                     |
 | El tiempo de conversión crece (medición por ancho de ajuste + `classic` como piso)          |  Bajo   | La puntuación se hace en Node sin dibujar; solo se dibuja el ganador. Límite de tiempo en el criterio 3 del §7.2.                                               |
 | Etiquetas con código o palabras muy largas                                                  |  Bajo   | Las mide Mermaid en la misma página y con las mismas fuentes que el PDF; el plan usa esos tamaños tal cual.                                                     |
 
@@ -485,21 +566,21 @@ Se registra para decidirlo al cerrar la Fase 7 (paso 7.9):
 
 Cambios respecto de la especificación recibida (commit `de16d9e`):
 
-| Tema                     | Original                                                                 | Revisado                                                                               | Motivo                                                                                                           |
-| :----------------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| Dibujo                   | SVG propio (`emit-svg.ts`) que imita la estructura de Mermaid            | Layouts propios registrados en Mermaid (`mdr-measure`, `mdr-place`); dibuja Mermaid    | Decisión del autor. Conserva formas, estilos y aspectos sin reimplementarlos; probado en Chromium con 12.1.0.    |
-| Extracción               | `getDiagramFromText` y lectura de `diag.db`                              | Datos que Mermaid entrega al layout (`LayoutData`), con tamaños ya medidos             | Es la misma estructura que usan los layouts de Mermaid y trae las medidas; `diag.db` cambia más entre versiones. |
-| Medición de texto        | Medición propia y ajuste de líneas balanceado, por forma                 | Tamaños que da `insertNode` por ancho de ajuste                                        | Mermaid ya sabe cuánto ocupa cada forma; repetirlo era duplicar su lógica.                                       |
-| `NodeShape`              | Enumeración propia de 11 formas                                          | Nombre de forma de Mermaid + funciones auxiliares                                      | Mermaid 12 tiene más de 40 formas y alias (`cylinder`/`cyl`).                                                    |
-| Alcance                  | `flowchart` y `stateDiagram`                                             | Solo `flowchart`/`graph`                                                               | Decisión del autor; no hay corpus de estados.                                                                    |
-| Modo `ai`                | Corte 2 con `--mermaid-ai-model`, caché, credenciales y `--allow-remote` | Aplazado (§10)                                                                         | Decisión del autor. Además, `--allow-remote` no debería autorizar el envío de contenido a un tercero.            |
-| `elkjs`                  | Dependencia directa                                                      | Igual, en Node para `layered`                                                          | La copia de ELK dentro de `mermaid.min.js` no está expuesta.                                                     |
-| Versión de Mermaid       | Sin mención                                                              | Versión exacta y pruebas de contrato                                                   | `^12.1.0` acepta versiones menores que podrían cambiar las funciones de dibujo.                                  |
-| Elección de candidatos   | Se dibuja cada candidato                                                 | Puntuación en Node; solo se dibuja el ganador; piso `classic` medido sobre el SVG real | Más rápido y nunca peor que hoy.                                                                                 |
-| Marco de `tech_magazine` | Descontarlo solo en `smart`                                              | Pendiente aparte, para ambos modos (§10)                                               | Descontarlo solo en `smart` haría que los dos modos midan distinto; corregir `classic` rompe el invariante 1.    |
-| Fórmulas                 | LaTeX (`$…$`) en el texto                                                | Texto plano                                                                            | Se lee en GitHub y en cualquier visor; mdrender las dibujaría, pero no hacen falta.                              |
-| Referencias a líneas     | «`mermaid-style.ts` línea 306»                                           | Nombres de funciones                                                                   | Los números de línea cambian con cualquier edición.                                                              |
-| Criterio de tiempo       | —                                                                        | `smart` ≤ 2 × `classic` en 50 diagramas                                                | La Fase 6 del plan maestro fija un objetivo de rendimiento; el modo nuevo no debe romperlo sin medirlo.          |
+| Tema                     | Original                                                                 | Revisado                                                                                                                                 | Motivo                                                                                                           |
+| :----------------------- | :----------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| Dibujo                   | SVG propio (`emit-svg.ts`) que imita la estructura de Mermaid            | Layouts propios registrados en Mermaid (`mdr-measure`, `mdr-place`); dibuja Mermaid                                                      | Decisión del autor. Conserva formas, estilos y aspectos sin reimplementarlos; probado en Chromium con 12.1.0.    |
+| Extracción               | `getDiagramFromText` y lectura de `diag.db`                              | Datos que Mermaid entrega al layout (`LayoutData`), con tamaños ya medidos                                                               | Es la misma estructura que usan los layouts de Mermaid y trae las medidas; `diag.db` cambia más entre versiones. |
+| Medición de texto        | Medición propia y ajuste de líneas balanceado, por forma                 | Tamaños que da `insertNode` por ancho de ajuste                                                                                          | Mermaid ya sabe cuánto ocupa cada forma; repetirlo era duplicar su lógica.                                       |
+| `NodeShape`              | Enumeración propia de 11 formas                                          | Nombre de forma de Mermaid + funciones auxiliares                                                                                        | Mermaid 12 tiene más de 40 formas y alias (`cylinder`/`cyl`).                                                    |
+| Alcance                  | `flowchart` y `stateDiagram`                                             | Solo `flowchart`/`graph`                                                                                                                 | Decisión del autor; no hay corpus de estados.                                                                    |
+| Modo `ai`                | Corte 2 con `--mermaid-ai-model`, caché, credenciales y `--allow-remote` | Aplazado (§10)                                                                                                                           | Decisión del autor. Además, `--allow-remote` no debería autorizar el envío de contenido a un tercero.            |
+| `elkjs`                  | Dependencia directa                                                      | Igual, en Node para `layered`                                                                                                            | La copia de ELK dentro de `mermaid.min.js` no está expuesta.                                                     |
+| Versión de Mermaid       | Sin mención                                                              | Versión exacta y pruebas de contrato                                                                                                     | `^12.1.0` acepta versiones menores que podrían cambiar las funciones de dibujo.                                  |
+| Elección de candidatos   | Se dibuja cada candidato; elección por escala                            | Puntuación en Node; solo se dibujan los mejores; `classic` compite con un criterio de varias medidas calibrado con el autor (§5.3, §5.4) | Más rápido, y «mejor» definido con medidas y no solo con la escala. Decisión del autor.                          |
+| Marco de `tech_magazine` | Descontarlo solo en `smart`                                              | Pendiente aparte, para ambos modos (§10)                                                                                                 | Descontarlo solo en `smart` haría que los dos modos midan distinto; corregir `classic` rompe el invariante 1.    |
+| Fórmulas                 | LaTeX (`$…$`) en el texto                                                | Texto plano                                                                                                                              | Se lee en GitHub y en cualquier visor; mdrender las dibujaría, pero no hacen falta.                              |
+| Referencias a líneas     | «`mermaid-style.ts` línea 306»                                           | Nombres de funciones                                                                                                                     | Los números de línea cambian con cualquier edición.                                                              |
+| Criterio de tiempo       | —                                                                        | `smart` ≤ 2 × `classic` en 50 diagramas                                                                                                  | La Fase 6 del plan maestro fija un objetivo de rendimiento; el modo nuevo no debe romperlo sin medirlo.          |
 
 ## 12. Prueba de concepto (paso 7.1)
 
@@ -614,13 +695,13 @@ agregaron versiones mínimas de los motores del plan:
 El contrato se cumple en los cinco casos: posiciones, tamaños, recorte, flechas y etiquetas.
 Resultado:
 
-| Caso                                    | Motor elegido   | Escala classic → smart | Alto classic → smart | Con el piso del §5.3 |
-| :-------------------------------------- | :-------------- | :--------------------: | :------------------: | :------------------- |
-| R1. Plan de bloques con dos decisiones  | `layered` (ELK) |      0,86 → 0,75       |      949 → 949       | `classic`            |
-| R2. Cierre de RG01 con decisión         | `layered` (ELK) |      0,94 → 0,94       |      949 → 949       | Iguales              |
-| R3. Ciclo de entrenamiento              | `flywheel` (6)  |      1,00 → 0,61       |      939 → 406       | `classic`            |
-| R4. Bloque residual con ramas punteadas | `layered` (ELK) |      1,00 → 1,00       |      751 → 751       | Iguales              |
-| R5. Árbol de causas                     | `layered` (ELK) |      0,81 → 0,81       |      498 → 442       | `smart` (−11 % alto) |
+| Caso                                    | Motor elegido   | Escala classic → smart | Alto classic → smart | Con el piso anterior (solo escala) |
+| :-------------------------------------- | :-------------- | :--------------------: | :------------------: | :--------------------------------- |
+| R1. Plan de bloques con dos decisiones  | `layered` (ELK) |      0,86 → 0,75       |      949 → 949       | `classic`                          |
+| R2. Cierre de RG01 con decisión         | `layered` (ELK) |      0,94 → 0,94       |      949 → 949       | Iguales                            |
+| R3. Ciclo de entrenamiento              | `flywheel` (6)  |      1,00 → 0,61       |      939 → 406       | `classic`                          |
+| R4. Bloque residual con ramas punteadas | `layered` (ELK) |      1,00 → 1,00       |      751 → 751       | Iguales                            |
+| R5. Árbol de causas                     | `layered` (ELK) |      0,81 → 0,81       |      498 → 442       | `smart` (−11 % alto)               |
 
 Lo que enseñan:
 
@@ -642,10 +723,10 @@ Lo que enseñan:
 
 Decisiones abiertas que salen de aquí (se resuelven antes del paso 7.5):
 
-- **Piso para los arquetipos que cambian la forma** (`flywheel`, quizá `hub`): mantener el piso
-  estricto por escala, o aceptar menos escala a cambio de mucho menos alto, con un mínimo
-  absoluto de legibilidad. Una vía intermedia: que el autor lo pida con
-  `%% @archetype: flywheel` y, en ese caso, aplicar solo el mínimo absoluto (`SMALL_SCALE`).
+- ~~**Piso para los arquetipos que cambian la forma**~~ **Resuelto:** el piso por escala se
+  reemplaza por el criterio del §5.3. El anillo compite como cualquier candidato: la medida de
+  retornos premia cerrar el ciclo frente a la legibilidad que pierde. Además,
+  `%% @archetype: flywheel` lo fuerza con solo las condiciones obligatorias.
 - **Rombos de decisión compactos:** una opción para dibujar las decisiones con una forma de
   menor alto, que ataque el problema de R1 y R2. Cambia la forma que eligió el autor, así que
   sería opcional; encaja mejor con los estilos de diagrama
