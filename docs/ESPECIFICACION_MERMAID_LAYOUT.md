@@ -554,6 +554,11 @@ del autor; aristas de todo tipo y subgrafos; aspecto `handDrawn`.
 5. **La configuración de Mermaid debe ser la misma en `classic` y en `smart`.** Hoy
    `mermaidConfig` es privada en `src/render/mermaid.ts`; el paso 7.3 la exporta para no
    duplicarla, como hizo la prueba.
+6. **Una ruta que ya termina en los bordes se dibuja tal cual** (`insertEdge` con
+   `skipIntersect`). Es el caso de las rutas de ELK. Si además se le agregan los centros, el
+   recorte de Mermaid repite el punto de borde, el último tramo queda de longitud cero y la
+   flecha sale torcida: se vio en la segunda iteración (§12.5). Cada arista del plan dice cuál de
+   los dos casos es (`exact`).
 
 ### 12.3 Descartado o limitado
 
@@ -572,10 +577,11 @@ del autor; aristas de todo tipo y subgrafos; aspecto `handDrawn`.
   fase.
 
 - **El motor desechable de capas** imprimió peor que `classic` en los casos 3, 7, 9, 12 y 15, y
-  en uno de los sintéticos. Era de esperar, y confirma dos cosas: el piso `classic` (§5.3) es
-  necesario, y los motores reales (`layered` con ELK, `hub`, `bento`) son el grueso del
-  trabajo. El caso 7, tres subgrafos sin aristas puestos en una fila, motivó el ajuste de
-  `bento` en el §5.1.
+  en uno de los sintéticos. Al cambiarlo por ELK (§12.5), solo siguen peor los diagramas con
+  subgrafos (casos 7, 8 y 17, y dos sintéticos), que aún usan el motor desechable. Confirma
+  dos cosas: el piso `classic` (§5.3) es necesario, y `bento` es parte del grueso del trabajo.
+  El caso 7, tres subgrafos sin aristas puestos en una fila, motivó el ajuste de `bento` en el
+  §5.1.
 
 ### 12.4 Ajustes a los pasos siguientes
 
@@ -584,4 +590,63 @@ del autor; aristas de todo tipo y subgrafos; aspecto `handDrawn`.
   recorte, flechas, etiquetas, bandas).
 - **7.5:** `bento` reparte en retícula los subgrafos sin aristas; igualar nodos hermanos queda
   fuera.
-- **7.6:** el router calcula la posición de las etiquetas.
+- **7.6:** el router calcula la posición de las etiquetas. Con ELK, rutas `exact` (§12.2,
+  regla 6), y el motor empieza desde la configuración que se probó en `poc.mts` (§12.5).
+
+### 12.5 Segunda iteración: casos reales y motores más cercanos al plan
+
+A pedido del autor, la prueba se repitió con cinco diagramas de uso real:
+[`casos-reales.md`](prototipos/mermaid_layout/casos-reales.md),
+[`resultados-casos-reales.md`](prototipos/mermaid_layout/resultados-casos-reales.md) y
+[`galeria-casos-reales.png`](prototipos/mermaid_layout/galeria-casos-reales.png). El script acepta
+ahora cualquier archivo Markdown (`npx tsx docs/prototipos/mermaid_layout/poc.mts archivo.md`).
+
+Con el motor desechable de capas, ninguno mejoraba. Para que la prueba diga algo útil, se le
+agregaron versiones mínimas de los motores del plan:
+
+- **`layered` con `elkjs` en Node** (paso 7.6): rutas ortogonales y posición de etiquetas de
+  ELK, para los grafos sin subgrafos.
+- **`flywheel`** (paso 7.5), con la regla 3 del §4.4.
+- **Búsqueda de candidatos** (§5.3): ancho de ajuste de Mermaid, 200 y 300 px; eje escrito y
+  transpuesto en `layered`; proporción del anillo 1,0, 1,25 y 1,5 en `flywheel`. Se puntúa en
+  Node y se dibuja solo el mejor.
+
+El contrato se cumple en los cinco casos: posiciones, tamaños, recorte, flechas y etiquetas.
+Resultado:
+
+| Caso                                    | Motor elegido   | Escala classic → smart | Alto classic → smart | Con el piso del §5.3 |
+| :-------------------------------------- | :-------------- | :--------------------: | :------------------: | :------------------- |
+| R1. Plan de bloques con dos decisiones  | `layered` (ELK) |      0,86 → 0,75       |      949 → 949       | `classic`            |
+| R2. Cierre de RG01 con decisión         | `layered` (ELK) |      0,94 → 0,94       |      949 → 949       | Iguales              |
+| R3. Ciclo de entrenamiento              | `flywheel` (6)  |      1,00 → 0,61       |      939 → 406       | `classic`            |
+| R4. Bloque residual con ramas punteadas | `layered` (ELK) |      1,00 → 1,00       |      751 → 751       | Iguales              |
+| R5. Árbol de causas                     | `layered` (ELK) |      0,81 → 0,81       |      498 → 442       | `smart` (−11 % alto) |
+
+Lo que enseñan:
+
+1. **En los diagramas reales, `classic` ya rinde bien.** Mermaid 12 dibuja con ELK, y el
+   autofit elige ancho de ajuste y eje. Con las reglas actuales, el modo `smart` solo mejora R5.
+   El potencial está en las cadenas largas (serpentina, −47 a −53 % de alto) y en los ciclos.
+2. **El cuello de botella de R1 y R2 no es la topología, sino el tamaño de las cajas.** Las
+   etiquetas son largas y los rombos de decisión crecen con el texto en las dos dimensiones. En
+   R1 el rombo «Piloto de cobertura del sorteo por tramos» ocupa casi un cuarto del alto.
+   Ningún motor de posiciones lo resuelve.
+3. **El anillo de R3 muestra el ciclo de entrenamiento como lo que es,** con un 57 % menos de
+   alto, pero con la letra al 61 %: las etiquetas largas de las aristas lo ensanchan. El piso del
+   §5.3, que solo mira la escala, lo descarta.
+4. **ELK en Node funciona como se planeó.** Sus rutas y la posición de sus etiquetas pasan
+   directamente al plan. En el banco de pruebas, ningún diagrama de flujo sin subgrafos queda
+   por debajo de `classic`; los casos 2 y 15 suben de escala (0,86 → 1,00 y 0,96 → 1,00) y los
+   casos 9 y 13 bajan de alto (486 → 426 y 209 → 145 px). R1 queda por debajo de `classic`:
+   habrá que comparar la configuración de ELK con la que usa Mermaid (paso 7.6).
+
+Decisiones abiertas que salen de aquí (se resuelven antes del paso 7.5):
+
+- **Piso para los arquetipos que cambian la forma** (`flywheel`, quizá `hub`): mantener el piso
+  estricto por escala, o aceptar menos escala a cambio de mucho menos alto, con un mínimo
+  absoluto de legibilidad. Una vía intermedia: que el autor lo pida con
+  `%% @archetype: flywheel` y, en ese caso, aplicar solo el mínimo absoluto (`SMALL_SCALE`).
+- **Rombos de decisión compactos:** una opción para dibujar las decisiones con una forma de
+  menor alto, que ataque el problema de R1 y R2. Cambia la forma que eligió el autor, así que
+  sería opcional; encaja mejor con los estilos de diagrama
+  ([`IDEAS_ESTILOS_MERMAID.md`](IDEAS_ESTILOS_MERMAID.md)) que con este modo.

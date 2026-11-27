@@ -322,6 +322,11 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
   Reglas nuevas del plan: aristas de al menos 3 puntos y posición de etiquetas calculada por el
   router. Descartado: igualar el tamaño de nodos hermanos.
 
+  Segunda iteración con cinco diagramas reales del autor (§12.5): con motores mínimos de ELK y
+  de anillo, `smart` solo mejora uno; en los demás, el límite es el tamaño de las cajas y de
+  los rombos, no la topología. Quedan dos decisiones para antes del paso 7.5: el piso para
+  arquetipos que cambian la forma (`flywheel`) y si se ofrecen rombos de decisión compactos.
+
 - [ ] **7.2 Opción y dependencias (S).** `--mermaid-layout <classic|smart>` en `options.ts`,
       `cli.ts` (también en `preview`), `convert.ts` y `doctor.ts` (línea en `Settings`); pruebas
       en `options.test.ts`, `cli.test.ts` y `doctor.test.ts`. `elkjs` como dependencia directa.

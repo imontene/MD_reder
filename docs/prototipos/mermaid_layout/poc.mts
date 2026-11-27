@@ -9,9 +9,11 @@
 //   npx tsx docs/prototipos/mermaid_layout/poc.mts
 // Writes galeria.png and resultados.md next to this file (and a PDF of the gallery, checked for
 // raster images, to the system's temporary folder).
+import ELK from "elkjs/lib/elk.bundled.js";
+import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api";
 import { readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MERMAID_JS, readTextAsset } from "../../../src/assets.ts";
 import { findBrowser } from "../../../src/browser/detect.ts";
@@ -51,6 +53,17 @@ interface Case {
   source: string;
   /** Extra Mermaid configuration for both renders (e.g. a look). */
   config?: Record<string, unknown>;
+}
+
+function fromFile(path: string): Case[] {
+  const text = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+  return [...text.matchAll(/```mermaid\n([\s\S]*?)```/g)]
+    .map((m) => m[1]!)
+    .filter((source) => flowchartHeader(source) && !authorConfigured(source))
+    .map((source, i) => {
+      const first = /\["([^"]{1,60})/.exec(source)?.[1] ?? "";
+      return { title: `R${i + 1}. ${first}…`, source };
+    });
 }
 
 function corpus(): Case[] {
@@ -171,7 +184,8 @@ const PLACE_LAYOUT = `{ name: "mdr-place", loader: async () => ({ render: async 
       e.x = p.label.x;
       e.y = p.label.y - plan.labelShift;
     }
-    const paths = h.insertEdge(edgePathsG, e, new Map(), data.type, byId.get(e.start), byId.get(e.end), data.diagramId);
+    // exact: the route already starts and ends on the shapes' borders (ELK); draw it as given.
+    const paths = h.insertEdge(edgePathsG, e, new Map(), data.type, byId.get(e.start), byId.get(e.end), data.diagramId, !!p.exact);
     h.positionEdgeLabel(e, paths);
   }
   globalThis.mdrPlaced = placed;
@@ -254,7 +268,7 @@ interface Plan {
   archetype: string;
   nodes: Record<string, Point & { width?: number; height?: number }>;
   clusters: Record<string, Point & { width: number; height: number }>;
-  edges: Record<string, { points: Point[]; curve?: string; label?: Point }>;
+  edges: Record<string, { points: Point[]; curve?: string; label?: Point; exact?: boolean }>;
   /** Mermaid adds half the subgraph title margin to every edge label's y. */
   labelShift: number;
   width: number;
@@ -551,9 +565,338 @@ function compose(g: Measured): Plan | { fallback: string } {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Engines closer to the plan: ELK for the general case (step 7.6), the ring for cycles (7.5)
+
+const elk = new ELK();
+const ELK_DIRECTION: Record<Dir, string> = { TB: "DOWN", BT: "UP", LR: "RIGHT", RL: "LEFT" };
+const FLIPPED_DIR: Record<Dir, Dir> = { TB: "LR", BT: "LR", LR: "TB", RL: "TB" };
+const LABEL_SHIFT = (SUBGRAPH_TITLE_MARGIN.top + SUBGRAPH_TITLE_MARGIN.bottom) / 2;
+
+function bounds(boxes: Rect[], points: Point[] = []): { width: number; height: number } {
+  const xs = [...boxes.flatMap((b) => [b.x - b.w / 2, b.x + b.w / 2]), ...points.map((p) => p.x)];
+  const ys = [...boxes.flatMap((b) => [b.y - b.h / 2, b.y + b.h / 2]), ...points.map((p) => p.y)];
+  return { width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+}
+
+/** Layered layout by elkjs in Node, orthogonal routes and edge labels placed by ELK. */
+async function composeElk(g: Measured, dir: Dir): Promise<Plan> {
+  const graph: ElkNode = {
+    id: "root",
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": ELK_DIRECTION[dir],
+      "elk.edgeRouting": "ORTHOGONAL",
+      "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
+      "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
+      "elk.spacing.nodeNode": "28",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "40",
+      "elk.spacing.edgeNode": "16",
+      "elk.spacing.edgeEdge": "12",
+      "elk.layered.spacing.edgeNodeBetweenLayers": "16",
+      "elk.spacing.edgeLabel": "4",
+      "elk.edgeLabels.placement": "CENTER",
+    },
+    children: g.nodes.map((n) => ({ id: n.id, width: n.width, height: n.height })),
+    edges: g.edges.map((e): ElkExtendedEdge => ({
+      id: e.id,
+      sources: [e.from],
+      targets: [e.to],
+      labels: e.label
+        ? [{ id: `${e.id}-label`, text: e.label, width: e.labelWidth, height: e.labelHeight }]
+        : [],
+    })),
+  };
+  const out = await elk.layout(graph);
+  const plan: Plan = {
+    archetype: `layered (ELK ${dir})`,
+    nodes: {},
+    clusters: {},
+    edges: {},
+    labelShift: LABEL_SHIFT,
+    width: 0,
+    height: 0,
+  };
+  const boxes = new Map<string, Rect>();
+  for (const c of out.children ?? []) {
+    const box = { x: c.x! + c.width! / 2, y: c.y! + c.height! / 2, w: c.width!, h: c.height! };
+    boxes.set(c.id, box);
+    plan.nodes[c.id] = { x: box.x, y: box.y };
+  }
+  const extra: Point[] = [];
+  for (const e of (out.edges ?? []) as ElkExtendedEdge[]) {
+    const s = e.sections?.[0];
+    const a = boxes.get(e.sources[0]!)!;
+    const b = boxes.get(e.targets[0]!)!;
+    const route = s ? [s.startPoint, ...(s.bendPoints ?? []), s.endPoint] : [];
+    // ELK's route starts and ends on the borders: drawn as given (exact), no centres added.
+    const points = route.length
+      ? route.map((p) => ({ x: p.x, y: p.y }))
+      : [
+          { x: a.x, y: a.y },
+          { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+          { x: b.x, y: b.y },
+        ];
+    const l = e.labels?.[0];
+    const label = l ? { x: l.x! + l.width! / 2, y: l.y! + l.height! / 2 } : undefined;
+    if (l) extra.push({ x: l.x!, y: l.y! }, { x: l.x! + l.width!, y: l.y! + l.height! });
+    extra.push(...points);
+    plan.edges[e.id] = {
+      points,
+      curve: "rounded",
+      exact: route.length > 0,
+      ...(label ? { label } : {}),
+    };
+  }
+  Object.assign(plan, bounds([...boxes.values()], extra));
+  return plan;
+}
+
+/** Strongly connected components (Tarjan). */
+function sccs(ids: string[], edges: MEdge[]): string[][] {
+  let index = 0;
+  const idx = new Map<string, number>();
+  const low = new Map<string, number>();
+  const stack: string[] = [];
+  const on = new Set<string>();
+  const out: string[][] = [];
+  const visit = (v: string) => {
+    idx.set(v, index);
+    low.set(v, index++);
+    stack.push(v);
+    on.add(v);
+    for (const e of edges.filter((e) => e.from === v)) {
+      if (!idx.has(e.to)) {
+        visit(e.to);
+        low.set(v, Math.min(low.get(v)!, low.get(e.to)!));
+      } else if (on.has(e.to)) low.set(v, Math.min(low.get(v)!, idx.get(e.to)!));
+    }
+    if (low.get(v) === idx.get(v)) {
+      const comp: string[] = [];
+      let w: string;
+      do {
+        w = stack.pop()!;
+        on.delete(w);
+        comp.push(w);
+      } while (w !== v);
+      out.push(comp);
+    }
+  };
+  for (const id of ids) if (!idx.has(id)) visit(id);
+  return out;
+}
+
+/** The ring of a flywheel diagram (§4.4 rule 3 of the specification), or undefined. */
+function flywheelRing(g: Measured): string[] | undefined {
+  if (g.clusters.length) return undefined;
+  const edges = g.edges.filter((e) => e.pattern !== "invisible" && e.from !== e.to);
+  const comp = sccs(
+    g.nodes.map((n) => n.id),
+    edges,
+  ).sort((a, b) => b.length - a.length)[0];
+  if (!comp || comp.length < 3 || comp.length > 8 || comp.length < 0.65 * g.nodes.length) return;
+  const inside = new Set(comp);
+  const internal = edges.filter((e) => inside.has(e.from) && inside.has(e.to));
+  if ((2 * internal.length) / comp.length > 2.4) return undefined;
+  const order = (id: string) => g.nodes.find((n) => n.id === id)!.order;
+  const byOrder = (a: string, b: string) => order(a) - order(b);
+  const entered = comp.filter((id) => edges.some((e) => e.to === id && !inside.has(e.from)));
+  const start = (entered.length ? entered : comp).sort(byOrder)[0]!;
+  const ring = [start];
+  for (;;) {
+    const next = internal
+      .filter((e) => e.from === ring.at(-1) && !ring.includes(e.to))
+      .sort((a, b) => a.order - b.order)[0];
+    if (!next) break;
+    ring.push(next.to);
+  }
+  const closes = internal.some((e) => e.from === ring.at(-1) && e.to === start);
+  return ring.length === comp.length && closes ? ring : undefined;
+}
+
+const gapBetween = (a: Rect, b: Rect) =>
+  Math.max(Math.abs(a.x - b.x) - (a.w + b.w) / 2, Math.abs(a.y - b.y) - (a.h + b.h) / 2);
+
+/** Ring layout: the cycle on an ellipse, clockwise from 12 o'clock; other nodes outside. */
+function composeFlywheel(g: Measured, ring: string[], ratio: number): Plan {
+  const node = (id: string) => g.nodes.find((n) => n.id === id)!;
+  const edges = g.edges.filter((e) => e.from !== e.to);
+  const k = ring.length;
+  const theta = (i: number) => -Math.PI / 2 + (2 * Math.PI * i) / k;
+  const at = new Map(ring.map((id, i) => [id, i]));
+  const ringEdge = (e: MEdge) =>
+    at.has(e.from) && at.has(e.to) && (at.get(e.from)! + 1) % k === at.get(e.to)!;
+  const reverseEdge = (e: MEdge) =>
+    at.has(e.from) && at.has(e.to) && (at.get(e.to)! + 1) % k === at.get(e.from)!;
+  const outward = (angle: number, w: number, h: number) =>
+    Math.abs(Math.cos(angle)) * (w / 2) + Math.abs(Math.sin(angle)) * (h / 2);
+
+  let boxes = new Map<string, Rect>();
+  let labels = new Map<string, Rect>();
+  let rx = 0;
+  let ry = 0;
+  const arc = (from: number, to: number, scale: number, steps = 12): Point[] => {
+    const pts: Point[] = [];
+    for (let s = 1; s < steps; s++) {
+      const t = from + ((to - from) * s) / steps;
+      pts.push({ x: rx * scale * Math.cos(t), y: ry * scale * Math.sin(t) });
+    }
+    return pts;
+  };
+  const free = (p: Point, ...rects: Rect[]) =>
+    rects.every((r) => Math.abs(p.x - r.x) > r.w / 2 + 4 || Math.abs(p.y - r.y) > r.h / 2 + 4);
+  for (ry = 60; ry < 3000; ry += 6) {
+    rx = ry * ratio;
+    boxes = new Map(
+      ring.map((id, i) => {
+        const n = node(id);
+        return [
+          id,
+          { x: rx * Math.cos(theta(i)), y: ry * Math.sin(theta(i)), w: n.width, h: n.height },
+        ];
+      }),
+    );
+    labels = new Map();
+    for (const e of edges.filter((e) => e.label && (ringEdge(e) || reverseEdge(e)))) {
+      const i = at.get(e.from)!;
+      const forward = ringEdge(e);
+      const mid = forward ? theta(i) + Math.PI / k : theta(i) - Math.PI / k;
+      const scale = forward ? 1 : 0.6;
+      const p = { x: rx * scale * Math.cos(mid), y: ry * scale * Math.sin(mid) };
+      const d = (outward(mid, e.labelWidth, e.labelHeight) + 8) * (forward ? 1 : -1);
+      labels.set(e.id, {
+        x: p.x + Math.cos(mid) * d,
+        y: p.y + Math.sin(mid) * d,
+        w: e.labelWidth,
+        h: e.labelHeight,
+      });
+    }
+    const all = [...boxes.values(), ...labels.values()];
+    const apart = all.every((a, i) => all.slice(i + 1).every((b) => gapBetween(a, b) >= 20));
+    const arcsClear = edges.filter(ringEdge).every((e) => {
+      const i = at.get(e.from)!;
+      const pts = arc(theta(i), theta(i) + (2 * Math.PI) / k, 1);
+      const others = [...boxes.entries()].filter(([id]) => id !== e.from && id !== e.to);
+      return pts.every((p) => free(p, ...others.map(([, r]) => r)));
+    });
+    if (apart && arcsClear) break;
+  }
+
+  // Nodes off the ring, placed outwards from their ring neighbours.
+  const placed = new Set(ring);
+  for (let pass = 0; pass < g.nodes.length && placed.size < g.nodes.length; pass++) {
+    for (const n of g.nodes.filter((n) => !placed.has(n.id))) {
+      const links = edges.filter(
+        (e) => (e.from === n.id && placed.has(e.to)) || (e.to === n.id && placed.has(e.from)),
+      );
+      if (!links.length) continue;
+      const anchors = links.map((e) => boxes.get(e.from === n.id ? e.to : e.from)!);
+      const cx = anchors.reduce((s, r) => s + r.x, 0) / anchors.length;
+      const cy = anchors.reduce((s, r) => s + r.y, 0) / anchors.length;
+      const angle = Math.atan2(cy / ry, cx / rx);
+      const label = Math.max(
+        0,
+        ...links.map((e) => outward(angle, e.labelWidth, e.labelHeight) * 2),
+      );
+      let dist =
+        outward(angle, anchors[0]!.w, anchors[0]!.h) +
+        40 +
+        label +
+        outward(angle, n.width, n.height);
+      let box: Rect;
+      for (;;) {
+        box = {
+          x: cx + Math.cos(angle) * dist,
+          y: cy + Math.sin(angle) * dist,
+          w: n.width,
+          h: n.height,
+        };
+        const clear = [...boxes.values(), ...labels.values()].every(
+          (r) => gapBetween(r, box) >= 20,
+        );
+        if (clear || dist > 4000) break;
+        dist += 12;
+      }
+      boxes.set(n.id, box);
+      placed.add(n.id);
+    }
+  }
+  for (const n of g.nodes.filter((n) => !placed.has(n.id)))
+    boxes.set(n.id, { x: 0, y: ry + 200, w: n.width, h: n.height });
+
+  const plan: Plan = {
+    archetype: `flywheel ${k} (Rx/Ry ${ratio})`,
+    nodes: {},
+    clusters: {},
+    edges: {},
+    labelShift: LABEL_SHIFT,
+    width: 0,
+    height: 0,
+  };
+  for (const [id, b] of boxes) plan.nodes[id] = { x: b.x, y: b.y };
+  const extra: Point[] = [];
+  for (const e of edges) {
+    const a = boxes.get(e.from)!;
+    const b = boxes.get(e.to)!;
+    let points: Point[];
+    let label: Point | undefined;
+    let curve = "catmullRom";
+    if (ringEdge(e) || reverseEdge(e)) {
+      const i = at.get(e.from)!;
+      const forward = ringEdge(e);
+      const end = forward ? theta(i) + (2 * Math.PI) / k : theta(i) - (2 * Math.PI) / k;
+      const inner = arc(theta(i), end, forward ? 1 : 0.6, 16).filter((p) => free(p, a, b));
+      points = [a, ...(inner.length ? inner : [{ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }]), b];
+      const l = labels.get(e.id);
+      if (l) label = { x: l.x, y: l.y };
+    } else if (at.has(e.from) && at.has(e.to)) {
+      const m = { x: ((a.x + b.x) / 2) * 0.5, y: ((a.y + b.y) / 2) * 0.5 };
+      points = [a, m, b];
+      if (e.label) label = m;
+    } else {
+      const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      points = [a, m, b];
+      curve = "rounded";
+      if (e.label) label = m;
+    }
+    extra.push(...points);
+    plan.edges[e.id] = {
+      points: points.map((p) => ({ x: p.x, y: p.y })),
+      curve,
+      ...(label ? { label } : {}),
+    };
+  }
+  const labelBoxes = g.edges
+    .filter((e) => e.label && plan.edges[e.id]?.label)
+    .map((e) => ({ ...plan.edges[e.id]!.label!, w: e.labelWidth, h: e.labelHeight }));
+  Object.assign(plan, bounds([...boxes.values(), ...labelBoxes], extra));
+  return plan;
+}
+
+/** The engine the rules choose, in every variant worth trying (axis, ring proportion). */
+async function candidates(g: Measured, flip: boolean): Promise<Plan[] | { fallback: string }> {
+  const root = norm(g.direction, "TB");
+  if (g.edges.some((e) => e.from === e.to)) return { fallback: "self loop" };
+  const basic = compose(g);
+  if ("fallback" in basic) return basic;
+  if (g.clusters.length || basic.archetype.startsWith("serpentine")) return [basic];
+  const ring = flywheelRing(g);
+  if (ring) return [1, 1.25, 1.5].map((ratio) => composeFlywheel(g, ring, ratio));
+  const dirs = flip ? [root, FLIPPED_DIR[root]] : [root];
+  return Promise.all(dirs.map((d) => composeElk(g, d)));
+}
+
+/** As classic autofit: the largest print scale (within 0.05), then the shortest print. */
+function best<T extends { scale: number; height: number }>(items: T[]): T {
+  const top = Math.max(...items.map((c) => c.scale));
+  return items
+    .filter((c) => c.scale >= top - 0.05)
+    .sort((a, b) => a.height * a.scale - b.height * b.scale)[0]!;
+}
+
+// ---------------------------------------------------------------------------------------------
 // Run
 
-function config(extra: Record<string, unknown> = {}, layout?: string) {
+function config(extra: Record<string, unknown> = {}, layout?: string, wrap?: number) {
   const fontFamily = fontStack("manrope");
   return {
     startOnLoad: false,
@@ -569,16 +912,24 @@ function config(extra: Record<string, unknown> = {}, layout?: string) {
     htmlLabels: true,
     themeCSS: MERMAID_THEME_CSS,
     sequence: { mirrorActors: false },
-    flowchart: { subGraphTitleMargin: SUBGRAPH_TITLE_MARGIN },
+    flowchart: {
+      subGraphTitleMargin: SUBGRAPH_TITLE_MARGIN,
+      ...(wrap === undefined ? {} : { wrappingWidth: wrap }),
+    },
     ...extra,
     ...(layout ? { layout } : {}),
   };
 }
 
 const session = await BrowserSession.open(findBrowser(process.env.MDRENDER_BROWSER));
-const cases = corpus();
-const case8 = cases.find((c) => c.title.startsWith("8."))!;
-for (const x of EXTRA) cases.push(x.source ? x : { ...x, source: case8.source });
+/** Optional argument: a Markdown file whose flowcharts are used instead of the corpus. */
+const input = process.argv[2];
+const suffix = input ? `-${basename(input, ".md")}` : "";
+const cases = input ? fromFile(input) : corpus();
+if (!input) {
+  const case8 = cases.find((c) => c.title.startsWith("8."))!;
+  for (const x of EXTRA) cases.push(x.source ? x : { ...x, source: case8.source });
+}
 
 const page = await session.newPage();
 await page.setContent(
@@ -702,14 +1053,39 @@ for (const [i, c] of cases.entries()) {
     continue;
   }
   row.stable = JSON.stringify(m1.measured) === JSON.stringify(m2.measured);
-  const measured = m1.measured;
-  const plan = compose(measured);
-  if ("fallback" in plan) {
-    row.error = `fallback: ${plan.fallback}`;
+  // Candidates: Mermaid's wrapping and two wider ones (§5.3), each with the variants of the
+  // chosen engine; scored in Node, and only the best one is drawn.
+  const tried: { plan: Plan; measured: Measured; wrap?: number; scale: number; height: number }[] =
+    [];
+  let fallback: string | undefined;
+  for (const wrap of [undefined, 200, 300]) {
+    const m =
+      wrap === undefined
+        ? m1
+        : await render(c.source, `measure-${i}-${wrap}`, config(c.config, "mdr-measure", wrap));
+    if ("error" in m || !m.measured) continue;
+    const plans = await candidates(m.measured, true);
+    if ("fallback" in plans) {
+      fallback = plans.fallback;
+      break;
+    }
+    for (const plan of plans)
+      tried.push({
+        plan,
+        measured: m.measured,
+        wrap,
+        scale: printScale(plan, FIT),
+        height: plan.height,
+      });
+  }
+  if (fallback || !tried.length) {
+    row.error = `fallback: ${fallback ?? "no candidate"}`;
     continue;
   }
-  row.archetype = plan.archetype;
-  const placedOut = await render(c.source, `smart-${i}`, config(c.config, "mdr-place"), plan);
+  const chosen = best(tried);
+  const { plan, measured, wrap } = chosen;
+  row.archetype = `${plan.archetype}, wrap ${wrap ?? "Mermaid"}, ${tried.length} candidatos`;
+  const placedOut = await render(c.source, `smart-${i}`, config(c.config, "mdr-place", wrap), plan);
   row.ms.smart = Math.round(performance.now() - t);
   if ("error" in placedOut || !placedOut.placed) {
     row.error = "error" in placedOut ? placedOut.error : "nothing placed";
@@ -728,7 +1104,7 @@ for (const [i, c] of cases.entries()) {
   row.positionsKept = measured.nodes.every((n) => {
     const p = plan.nodes[n.id]!;
     const tr = back.nodes[placed.nodes[n.id]!.domId] ?? "";
-    const mm = /translate\(\s*(-?[\d.]+)[\s,]+(-?[\d.]+)/.exec(tr);
+    const mm = /translate\(\s*(-?[\d.]+(?:e[-+]?\d+)?)[\s,]+(-?[\d.]+(?:e[-+]?\d+)?)/.exec(tr);
     const ok = !!mm && Math.abs(Number(mm[1]) - p.x) < 0.5 && Math.abs(Number(mm[2]) - p.y) < 0.5;
     if (!ok) row.notes.push(`nodo ${n.id}: plan (${p.x}, ${p.y}), dibujado "${tr}"`);
     return ok;
@@ -775,13 +1151,15 @@ for (const [i, c] of cases.entries()) {
   row.markers = drawnEdges
     .filter((e) => e.type !== "arrow_open")
     .every((e) => paths.find(([id]) => id.endsWith(e.id))?.[1].markers);
-  row.rounded = drawnEdges.every(
-    (e) => !/C/.test(paths.find(([id]) => id.endsWith(e.id))?.[1].d ?? "C"),
-  );
+  row.rounded = drawnEdges
+    .filter((e) => plan.edges[e.id]?.curve === "rounded")
+    .every((e) => !/C/.test(paths.find(([id]) => id.endsWith(e.id))?.[1].d ?? "C"));
   const labelled = measured.edges.filter((e) => e.label);
   const labelsAt = labelled.filter((e) => {
     const want = plan.edges[e.id]!.label!;
-    const mm = /translate\(\s*(-?[\d.]+)[\s,]+(-?[\d.]+)/.exec(back.labels[e.id] ?? "");
+    const mm = /translate\(\s*(-?[\d.]+(?:e[-+]?\d+)?)[\s,]+(-?[\d.]+(?:e[-+]?\d+)?)/.exec(
+      back.labels[e.id] ?? "",
+    );
     const ok = !!mm && Math.abs(Number(mm[1]) - want.x) < 1 && Math.abs(Number(mm[2]) - want.y) < 1;
     if (!ok)
       row.notes.push(
@@ -850,7 +1228,10 @@ foreignObject p { margin: 0; }
 const shot = await session.newPage();
 await shot.setViewport({ width: 2 * FIT.width + 96, height: 900, deviceScaleFactor: 1 });
 await shot.setContent(html);
-await shot.screenshot({ path: join(here, "galeria.png") as `${string}.png`, fullPage: true });
+await shot.screenshot({
+  path: join(here, `galeria${suffix}.png`) as `${string}.png`,
+  fullPage: true,
+});
 const pdf = Buffer.from(
   await shot.pdf({ width: `${2 * FIT.width + 96}px`, printBackground: true }),
 );
@@ -882,5 +1263,5 @@ const lines = [
   `- Imágenes rasterizadas en el PDF de la galería: ${images}.`,
   "",
 ];
-writeFileSync(join(here, "resultados.md"), lines.join("\n"));
+writeFileSync(join(here, `resultados${suffix}.md`), lines.join("\n"));
 console.log(lines.join("\n"));
