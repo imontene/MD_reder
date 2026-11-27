@@ -1,491 +1,496 @@
 ---
-title: Especificación técnica — Diagramación compositiva de Mermaid (Fases 2 y 3)
-subtitle: Motor reintérprete determinista (smart) y planificador semántico asistido (ai) para mdrender, en dos cortes de entrega
-author: Antigravity · Especificación para MD_reder
+title: Especificación técnica — Diagramación compositiva de Mermaid (modo smart)
+subtitle: Motor reintérprete determinista para los diagramas de flujo de mdrender
+author: Antigravity · Especificación para MD_reder (revisada)
 date: 2026-11-27
 ---
 
+> **Revisión (2026-11-27).** Esta versión reemplaza la especificación recibida (commit
+> `de16d9e`), tras revisarla contra el código de mdrender 2.18.0 y Mermaid 12.1.0. Los cambios
+> y sus motivos están en el §11. Decisiones del autor del proyecto:
+>
+> 1. **Arquitectura A:** los motores de mdrender calculan las posiciones y **Mermaid dibuja**,
+>    mediante un algoritmo de diagramación propio registrado con `mermaid.registerLayoutLoaders`.
+>    Ya no se escribe un serializador de SVG propio.
+> 2. **Solo `flowchart`/`graph`.** Los diagramas de estados quedan como trabajo posterior.
+> 3. **El modo `ai` (antigua Fase 3) queda aplazado.** No se crea en esta fase. Al terminar el
+>    modo `smart` se evaluará si basta con la interpretación determinista o si conviene alguna
+>    opción con IA (§10).
+>
+> La ideación que dio origen a esta especificación está en
+> [`IDEACION_DIAGRAMACION_MERMAID.md`](IDEACION_DIAGRAMACION_MERMAID.md). Los pasos de
+> implementación están en la Fase 7 de [`PLAN_MAESTRO.md`](PLAN_MAESTRO.md).
+
 ## 1. Objetivo, alcance y garantías de diseño
 
-Agregar a `mdrender` (`@imontene/mdrender`) un nuevo subsistema de diagramación espacial para bloques ` ```mermaid ` que reinterpreta la topología y semántica del grafo antes de dibujar sus figuras y conectores, superando el layout lineal de Sugiyama sin sacrificar el acabado visual actual ni el modo de operación existente.
-
-La implementación se realizará en **dos cortes independientes y publicables**:
-
-- **Corte 1 (Fase 2 — modo `smart`):** Motor reintérprete 100 % determinista y sin conexión. Habilita `--mermaid-layout <classic|smart>`.
-- **Corte 2 (Fase 3 — modo `ai`):** Pre-planificador semántico híbrido con modelo ligero y caché local persistente sobre los motores geométricos del Corte 1. Amplía la opción a `--mermaid-layout <classic|smart|ai>` y añade `--mermaid-ai-model`.
+Agregar a `mdrender` un modo de diagramación espacial para los bloques ` ```mermaid ` de tipo
+diagrama de flujo. El modo reinterpreta la topología del grafo (espina dorsal, ciclos, nodos
+transversales, subgrafos) y coloca los nodos con motores especializados en lugar del layout
+jerárquico de un solo eje. El acabado visual actual y el modo de funcionamiento existente no
+cambian.
 
 ### 1.1 Modos de operación
 
-| Modo (`--mermaid-layout`) |     Corte / Fase     | Descripción                                                                                                                                                                                                                                                                        | Por defecto | Red / Costo                  |
-| :------------------------ | :------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: | :--------------------------- |
-| `classic`                 |     Base actual      | Pipeline vigente en `v2.18.0`: `mermaid.render()` + `mermaid-fit.ts` + `mermaid-style.ts`. Cero cambios de comportamiento.                                                                                                                                                         |   **Sí**    | Nunca / \$0                  |
-| `smart`                   | **Corte 1 (Fase 2)** | Motor reintérprete determinista local: extracción a grafo intermedio, detección de espina dorsal y _sidecars_, motores especializados (**Serpentina**, **Flywheel**, **Hub bilateral**, **Bento de subgrafos** y **ELK con puertos cardinales fijos**) + acabado vectorial propio. |     No      | Nunca / \$0                  |
-| `ai`                      | **Corte 2 (Fase 3)** | Pre-planificador semántico mediante un modelo de texto ultraligero (_Flash-Lite_) que emite roles y pistas de disposición en JSON (cacheado en disco por `SHA-256`), ejecutado geométricamente por los motores de Fase 2 con _fallback_ automático a `smart`.                      |     No      | Solo CLI + caché / ~\$0.0001 |
+| Modo (`--mermaid-layout`) | Descripción                                                                                                                                                         | Por defecto | Red   |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------: | :---- |
+| `classic`                 | El flujo vigente en 2.18.0: `mermaid.render()` + autofit (`mermaid-fit.ts`) + acabado (`mermaid-style.ts`). Sin ningún cambio.                                      |   **Sí**    | Nunca |
+| `smart`                   | Motor reintérprete determinista y local: análisis del grafo, motores **serpentina**, **ciclo**, **hub bilateral**, **bento** y **ELK con puertos**; dibuja Mermaid. |     No      | Nunca |
 
-### 1.2 Invariantes no negociables de `mdrender`
+### 1.2 Invariantes no negociables
 
-1. **Retrocompatibilidad estricta:** Sin `--mermaid-layout` (o con `classic`), todas las salidas HTML/PDF y todas las pruebas actuales (`mermaid.test.ts`, `mermaid-autofit.test.ts`, `mermaid-style.test.ts`, `pdf.test.ts`) **deben** producir exactamente el mismo resultado que hoy.
-2. **Cero banderas a medio implementar por corte:** En el **Corte 1**, `--mermaid-layout` solo acepta `classic` y `smart` (ni `ai` ni `--mermaid-ai-model` aparecen en `--help` ni en `VALIDATORS` hasta el **Corte 2**), de modo que el Corte 1 pueda publicarse limpio como versión _minor_ propia.
-3. **PDF 100 % vectorial y tipografía incrustada:** Ningún diagrama generado por `smart` o `ai` puede introducir imágenes rasterizadas (`/Subtype /Image` = 0 en el PDF) ni sombras CSS que fuercen a Chromium a rasterizar capas. Todo texto de nodos, aristas y subgrafos se compone con la familia incrustada del documento (`Manrope` o `Inter`, y `JetBrains Mono` en `<code>`).
-4. **Identidad visual unificada:** Los diagramas generados en `smart` y `ai` conservan el acabado de `mermaid-style.ts`: esquinas redondeadas (`CORNER_RADIUS = 5`), degradados verticales suaves por color (`GRADIENT_STEP = 4`) con opacidad `FILL_OPACITY = 0.72` dentro de los `<stop>` (para compatibilidad con marcas de agua `--watermark` / `--watermark-field` en Chrome PDF), cabeceras de subgrafo (`HEADER_STEP = 7`), variables de color de todos los temas (`antigravity`, `antigravity-dark`, `light`, `dark`, `academic_basic`, `tech_magazine`, `tech_magazine-dark`, `preprint`, `open_access`) y estilos `classDef` / `style` del autor.
-5. **Frontera de seguridad de red (Corte 2):** Siguiendo la regla de `src/convert.ts` (_un documento no puede otorgarse acceso de red a sí mismo_), una clave `mermaid-layout: ai` escrita en el _front matter_ o en `mdrender.config.json` **solo consulta la caché local en disco**; las llamadas HTTP salientes al proveedor LLM **solo** se autorizan cuando `--mermaid-layout ai` se pasa explícitamente en la línea de comandos (o junto con `--allow-remote`), y se ejecutan desde Node (`fetch`), manteniendo `BrowserSession.newPage()` siempre con `restrictNetwork(page, false)`.
-6. **Ejecutable independiente (Node SEA):** Todo código de ambos cortes debe empaquetarse limpiamente en `build/sea/mdrender(.exe)` mediante `scripts/build-sea.mjs` y registrar sus licencias en `THIRD-PARTY-NOTICES.txt`.
+1. **Retrocompatibilidad estricta.** Sin `--mermaid-layout`, o con `classic`, todas las salidas
+   HTML y PDF y todas las pruebas actuales (`mermaid.test.ts`, `mermaid-autofit.test.ts`,
+   `mermaid-style.test.ts`, `pdf.test.ts`…) dan exactamente el mismo resultado que hoy.
+2. **Sin opciones a medio implementar.** `--mermaid-layout` acepta solo `classic` y `smart`. No
+   aparece ninguna opción del modo `ai` en `--help`, en `VALIDATORS` ni en la documentación.
+3. **PDF vectorial y tipografía incrustada.** Un diagrama dibujado en `smart` no introduce
+   imágenes rasterizadas (en un PDF de prueba que solo tenga diagramas, `/Subtype /Image` = 0)
+   ni filtros o sombras que obliguen a Chromium a rasterizar. Los textos usan la familia
+   incrustada del documento (Manrope o Inter).
+4. **Identidad visual unificada.** Como dibuja Mermaid con la misma configuración de tema, los
+   diagramas en `smart` conservan formas, colores de todos los temas, estilos `classDef`,
+   `style` y `linkStyle` del autor, y el acabado de `finishDiagram` (esquinas redondeadas,
+   degradados con la opacidad en los `<stop>`, bandas de subgrafo). No se duplica ese código.
+5. **Sin red.** El modo `smart` no hace ninguna petición. La página de Mermaid sigue con la red
+   bloqueada (`restrictNetwork(page, false)`).
+6. **Nunca peor que `classic`.** Si el modo `smart` no logra imprimir un diagrama al menos tan
+   legible como lo haría `classic` (§5.3), o si falla por cualquier motivo, ese diagrama se
+   dibuja con `classic`, sin interrumpir el documento.
+7. **Ejecutable independiente.** Todo el código se empaqueta en `mdrender(.exe)` mediante
+   `scripts/build-sea.mjs`, y sus licencias aparecen en `THIRD-PARTY-NOTICES.txt`.
 
-### 1.3 Tipos de diagramas cubiertos y delegación automática
+### 1.3 Tipos de diagrama cubiertos
 
-| Tipo de diagrama Mermaid                                                         | Comportamiento en `smart` / `ai`                                                               | Razón                                                                                                         |
-| :------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `flowchart` / `graph` (`TB`, `TD`, `BT`, `LR`, `RL`)                             | **Reinterpretado** por los motores de Fases 2 y 3                                              | Constituyen el núcleo del problema de composición espacial (17 de los 20 casos de `mermaid-autofit.md`).      |
-| `stateDiagram-v2` / `stateDiagram`                                               | **Reinterpretado** (normalizado al mismo Grafo Semántico IR; estados compuestos como clusters) | Es topológicamente un grafo dirigido de estados y ciclos donde `flywheel` y `serpentine` aportan gran mejora. |
-| `sequenceDiagram`, `classDiagram`, `erDiagram`, `gantt`, `pie`, `mindmap`, otros | **Delegado transparentemente a `classic`**                                                     | Ya poseen gramáticas visuales posicionales estrictas (líneas de vida temporales, tartas, cronogramas).        |
-| Diagramas con `%%{init: …}%%` o `config:` explícito del autor                    | **Delegado a `classic`** (salvo que incluya comentario `%% @archetype:` explícito)             | Respeta `authorConfigured()` tal como hoy lo hace `mermaid-fit.ts`.                                           |
-
----
+| Diagrama                                                                         | En modo `smart`       | Motivo                                                                                  |
+| :------------------------------------------------------------------------------- | :-------------------- | :-------------------------------------------------------------------------------------- |
+| `flowchart` / `graph` (`TB`, `TD`, `BT`, `LR`, `RL`)                             | **Reinterpretado**    | Núcleo del problema: 17 de los 20 casos de `tests/fixtures/mermaid-autofit.md`.         |
+| `stateDiagram-v2`, `stateDiagram`                                                | `classic` (por ahora) | Sin corpus para calibrarlo; queda como trabajo posterior (§10).                         |
+| `sequenceDiagram`, `classDiagram`, `erDiagram`, `gantt`, `pie`, `mindmap`, otros | `classic`             | Tienen una gramática visual posicional propia.                                          |
+| Diagrama con `%%{init: …}%%` o `config:` del autor                               | `classic`             | Se respeta `authorConfigured()`, como hace hoy el autofit. Excepción: `%% @archetype:`. |
+| Diagrama con elementos que el modo `smart` no sabe colocar                       | `classic`             | P. ej. aristas a un subgrafo anidado (§4.2); la medición lo detecta y delega.           |
 
 ## 2. Interfaz de línea de comandos, configuración y diagnósticos
 
-### 2.1 Nuevas opciones por corte
+### 2.1 Nueva opción
 
-Se registran en `src/cli.ts` (`DOCUMENT_FLAGS` y `addDocumentOptions`, disponibles tanto en `mdrender` como en `mdrender preview`), `src/options.ts` (`DocumentOptions`, `DEFAULT_OPTIONS`, `VALIDATORS`, `OPTION_KEYS`) y `mdrender.config.json`:
+Se registra en `src/cli.ts` (`DOCUMENT_FLAGS` y `addDocumentOptions`, para `mdrender` y para
+`mdrender preview`), en `src/options.ts` (`DocumentOptions`, `DEFAULT_OPTIONS`, `VALIDATORS`,
+`OPTION_KEYS`) y en `mdrender.config.json`:
 
-| Opción CLI                | Front matter / JSON                   | Valores en Corte 1 |         Valores en Corte 2          |        Por defecto        | Descripción                                                      |
-| :------------------------ | :------------------------------------ | :----------------: | :---------------------------------: | :-----------------------: | :--------------------------------------------------------------- |
-| `--mermaid-layout <mode>` | `mermaid-layout` / `mermaidLayout`    | `classic`, `smart` |      `classic`, `smart`, `ai`       |         `classic`         | Motor de composición espacial para diagramas de flujo y estados. |
-| `--mermaid-ai-model <id>` | `mermaid-ai-model` / `mermaidAiModel` |  _(No expuesto)_   | texto (ej. `gemini-2.5-flash-lite`) | `"gemini-2.5-flash-lite"` | Modelo ligero empleado cuando `--mermaid-layout ai` está activo. |
+| Opción CLI                | Front matter / JSON                | Valores            | Por defecto | Descripción                                              |
+| :------------------------ | :--------------------------------- | :----------------- | :---------: | :------------------------------------------------------- |
+| `--mermaid-layout <mode>` | `mermaid-layout` / `mermaidLayout` | `classic`, `smart` |  `classic`  | Motor de composición espacial de los diagramas de flujo. |
 
-**Credenciales y entorno para Corte 2 (`ai`) — solo variables de entorno, nunca en front matter ni `mdrender.config.json`:**
+### 2.2 Precedencia e interacción con las opciones existentes
 
-- `MDRENDER_AI_API_KEY` (prioritaria) o `GEMINI_API_KEY`.
-- `MDRENDER_AI_BASE_URL` (opcional, para endpoints compatibles; respeta `HTTPS_PROXY` igual que `doctor.ts`).
-
-> [!WARNING]
-> **Seguridad de secretos:** `VALIDATORS` en `src/options.ts` **no debe** aceptar una opción `mermaidAiApiKey` en archivos de configuración ni en _front matter_, evitando que claves de API queden escritas accidentalmente en repositorios Markdown.
-
-### 2.2 Compuerta exacta de red en `src/convert.ts` (Corte 2)
-
-En `src/cli.ts`, `cliOverrides(program)` puebla `settings.overrides` únicamente cuando `program.getOptionValueSource(key) === "cli"`. En `src/convert.ts`, la autorización de red para el planificador de Fase 3 queda determinada sin ambigüedad por:
-
-```ts
-const allowAiNetwork = settings.overrides?.mermaidLayout === "ai" || Boolean(settings.allowRemote);
-```
-
-- Si `options.mermaidLayout === "ai"` y `allowAiNetwork === true`: consulta caché local $\rightarrow$ si no existe, consulta la API LLM y persiste en caché.
-- Si `options.mermaidLayout === "ai"` y `allowAiNetwork === false` (proveniente de _front matter_ o `mdrender.config.json` sin flag en CLI): consulta caché local $\rightarrow$ si existe, la aplica; si no existe, emite un diagnóstico `warning` y renderiza con `smart`.
-
-### 2.3 Precedencia e interacción con banderas existentes
-
-1. **Prioridad general:** `CLI > front matter > mdrender.config.json > THEME_DEFAULTS > DEFAULT_OPTIONS`.
-2. **Interacción con `--no-mermaid-autofit`:**
-   - En `classic`: desactiva la búsqueda de `wrappingWidth` y eje, como hoy.
-   - En `smart` / `ai`: ejecuta una única pasada del arquetipo seleccionado con ancho de etiqueta estándar (`190px`), sin búsqueda multi-candidato.
-3. **Interacción con `--mermaid-flip never`:**
-   - En `smart` / `ai`: prohíbe a los motores cambiar el eje global escrito por el autor (p. ej. no transponer un `bento` o `layered` de `LR` a `TB`, aunque sí permite plegar una cadena `LR` en serpentina horizontal `L→R / R→L`).
-4. **Ajuste al marco de tarjeta en temas con relleno (`--diagram-frame`):**
-   - En `tech_magazine` y `tech_magazine-dark` (donde `.mermaid-diagram` define `padding: 1.4em` y `--diagram-frame: 4.6em`), `renderDocument` descontará `2.8 * fontPx` del ancho útil y `4.6 * fontPx` de `pageHeightPx` al evaluar candidatos en `smart` / `ai`, coincidiendo con la caja impresa real que mide `FIGURE_FIT`.
-5. **Salida detallada en `--verbose` (`describeLayout` ampliado en `src/convert.ts`):**
+1. **Prioridad:** la de siempre, `CLI > front matter > mdrender.config.json > THEME_DEFAULTS >
+DEFAULT_OPTIONS`. Como `smart` no usa la red, no hace falta ninguna compuerta especial.
+2. **`--no-mermaid-autofit`:** en `classic`, como hoy. En `smart`, una sola pasada del
+   arquetipo elegido con el ancho de ajuste por defecto de Mermaid, sin búsqueda de candidatos.
+3. **`--mermaid-flip never`:** en `smart`, los motores no cambian el eje global escrito por el
+   autor (no transponen un `bento` o un `layered` de `LR` a `TB`). Sí pueden plegar una cadena
+   `LR` en serpentina, que sigue leyéndose de izquierda a derecha.
+4. **`--mermaid-theme` y los temas de página:** sin cambios; el modo `smart` usa la misma
+   configuración de Mermaid que `classic` (tema, variables, `themeCSS`, fuente).
+5. **`--verbose`** (`describeLayout` en `src/convert.ts`):
    - `classic`: sin cambios (`Mermaid autofit: wrap 300, turned LR→TB, scale 0.33 → 1.00…`).
-   - `smart`: `Mermaid smart layout: archetype serpentine (4×2), sidecars [DB], scale 0.37 → 1.00, height 81 → 312 px (4 candidates tried)`.
-   - `ai` (Corte 2): `Mermaid ai layout (cached|live): archetype bento, spine 5 nodes, sidecars [LOG, DB], scale 0.48 → 0.96, height 610 → 420 px`.
-6. **Integración en `mdrender doctor` (`src/doctor.ts`):**
-   - Corte 1: en el check `Settings`, añadir `, mermaid layout smart` cuando la configuración efectiva no sea `classic`.
-   - Corte 2: si la configuración efectiva pide `ai`, añadir además un check `Mermaid AI` que informe la ruta de caché y si `MDRENDER_AI_API_KEY` / `GEMINI_API_KEY` está presente (`[ok]` o `[warn]` con sugerencia).
+   - `smart`: `Mermaid smart layout: archetype serpentine (3×3), sidecars [DB], scale 0.37 → 1.00, height 81 → 312 px (4 candidates tried)`.
+   - Diagrama que vuelve a `classic`: `Mermaid smart layout: kept classic (<motivo>)`.
+6. **`mdrender doctor`** (`src/doctor.ts`): en el check `Settings`, agregar
+   `, mermaid layout smart` cuando la configuración efectiva no sea `classic`.
 
----
+## 3. Arquitectura
 
-## 3. Arquitectura modular en el repositorio
+### 3.1 Idea central: Mermaid dibuja, mdrender coloca
 
-### 3.1 Reutilización y puntos de contacto
+Mermaid 12 permite registrar algoritmos de diagramación propios con
+`mermaid.registerLayoutLoaders([{ name, loader }])` y elegirlos con la opción `layout`. Mermaid
+analiza el diagrama, prepara los nodos y aristas (`LayoutData`) y llama a la función `render`
+del algoritmo con funciones de dibujo: `insertNode`, `insertCluster`, `insertEdge`,
+`insertEdgeLabel`, `positionEdgeLabel`, `insertMarkers`. El algoritmo decide las coordenadas y
+usa esas funciones para dibujar. Después Mermaid ajusta el `viewBox` como siempre.
+
+Se comprobó en Chromium con Mermaid 12.1.0: una cadena de 8 pasos plegada en serpentina,
+dibujada por Mermaid con el tema Anti-Gravity, flechas incluidas, y con `finishDiagram`
+aplicado sin cambios. Pasó de 1512×103 px a 572×386 px.
+
+Los motores se escriben en TypeScript y corren **en Node**, como funciones puras que se prueban
+sin navegador. La página solo mide y dibuja. Por eso cada diagrama pasa por la página dos
+veces:
 
 ```mermaid
-flowchart TB
-    subgraph Existente["Módulos existentes en MD_reder (cambios mínimos)"]
-        CLI["src/cli.ts + src/options.ts"]
-        CONV["src/convert.ts"]
-        MRM["src/render/mermaid.ts"]
-        FIT["src/render/mermaid-fit.ts"]
-        STY["src/render/mermaid-style.ts"]
-    end
-    subgraph Corte1["Corte 1 — src/render/mermaid-compose/ (Fase 2: smart)"]
-        PRB["probe.ts (Extracción AST + medición DOM en Chromium)"]
-        IR["types.ts + directives.ts (SemanticGraph IR)"]
-        ANA["analyze.ts (SCC, Espina Dorsal, Sidecars, Clasificador)"]
-        ENG["engines/ (serpentine, flywheel, hub, bento, elk-composed)"]
-        RTE["routing.ts + polish.ts (Puertos, rutas Q, line hops, grid 8px)"]
-        SCR["score.ts (Función de costo multi-candidato)"]
-        SVG["emit-svg.ts (SVG vectorial compatible con finishDiagram)"]
-    end
-    subgraph Corte2["Corte 2 — Extensión IA (Fase 3: ai)"]
-        AI["ai-planner.ts (Cliente fetch + saneamiento contra AST)"]
-        CAC["cache.ts (Caché atómica SHA-256 en cacheDir)"]
-    end
-    CLI --> CONV --> MRM
-    MRM -->|"classic (por defecto)"| FIT --> STY
-    MRM -->|"smart / ai"| PRB --> IR --> ANA
-    ANA -->|"modo smart"| ENG
-    ANA -->|"modo ai (Corte 2)"| AI
-    AI <--> CAC
-    AI --> ENG
-    ENG --> RTE --> SCR --> SVG --> STY
+flowchart LR
+  subgraph Pagina1["Página de Mermaid: medición"]
+    M["layout mdr-measure: insertNode e insertEdgeLabel miden cada caja"]
+  end
+  subgraph Node["Node: composición"]
+    A["analyze.ts: roles y arquetipo"] --> E["engines/: posiciones por candidato"]
+    E --> S["score.ts: elige el candidato"]
+  end
+  subgraph Pagina2["Página de Mermaid: dibujo"]
+    P["layout mdr-place: dibuja con las posiciones del plan"] --> F["FILL_PROBE y finishDiagram"]
+  end
+  M -->|"grafo medido"| A
+  S -->|"plan de posiciones"| P
 ```
 
-### 3.2 Mapa de archivos por corte
+1. **Medición** (`mdr-measure`). En la página que ya abre `renderMermaid`, con las fuentes del
+   documento cargadas, se renderiza el diagrama con el layout `mdr-measure`. Su `render` llama
+   a `insertNode` para cada nodo, a `insertEdgeLabel` para cada etiqueta de arista y a
+   `insertCluster` para cada subgrafo. Así obtiene los tamaños reales que Mermaid dará a cada
+   forma, guarda el grafo medido en una variable global de la página y no dibuja nada útil. Se
+   repite una vez por ancho de ajuste candidato.
+2. **Composición** (Node). El grafo medido se convierte en el IR (§4.1). `analyze.ts` le asigna
+   roles y arquetipo, los motores calculan las posiciones de cada candidato y `score.ts` los
+   puntúa con las dimensiones calculadas, **sin volver a dibujar**.
+3. **Dibujo** (`mdr-place`). El plan ganador (centros de nodos, rectángulos de subgrafos,
+   puntos de cada arista) se pasa a la página como datos, como argumento de `page.evaluate`
+   (nunca concatenado en código). El layout `mdr-place` dibuja con las funciones de Mermaid en
+   esas posiciones. El SVG resultante sigue el camino de hoy: `FILL_PROBE` y `finishDiagram`.
 
-| Archivo                                                           |      Corte      |    Tipo    | Responsabilidad                                                                                                                                                                          |
-| :---------------------------------------------------------------- | :-------------: | :--------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/options.ts`, `src/cli.ts`, `src/convert.ts`, `src/doctor.ts` | 1 (amplía en 2) | Modificado | Registro de `--mermaid-layout` (`classic\|smart` en Corte 1; `+ai` y `--mermaid-ai-model` en Corte 2), `allowAiNetwork`, trazas `--verbose` y `doctor`.                                  |
-| `src/render/mermaid.ts`                                           | 1 (amplía en 2) | Modificado | Bifurcación por bloque: si `layoutMode === "classic"` o el diagrama no es reinterpretable, ejecuta el flujo actual intacto; si es `smart`/`ai`, invoca `composeDiagram()`.               |
-| `src/render/mermaid-compose/types.ts`                             |        1        |   Nuevo    | Tipos puros del Grafo Semántico Intermedio (`SemanticGraph`, `AnalyzedGraph`, `PositionedGraph`).                                                                                        |
-| `src/render/mermaid-compose/directives.ts`                        |        1        |   Nuevo    | Lector opcional de pistas en comentarios Mermaid (`%% @archetype:`, `%% @sidecar:`, `%% @spine:`).                                                                                       |
-| `src/render/mermaid-compose/probe.ts`                             |        1        |   Nuevo    | Script evaluado en la página aislada de `renderMermaid` que extrae el grafo vía `mermaid.mermaidAPI.getDiagramFromText()`, resuelve colores efectivos y mide cajas de texto balanceadas. |
-| `src/render/mermaid-compose/analyze.ts`                           |        1        |   Nuevo    | Algoritmos deterministas de grafos (Tarjan SCC, DFS _back-edges_, camino crítico, detección de _sidecars_, polaridad de decisiones y selección de arquetipo).                            |
-| `src/render/mermaid-compose/engines/serpentine.ts`                |        1        |   Nuevo    | Motor de plegado en S (_boustrophedon_) con conectores en U y soporte de hojas laterales.                                                                                                |
-| `src/render/mermaid-compose/engines/flywheel.ts`                  |        1        |   Nuevo    | Motor elíptico/poligonal horario para ciclos cerrados de 3 a 8 nodos (+ entrada/salida tangencial).                                                                                      |
-| `src/render/mermaid-compose/engines/hub.ts`                       |        1        |   Nuevo    | Motor simétrico bilateral (alas Oeste/Este) y radial en 4 cuadrantes para topologías _Hub & Spoke_.                                                                                      |
-| `src/render/mermaid-compose/engines/bento.ts`                     |        1        |   Nuevo    | Motor de contenedores `subgraph` con igualación de anchos por capa, igualación de altos por fila y retícula compartida.                                                                  |
-| `src/render/mermaid-compose/engines/elk-composed.ts`              |        1        |   Nuevo    | Adaptador sobre `elkjs` (`elk.bundled.js` en Node) con puertos cardinales fijos (`FIXED_SIDE`) y zócalo desacoplado para nodos `sidecar`.                                                |
-| `src/render/mermaid-compose/routing.ts`                           |        1        |   Nuevo    | Enrutador ortogonal con esquinas cuadráticas `Q`, puentes en cruces (_line hops_), arcos tangenciales y etiquetas anticolisión.                                                          |
-| `src/render/mermaid-compose/polish.ts`                            |        1        |   Nuevo    | _Grid snapping_ (`8px`), igualación de dimensiones entre nodos hermanos y centrado óptico.                                                                                               |
-| `src/render/mermaid-compose/score.ts`                             |        1        |   Nuevo    | Evaluación objetiva de candidatos (legibilidad `printScale`, ajuste de proporción, cruces y simetría).                                                                                   |
-| `src/render/mermaid-compose/emit-svg.ts`                          |        1        |   Nuevo    | Serializador SVG vectorial compatible con `FIGURE_FIT`, `measureSvg` y `finishDiagram`.                                                                                                  |
-| `src/render/mermaid-compose/cache.ts`                             |        2        |   Nuevo    | Caché atómica persistente en disco indexada por `SHA-256` bajo `cacheDir` de `mdrender`.                                                                                                 |
-| `src/render/mermaid-compose/ai-planner.ts`                        |        2        |   Nuevo    | Cliente HTTP (`fetch` nativo de Node 22+), prompt JSON estructurado, saneamiento contra el AST y degradación limpia a `smart`.                                                           |
+El código de los dos layouts de página se pasa como texto fuente, igual que hoy `FILL_PROBE`,
+sin paso de compilación. Debe ser corto: medir y dibujar, nada más.
 
-### 3.3 Dependencias y licencias
+### 3.2 Bifurcación en `renderMermaid`
 
-- **`elkjs` (`0.9.3`, licencia `EPL-2.0`):** Ya presente en `package-lock.json` como dependencia de `mermaid@12.1.0` e incluida en `THIRD-PARTY-NOTICES.txt`. En el Corte 1 se añade como dependencia directa en `package.json` (`"elkjs": "^0.9.3"`) importando `elkjs/lib/elk.bundled.js` (JS puro sin Web Workers, empaquetado directamente por `esbuild` dentro de `mdrender.cjs` en `scripts/build-sea.mjs` sin activos SEA adicionales).
-- **Cero dependencias adicionales en el Corte 2:** Se usa `node:crypto`, `node:fs` y `globalThis.fetch` nativo de Node $\ge 22.12$.
+Para cada bloque, `src/render/mermaid.ts` hace lo de hoy y, si corresponde, prueba `smart`:
 
----
+1. Renderiza con `classic`, con autofit si está activo, como hoy. Ese resultado es el **piso**.
+2. Si el modo es `smart`, el diagrama es un `flowchart`/`graph` y no está configurado por el
+   autor (o trae `%% @archetype:`), llama a `composeDiagram()`.
+3. Si `composeDiagram()` devuelve un SVG que cumple el piso (§5.3), se usa ese; si no, se usa el
+   de `classic`, con la nota correspondiente en `--verbose`.
 
-## 4. Especificación del Corte 1: Fase 2 (`--mermaid-layout smart`)
+Los dos layouts se registran una sola vez por página. Los nombres `mdr-measure` y `mdr-place`
+no chocan con los de Mermaid (`dagre`, `elk`, `swimlane`…).
 
-### 4.1 Grafo Semántico Intermedio (`types.ts`)
+### 3.3 Mapa de archivos
 
-Todo diagrama `flowchart`/`graph` o `stateDiagram-v2` se normaliza a la siguiente representación pura en Node antes de calcular posiciones:
+| Archivo                                                           | Tipo       | Responsabilidad                                                                                                            |
+| :---------------------------------------------------------------- | :--------- | :------------------------------------------------------------------------------------------------------------------------- |
+| `src/options.ts`, `src/cli.ts`, `src/convert.ts`, `src/doctor.ts` | Modificado | Opción `--mermaid-layout <classic\|smart>`, trazas de `--verbose` y `doctor`.                                              |
+| `src/render/mermaid.ts`                                           | Modificado | Registro de los layouts de página y bifurcación por bloque (§3.2).                                                         |
+| `src/render/mermaid-compose/types.ts`                             | Nuevo      | Tipos puros: `MeasuredGraph`, `AnalyzedGraph`, `LayoutPlan`.                                                               |
+| `src/render/mermaid-compose/directives.ts`                        | Nuevo      | Lectura de las pistas `%% @archetype:`, `%% @sidecar:`, `%% @spine:` del texto del diagrama.                               |
+| `src/render/mermaid-compose/page-layouts.ts`                      | Nuevo      | Texto fuente de los layouts `mdr-measure` y `mdr-place` que corren en la página.                                           |
+| `src/render/mermaid-compose/analyze.ts`                           | Nuevo      | Ciclos (Tarjan), espina dorsal, nodos transversales, polaridad de decisiones y elección de arquetipo.                      |
+| `src/render/mermaid-compose/engines/serpentine.ts`                | Nuevo      | Plegado en S con conectores en U.                                                                                          |
+| `src/render/mermaid-compose/engines/flywheel.ts`                  | Nuevo      | Ciclos cerrados de 3 a 8 nodos sobre una elipse.                                                                           |
+| `src/render/mermaid-compose/engines/hub.ts`                       | Nuevo      | Hub con dos alas equilibradas (oeste y este).                                                                              |
+| `src/render/mermaid-compose/engines/bento.ts`                     | Nuevo      | Subgrafos en retícula con anchos y altos igualados.                                                                        |
+| `src/render/mermaid-compose/engines/layered.ts`                   | Nuevo      | Caso general: `elkjs` en Node con puertos fijos y zócalo para los nodos transversales.                                     |
+| `src/render/mermaid-compose/routing.ts`                           | Nuevo      | Puntos de cada arista (rutas ortogonales, arcos del ciclo, retornos por un canal lateral).                                 |
+| `src/render/mermaid-compose/polish.ts`                            | Nuevo      | Ajuste a una retícula de 8 px y centrado.                                                                                  |
+| `src/render/mermaid-compose/score.ts`                             | Nuevo      | Puntuación de candidatos (§5.2).                                                                                           |
+| `src/render/mermaid-compose/index.ts`                             | Nuevo      | `composeDiagram()`: medición, análisis, motores, puntuación y dibujo; devuelve el SVG o el motivo para volver a `classic`. |
+
+### 3.4 Dependencias y licencias
+
+- **`elkjs` (0.9.3, EPL-2.0)** se agrega como dependencia directa para `engines/layered.ts`, con
+  `elkjs/lib/elk.bundled.js` (JavaScript puro, sin Web Workers; se comprobó que corre en Node).
+  Ya está en `package-lock.json` como dependencia de `mermaid` y ya aparece en
+  `THIRD-PARTY-NOTICES.txt`. La copia de ELK que trae `mermaid.min.js` no está expuesta y no se
+  puede usar desde el layout propio.
+- **Versión de Mermaid.** Los layouts propios dependen de las funciones de dibujo que Mermaid
+  pasa al algoritmo, que no tienen garantía de estabilidad. `package.json` declara hoy
+  `"mermaid": "^12.1.0"`, que acepta versiones menores nuevas. Se fija la versión exacta y se
+  agregan pruebas de contrato (`mermaid-layout-contract.test.ts`, §7.1); toda actualización de Mermaid pasa por ellas.
+
+### 3.5 Compatibilidad con estilos futuros
+
+Como Mermaid dibuja, el modo `smart` funciona también con los aspectos `look: handDrawn` y
+`neo`, y con los estilos de diagrama propuestos en
+[`IDEAS_ESTILOS_MERMAID.md`](IDEAS_ESTILOS_MERMAID.md). Los tamaños de las formas cambian con el
+aspecto; como se miden en la misma página, el plan sigue siendo correcto.
+
+## 4. Grafo medido, pistas y análisis
+
+### 4.1 Grafo medido (`types.ts`)
+
+El layout `mdr-measure` devuelve, a partir del `LayoutData` de Mermaid:
 
 ```ts
-export type NodeShape =
-  | "rect" // [Texto]
-  | "round" // (Texto)
-  | "stadium" // ([Texto])
-  | "cylinder" // [(Base de datos)]
-  | "circle" // ((Texto)) / doble círculo
-  | "diamond" // {¿Decisión?}
-  | "hexagon" // {{Preparación}}
-  | "parallelogram" // [/Entrada/] o [\Salida\]
-  | "trapezoid" // [/Trapecio\] o [\Trapecio/]
-  | "subroutine" // [[Subrutina]]
-  | "asymmetric"; // >Bandera]
-
-export type NodeRole =
-  "entry" | "spine" | "branch" | "decision" | "hub" | "sidecar" | "error" | "sink";
-
-export type EdgeKind = "primary" | "positive" | "negative" | "feedback" | "infra" | "normal";
-
-export type Archetype = "serpentine" | "flywheel" | "hub" | "bento" | "layered";
-
-export interface MeasuredSize {
-  width: number;
+export interface MeasuredNode {
+  id: string; // id de Mermaid
+  label: string; // texto, para las reglas léxicas
+  shape: string; // nombre de forma de Mermaid: "squareRect", "diamond", "cylinder", "cyl", "stadium"…
+  parentId?: string; // subgrafo que lo contiene
+  order: number; // orden de aparición en la fuente
+  width: number; // tamaño que le da insertNode, en px
   height: number;
-  lines: string[];
 }
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  shape: NodeShape;
-  clusterId?: string;
-  order: number;
-  style: {
-    fill: string; // "rgb(...)" resuelto según tema + classDef + style
-    stroke: string;
-    textColor: string;
-    strokeDasharray?: string;
-  };
-  /** Medidas reales en Chromium para cada ancho de envoltura candidato (140, 190, 250, 320 px). */
-  sizes: Record<number, MeasuredSize>;
-}
-
-export interface GraphEdge {
-  id: string;
+export interface MeasuredEdge {
+  id: string; // "L_A_B_0"
   from: string;
   to: string;
   label?: string;
   labelSize?: { width: number; height: number };
-  lineStyle: "solid" | "dotted" | "thick" | "invisible";
-  arrowStart: boolean;
-  arrowEnd: boolean;
-  minLength: number; // Longitud de flecha en fuente: --> (1), ---> (2), ----> (3)
+  pattern: "normal" | "dotted" | "thick" | "invisible";
+  minlen: number; // 1 para -->, 2 para --->, …
   order: number;
 }
 
-export interface GraphCluster {
+export interface MeasuredCluster {
   id: string;
   title: string;
   titleSize: { width: number; height: number };
   parentId?: string;
-  direction?: "TB" | "BT" | "LR" | "RL";
-  nodeIds: string[];
-  childClusterIds: string[];
-  style: { fill: string; stroke: string; textColor: string };
+  dir?: "TB" | "BT" | "LR" | "RL";
+  order: number;
 }
 
-export interface SemanticGraph {
-  diagramType: "flowchart" | "state";
-  writtenDirection: "TB" | "BT" | "LR" | "RL";
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  clusters: GraphCluster[];
-  hints: LayoutHints; // Comentarios opcionales %% @...
+export interface MeasuredGraph {
+  direction: "TB" | "BT" | "LR" | "RL";
+  wrap: number | undefined; // ancho de ajuste con que se midió
+  nodes: MeasuredNode[];
+  edges: MeasuredEdge[];
+  clusters: MeasuredCluster[];
 }
 ```
 
-#### Pistas opcionales en comentarios (`directives.ts`)
+Las formas se agrupan con funciones auxiliares, porque Mermaid tiene alias (por ejemplo,
+`[(…)]` da `cylinder` y `@{ shape: cyl }` da `cyl`): `isDecisionShape`, `isStorageShape`.
 
-`directives.ts` reconoce comentarios opcionales compatibles al 100 % con cualquier visor Mermaid estándar:
+`LayoutPlan` es lo que vuelve a la página: el centro de cada nodo; el rectángulo de cada
+subgrafo; los puntos de cada arista, con su interpolación; la dirección efectiva.
+
+### 4.2 Lo que no se reinterpreta
+
+La medición devuelve `fallback` (y el diagrama se dibuja con `classic`) si encuentra:
+
+- aristas que salen de un subgrafo anidado o llegan a él. Las aristas entre subgrafos de primer
+  nivel, o entre un nodo y uno de ellos (como `Entrada --> Salida` en el caso 8 de
+  `mermaid-autofit.md`), sí se admiten: el motor `bento` las une por el borde de los
+  subgrafos, y `insertEdge` las recorta contra ese borde con el registro de subgrafos que
+  recibe (`clusterDb`), como hace el layout `dagre` de Mermaid. Se confirma en la prueba de
+  concepto (paso 7.1 del plan);
+- subgrafos anidados a más de dos niveles;
+- más de 60 nodos (límite inicial, ajustable con `bench:mermaid`);
+- cualquier dato que no tenga la forma esperada (señal de un cambio en Mermaid).
+
+### 4.3 Pistas opcionales en comentarios (`directives.ts`)
+
+Comentarios de Mermaid, ignorados por cualquier otro visor:
 
 - `%% @archetype: serpentine | flywheel | hub | bento | layered`
 - `%% @sidecar: ID1, ID2`
 - `%% @spine: A -> B -> C -> D`
 
-Si están presentes, prevalecen sobre la heurística automática; en Mermaid crudo sin comentarios, `analyze.ts` deduce todo automáticamente.
+Si están presentes, mandan sobre la heurística. Los IDs que no existan en el grafo se ignoran,
+con un aviso en `--verbose`.
 
-### 4.2 Extracción AST y medición tipográfica balanceada (`probe.ts`)
+### 4.4 Analizador (`analyze.ts`)
 
-Dentro de la página Chromium que `renderMermaid()` ya abre con las fuentes del documento cargadas:
+Sobre el grafo medido, ignorando las aristas `invisible` para la conectividad pero conservando
+su orden, cinco pasos puros. Todos los umbrales de esta sección son **valores iniciales**: se
+calibran con el corpus (§7) y quedan como constantes con nombre, como en `mermaid-fit.ts`.
 
-1. **Extracción con adaptador defensivo:**
-   - Ejecuta `mermaid.initialize(...)` con la configuración de tema activa y llama a `await mermaid.mermaidAPI.getDiagramFromText(source)`.
-   - Si hay un error de sintaxis, devuelve el error estándar de Mermaid (conservando línea en el `.md`, resumen `Expecting ...`, bloque `.mermaid-error` y `ExitCode.Render = 2`).
-   - Si `diag.type` es `flowchart-v2`, `flowchart`, `graph` o `stateDiagram-v2`, lee nodos, aristas, subgrafos y estilos desde `diag.db`. Si detecta primitivas exóticas sin geometría mapeada (p. ej. nodos de icono externo `@{ icon: ... }`) o cualquier discrepancia en `diag.db`, devuelve `{ kind: "fallback-classic" }` y `renderMermaid` dibuja ese diagrama con el flujo `classic` sin interrumpir el documento.
-2. **Medición con envoltura tipográfica balanceada (_Balanced Line Wrapping_):**
-   - Para cada etiqueta y ancho objetivo $W \in \{140, 190, 250, 320\}\text{ px}$:
-     - Mide primero en una sola línea con la familia y peso exactos; si `naturalWidth <= W`, conserva 1 línea.
-     - Si supera $W$, divide en $k = \lceil \text{naturalWidth} / W \rceil$ líneas minimizando la diferencia entre la línea más ancha y la más corta, evitando palabras sueltas al final y permitiendo corte limpio en identificadores de código largos (`encode_board(board: chess.Board)` del caso #16 de `mermaid-autofit.md`) tras `_`, `.`, `(`, `,`, `/` o espacio.
-     - Añade las holguras geométricas propias de cada `NodeShape` (factor inscrito en `diamond`, puntas de `hexagon` / `asymmetric`, inclinación de `parallelogram` / `trapezoid` y tapa elíptica de `cylinder`).
+1. **Ciclos.** Tarjan para las componentes fuertemente conexas, y DFS desde las entradas
+   (grado de entrada 0, o el nodo de menor `order` si todo el grafo es cíclico) para marcar
+   como `feedback` las aristas de retorno.
+2. **Nodos transversales (`sidecar`).** Con la profundidad topológica sobre el grafo sin
+   aristas `feedback`, un nodo es `sidecar` si cumple las dos condiciones:
+   - recibe aristas de al menos 3 nodos situados en al menos 2 profundidades distintas;
+   - es un sumidero, o solo alimenta a un nodo hoja (como `LOG --> DASH` en el caso 15 de
+     `mermaid-autofit.md`), o tiene forma de almacenamiento, o su etiqueta coincide (sin
+     distinguir mayúsculas ni acentos) con el vocabulario de infraestructura: `db`, `database`,
+     `postgres`, `sql`, `redis`, `cache`, `buffer`, `log`, `logs`, `metricas`, `metrics`,
+     `telemetria`, `audit`, `storage`, `s3`, `bus`, `queue`, `checkpoint`, `checkpoints`.
 
-### 4.3 Analizador topológico y semántico (`analyze.ts`)
+   Nunca es `sidecar` un vértice de articulación cuya eliminación desconecte las fuentes de
+   los sumideros principales. Las aristas que llegan a un `sidecar` se marcan `infra`.
 
-Sobre `SemanticGraph` (ignorando aristas `invisible` para conectividad semántica pero preservándolas como orden relativo), ejecuta cinco pasos puros en `< 3 ms`:
+3. **Espina dorsal.** Sin los `sidecar` ni las aristas `feedback`, el camino dirigido más largo
+   de una fuente a un sumidero, desempatando por aristas no negativas y por menor `order`. Sus
+   nodos son `spine` (los extremos, `entry` y `sink`) y sus aristas, `primary`.
+4. **Decisiones y excepciones.** Son `decision` los nodos con forma de rombo, los que terminan
+   en `?`, y los de grado de salida ≥ 2 cuyas aristas tienen etiquetas cortas (≤ 18
+   caracteres). Sus salidas se clasifican por la etiqueta:
+   - `positive`: `/^(s[ií]|yes|ok|true|v[aá]lido|éxito|pass|1|gana|promover)\b/i`
+   - `negative`: `/^(no|error|fail|fallo|false|inv[aá]lido|reject|timeout|0|descartar)\b/i`
 
-1. **Descomposición en Ciclos y DAG Condensado:**
-   - Algoritmo de **Tarjan** para componentes fuertemente conexas (SCC) + DFS desde las entradas ($\text{in-degree} = 0$, o el nodo de menor `order` si todo el grafo es cíclico) para etiquetar aristas de retorno como `feedback`.
-2. **Detección de Nodos Transversales (`sidecar`):**
-   - Calcula la profundidad topológica `depth(u)` sobre el DAG sin aristas `feedback`.
-   - Un nodo $v$ fuera de subgrafos hoja se etiqueta como `sidecar` si cumple **ambas** condiciones:
-     - Recibe aristas desde $\ge 3$ nodos situados en $\ge 2$ profundidades distintas ($\text{in-degree}(v) \ge 3$ y $|\{\text{depth}(u) : (u,v) \in E\}| \ge 2$).
-     - Es un sumidero ($\text{out-degree}(v) = 0$), **o** solo alimenta a 1 nodo hoja de visualización/salida (como `LOG --> DASH` en el caso #15 de `mermaid-autofit.md`), **o** tiene `shape === "cylinder"`, **o** su etiqueta coincide (sin distinción de mayúsculas/acentos) con vocabulario de infraestructura transversal (`db`, `database`, `postgres`, `sql`, `redis`, `cache`, `buffer`, `log`, `logs`, `metricas`, `metrics`, `telemetria`, `audit`, `storage`, `s3`, `bus`, `queue`, `checkpoint`, `checkpoints`).
-   - Además, nunca etiqueta como `sidecar` un vértice de articulación cuya eliminación desconecte las fuentes de los sumideros principales. Sus aristas entrantes se marcan como `infra`.
-3. **Extracción de la Espina Dorsal (`spine`):**
-   - Retirando temporalmente los nodos `sidecar` y las aristas `feedback`, calcula el **camino dirigido más largo ponderado** desde una fuente hasta un sumidero (desempatando por aristas no negativas y menor `order`). Sus nodos reciben `spine` (extremos `entry` y `sink`) y sus aristas `primary`.
-4. **Polaridad de Decisiones y Excepciones:**
-   - Nodos con `shape === "diamond"`, signos `¿...?` / `?...`, o $\text{out-degree} \ge 2$ con etiquetas de arista cortas ($\le 18$ caracteres) reciben rol `decision`.
-   - Clasificación léxica multilingüe de sus salidas:
-     - `positive`: `/^(s[ií]|yes|ok|true|v[aá]lido|éxito|pass|1|gana|promover)\b/i`
-     - `negative`: `/^(no|error|fail|fallo|false|inv[aá]lido|reject|timeout|0|descartar)\b/i`
-   - Hojas alcanzadas únicamente por aristas `negative` o punteadas (`dotted`, ej. `R -. desactivación .-> X` en `examples/articulo-academico.md`) reciben rol `error`.
-5. **Árbol de Decisión de Arquetipo:**
-   Sea $G_{\text{core}}$ el grafo sin nodos `sidecar` ($N = |V_{\text{core}}|$, $K = |\text{clusters raíz}|$):
+   Las hojas a las que solo llegan aristas `negative` o punteadas (como
+   `R -. desactivación .-> X` en `examples/articulo-academico.md`) son `error`.
 
-   | Prioridad | Arquetipo elegido | Regla exacta de activación                                                                                                                                                                          |
-   | :-------: | :---------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   |     1     | _(Directiva)_     | Comentario `%% @archetype: <nombre>` presente en el bloque.                                                                                                                                         |
-   |     2     | **`bento`**       | $K \ge 2$ subgrafos de nivel superior que agrupan al menos el $60\%$ de los nodos totales.                                                                                                          |
-   |     3     | **`flywheel`**    | Una única SCC cíclica de $3 \le                                                                                                                                                                     | C   | \le 8$ nodos abarca $\ge 65\%$ de $V_{\text{core}}$ con grado medio interno $\le 2.4$ (admite hasta 1 `entry` previo y 1 `sink` posterior). |
-   |     4     | **`serpentine`**  | $K = 0$, $N \ge 5$, espina dorsal $                                                                                                                                                                 | S   | \ge 0.75 N$, ramificación fuera de la espina $\le 1$ hoja lateral por nodo y sin ciclos largos ($> 2$ pasos).                               |
-   |     5     | **`hub`**         | $K = 0$, $N \ge 5$, existe un nodo $h$ con grado total en $G_{\text{core}} \ge \max(4, \lceil 0.55 (N - 1) \rceil)$ cuya remoción divide $G_{\text{core}}$ en $\ge 4$ componentes de $\le 2$ nodos. |
-   |     6     | **`layered`**     | Cualquier otro grafo (DAG general, árboles profundos, ciclos acoplados como MCTS/Gumbel).                                                                                                           |
+5. **Arquetipo.** Sea _N_ el número de nodos sin los `sidecar` y _K_ el de subgrafos de primer
+   nivel:
 
-### 4.4 Motores geométricos especializados (`engines/`)
+   | Prioridad | Arquetipo        | Regla                                                                                                                                              |
+   | :-------: | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+   |     1     | _(Pista)_        | `%% @archetype: <nombre>` en el bloque.                                                                                                            |
+   |     2     | **`bento`**      | _K_ ≥ 2 subgrafos de primer nivel que reúnen al menos el 60 % de los nodos.                                                                        |
+   |     3     | **`flywheel`**   | Una sola componente cíclica de 3 a 8 nodos con al menos el 65 % de los nodos y grado medio interno ≤ 2,4 (admite una entrada previa y una salida). |
+   |     4     | **`serpentine`** | _K_ = 0, _N_ ≥ 5, espina dorsal ≥ 0,75·_N_, a lo sumo una hoja lateral por nodo y sin ciclos de más de 2 pasos.                                    |
+   |     5     | **`hub`**        | _K_ = 0, _N_ ≥ 5 y un nodo con grado ≥ máx(4, ⌈0,55·(_N_ − 1)⌉) cuya eliminación deja ≥ 4 componentes de ≤ 2 nodos.                                |
+   |     6     | **`layered`**    | Cualquier otro grafo (DAG general, árboles profundos, ciclos acoplados como MCTS o Gumbel).                                                        |
 
-Todos los motores son funciones puras en Node `(graph: AnalyzedGraph, wrapPx: number, options) => PositionedGraph`:
+## 5. Motores, rutas y elección
 
-1. **`serpentine.ts` (Plegado en S / _Boustrophedon_):**
-   - Evalúa columnas por fila $C \in \{2, 3, 4, 5\}$ ($C < |S|$).
-   - Filas pares ($r = 0, 2, \dots$) fluyen Izquierda $\rightarrow$ Derecha; filas impares ($r = 1, 3, \dots$) fluyen Derecha $\rightarrow$ Izquierda.
-   - Alinea centros verticales por columna y centros horizontales por fila; conecta el cambio de fila mediante un conector curvo exterior limpio de radio $\Delta y / 2$ sin cruzar cajas; aloja hojas laterales de 1 nodo (`branch` / `error`) en una sub-banda inmediata bajo su nodo padre conectada por el puerto Sur.
-2. **`flywheel.ts` (Ciclo Elíptico / Poligonal):**
-   - Sitúa los $k$ nodos del ciclo ($3 \le k \le 8$) en sentido horario comenzando a las 12 en punto ($\theta_0 = -\pi / 2$):
-     $$\theta_i = -\frac{\pi}{2} + \frac{2\pi i}{k}, \qquad x_i = c_x + R_x \cos\theta_i, \qquad y_i = c_y + R_y \sin\theta_i$$
-   - Calcula $(R_x, R_y)$ analíticamente garantizando separación mínima de `36px` entre cajas contiguas y proporción $R_x / R_y \in [1.0, 1.45]$.
-   - Traza arcos cuadráticos tangenciales convexos entre nodos del anillo y entradas/salidas horizontales limpias para `entry`/`sink` externos.
-3. **`hub.ts` (Simetría Bilateral / Radial):**
-   - Coloca el `Hub` en el centro óptico `(cx, cy)` con ligero énfasis jerárquico (`padding +4px`, trazo `1.5px`).
-   - Reparte las ramas en **Ala Oeste** y **Ala Este** equilibrando la altura total acumulada de ambos lados (entradas al Oeste y salidas al Este cuando coexisten; mitad y mitad cuando todas tienen la misma dirección, como las 6 aperturas del caso #9 de `mermaid-autofit.md`), reduciendo a la mitad la altura vertical y conectando mediante buses ortogonales distribuidos sobre los puertos Oeste y Este del `Hub`.
-4. **`bento.ts` (Grilla Arquitectónica de Subgrafos):**
-   - Calcula primero el layout interno de cada `subgraph`, luego posiciona los contenedores raíz y aplica **normalización _Bento_**:
-     - Subgrafos apilados en una misma columna igualan exactamente su ancho exterior a $W_{\text{bento}} = \max_j W_j$, redistribuyendo simétricamente el espacio interno sobre una retícula común.
-     - Subgrafos en paralelo en una misma fila igualan su altura exterior a $H_{\text{bento}} = \max_j H_j$.
-     - Reserva exactamente `SUBGRAPH_TITLE_MARGIN` en la cabecera de cada `subgraph` para la franja de `addClusterHeads()`.
-5. **`elk-composed.ts` (DAG General con Puertos Cardinales Fijos y Zócalo Sidecar):**
-   - Extrae los nodos `sidecar` antes de invocar `elk.layout()` sobre `elkjs/lib/elk.bundled.js` para impedir que colapsen los rangos del flujo primario, y los ubica después en un **zócalo inferior** (flujo `LR`) o **carril derecho** (flujo `TB`) alineados con el baricentro de sus emisores.
-   - Asigna puertos cardinales explícitos (`elk.portConstraints: "FIXED_SIDE"`):
-     - En `TB`: flujo `primary`/`positive`/`normal` usa `NORTH` $\rightarrow$ `SOUTH`; ramas `negative` salen por `EAST`/`WEST`; aristas `feedback` (_back-edges_) salen por `EAST`, suben por un canal lateral despejado y re-entran por `EAST` del nodo ancestro; aristas `infra` bajan agrupadas (`mergeEdges: true`) al carril `sidecar`.
-     - En `LR`: transposición simétrica (`WEST` $\rightarrow$ `EAST` primario; `SOUTH` para ramas negativas, _feedback_ y zócalo `sidecar`).
+### 5.1 Motores (`engines/`)
 
-### 4.5 Enrutamiento (`routing.ts`), Pulido (`polish.ts`) y Evaluación (`score.ts`)
+Todos son funciones puras `(grafo analizado, opciones) => LayoutPlan`. Las posiciones son
+centros de nodo; los tamaños vienen medidos y no se cambian.
 
-- **Esquinas y cruces (`routing.ts`):** Giros ortogonales suavizados con curvas cuadráticas `Q` de radio `min(8, segLen / 3)`; puentes semicirculares de `4px` (_line hops_) en cruces ortogonales inevitables; pastillas de etiqueta de arista desplazadas automáticamente a lo largo del tramo recto si colisionan con cualquier nodo u otra etiqueta.
-- **Retícula y hermandad (`polish.ts`):** _Snap_ de centros alineados a múltiplos de `8px` e igualación de `width` entre nodos hermanos de la misma forma en una misma capa/fila cuya diferencia de ancho sea $< 35\%$.
-- **Selección multi-candidato (`score.ts`):** Con `autofit: true`, evalúa de 3 a 5 candidatos (arquetipo principal en anchos `190px` y `250px` —más `320px` para etiquetas largas—, eje transpuesto si `flip === "auto"` en arquetipos direccionales, y el candidato `classic` base como piso de seguridad) maximizando:
+1. **`serpentine`.** Prueba 2 a 5 columnas por fila (menos que la longitud de la espina). Las
+   filas pares van de izquierda a derecha y las impares de derecha a izquierda. Alinea los
+   centros por columna y por fila. El cambio de fila es una arista vertical en la columna del
+   extremo. Las hojas laterales (`branch`, `error`) van debajo de su nodo padre.
+2. **`flywheel`.** Los _k_ nodos del ciclo, en sentido horario desde las 12:
+   θᵢ = −π/2 + 2πi/_k_; xᵢ = cₓ + Rₓ·cos θᵢ; yᵢ = c_y + R_y·sen θᵢ. Rₓ y R_y se calculan para
+   dejar al menos 36 px entre cajas vecinas, con Rₓ/R_y entre 1,0 y 1,45. Las aristas del anillo
+   son arcos (varios puntos sobre la elipse); la entrada y la salida externas, horizontales.
+3. **`hub`.** El hub en el centro. Las ramas se reparten en un ala oeste y un ala este de altura
+   parecida: entradas al oeste y salidas al este cuando hay de las dos; mitad y mitad cuando
+   todas van en el mismo sentido (como las 6 aperturas del caso 9 de `mermaid-autofit.md`).
+4. **`bento`.** Primero el layout interno de cada subgrafo (con su `direction` o la global) y
+   luego la retícula de subgrafos: los apilados en una columna igualan su ancho exterior al
+   mayor; los que están en una misma fila igualan su alto. Cada subgrafo reserva arriba el
+   alto de su título más `SUBGRAPH_TITLE_MARGIN`, para la banda de `addClusterHeads()`.
+5. **`layered`.** `elkjs` en Node sobre el grafo sin los `sidecar`, con
+   `elk.portConstraints: FIXED_SIDE`. En `TB`, el flujo principal entra por el norte y sale por
+   el sur; las ramas `negative` salen por el este o el oeste; las aristas `feedback` salen por el
+   este y vuelven por un canal lateral. En `LR`, lo mismo girado. Después se colocan los
+   `sidecar` en un zócalo inferior (flujo `LR`) o un carril derecho (flujo `TB`), alineados con
+   el baricentro de los nodos que los usan, y sus aristas `infra` llegan agrupadas.
 
-$$
-U(c) = 100 \cdot S(c) - 12 \cdot \left| \ln\left(\frac{W_c / H_c}{R_{\text{objetivo}}}\right) \right| - 4 \cdot \text{Cruces}(c) - 6 \cdot \text{Desbalance}(c)
-$$
+### 5.2 Rutas (`routing.ts`) y pulido (`polish.ts`)
 
-con la restricción dura $S(c) \ge S(\text{base}) - 0.05$, garantizando que ningún diagrama se imprima con letra menos legible que su versión original.
+- **Rutas.** Cada arista es una lista de puntos que Mermaid recorta contra el borde de cada
+  forma y dibuja con su flecha. Rutas ortogonales con esquinas suavizadas: interpolación
+  `rounded` de Mermaid (`flowchart.curve`). Los arcos del ciclo, con varios puntos y una
+  interpolación suave. Si Mermaid permite la interpolación por arista (`edge.curve`), cada motor
+  elige la suya; si no, una para todo el diagrama (se confirma en la prueba de concepto, paso 7.1 del plan).
+- **Etiquetas de arista.** `positionEdgeLabel` las pone en el punto medio del recorrido; el
+  router elige un tramo recto libre y, si la etiqueta choca con un nodo, desplaza el tramo.
+- **Pulido.** Centros alineados a múltiplos de 8 px y centrado del conjunto.
+- **Fuera de esta fase:** puentes en los cruces inevitables (_line hops_) e igualar el tamaño
+  de nodos hermanos. Lo primero se puede hacer después como retoque del SVG, igual que
+  `finishDiagram`; lo segundo depende de que Mermaid respete un tamaño dado, a verificar.
 
-### 4.6 Contrato exacto de emisión SVG (`emit-svg.ts`)
+### 5.3 Elección del candidato (`score.ts`)
 
-Para integrarse sin fisuras con `theme.css`, `FIGURE_FIT` (`src/render/browser.ts`), `measureSvg()` (`src/render/mermaid-fit.ts`) y `finishDiagram()` (`src/render/mermaid-style.ts`), el SVG emitido **debe** cumplir:
+Con autofit, para cada ancho de ajuste candidato (inicialmente el de Mermaid, 200 y 300 px; se
+calibra con `bench:mermaid`) y, si `flip` es `auto`, para el eje transpuesto en los arquetipos
+con eje, se calcula el plan y su puntuación **en Node**, a partir de las dimensiones del plan:
 
-1. **Elemento raíz `<svg>`:**
-   ```html
-   <svg
-     id="mermaid-N"
-     xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 W H"
-     width="100%"
-     style="max-width: Wpx;"
-     role="graphics-document document"
-     aria-roledescription="flowchart-v2"
-   ></svg>
-   ```
-   _(Sin atributo fijo `height="..."`, para que `height: auto` y `max-height: calc(...)` en `@media print` mantengan la proporción exacta cuando `FIGURE_FIT` reserva `--caption-room`)._
-2. **Estructura de `subgraph` compatible con `addClusterHeads()` (`mermaid-style.ts` línea 306):**
-   Emitir exactamente la secuencia `<g class="cluster" id="..."><rect x="..." y="..." width="..." height="..." rx="5" ry="5" style="stroke: ...; stroke-width: 1px" data-mdr-cluster-fill="rgb(...)"></rect><g class="cluster-label" transform="translate(tx, ty)"><foreignObject width="lw" height="lh"><div>...</div></foreignObject></g></g>`.
-3. **Estructura de nodos compatible con `addFillGradients()` y `roundNodePolygons()`:**
-   Emitir `data-mdr-fill="rgb(...)"` en cada figura de nodo (`.label-container`, `circle`, `ellipse`, `.outer-path path`), reutilizar `roundedPolygonPath()` para diamantes, hexágonos, paralelogramos, trapecios y banderas, e invocar al final `finishDiagram(svg)` para inyectar los `<linearGradient>` con `stop-opacity="0.72"` y las bandas `path.cluster-head`.
+U(c) = 100·S(c) − 12·|ln((W_c/H_c)/R)| − 4·Cruces(c) − 6·Desbalance(c)
 
----
+- _S(c)_ es la escala impresa, igual que en `mermaid-fit.ts`: el mínimo entre 1, el ancho de la
+  columna dividido por _W_c_ y el alto disponible dividido por _H_c_.
+- _R_ es la proporción del espacio disponible (ancho de columna / alto de página).
 
-## 5. Especificación del Corte 2: Fase 3 (`--mermaid-layout ai`)
+Solo el candidato de mayor _U_ se dibuja. Después se mide su SVG real con `candidate()` de
+`mermaid-fit.ts` y se compara con el resultado de `classic` (el piso). El candidato `smart` se
+usa solo si su escala impresa es al menos la de `classic` menos `SCALE_TOLERANCE` (0,05). Si no,
+se queda el de `classic`, con su motivo en `--verbose`.
 
-El Corte 2 incorpora sobre la tubería ya probada del Corte 1 un planificador semántico ligero cacheado por contenido, pensado para grafos complejos donde el rol conceptual de cada bloque mejora la composición más allá de la topología pura.
+## 6. Contrato con el resto del pipeline
 
-### 5.1 Flujo de ejecución y compuerta de red (`ai-planner.ts`)
+El SVG de `smart` lo produce `mermaid.render()`, así que ya cumple lo que esperan `theme.css`,
+`FIGURE_FIT` (`src/render/browser.ts`), `measureSvg()` (`src/render/mermaid-fit.ts`) y
+`finishDiagram()` (`src/render/mermaid-style.ts`): raíz `<svg>` con `viewBox`, `width="100%"`
+y `max-width`; nodos con `.label-container`; subgrafos `g.cluster` con su `rect` y su
+`.cluster-label`. La prueba de concepto y las pruebas de integración lo verifican; no hace
+falta reproducirlo a mano.
 
-```mermaid
-flowchart LR
-    G["SemanticGraph (Corte 1)"] --> H["Clave SHA-256 normalizada"]
-    H --> C{"¿Existe en caché local?"}
-    C -->|"Sí"| V["Saneamiento contra AST"]
-    C -->|"No"| P{"¿allowAiNetwork y hay API Key?"}
-    P -->|"Sí"| LLM["fetch Flash-Lite (timeout 4s)"]
-    LLM -->|"JSON válido"| S["Escritura atómica en caché + Saneamiento"]
-    LLM -->|"Error / Timeout"| FB["Warning + Fallback a smart"]
-    P -->|"No"| FB
-    V --> E["Motores Geométricos Corte 1"]
-    S --> E
-    FB --> E
-```
+## 7. Pruebas y criterios de aceptación
 
-1. **Clave de caché inmune a formato:**
-   `key = sha256(JSON.stringify({ v: 1, model, nodes: id+label+shape, edges: from+to+label, clusters: id+title }))`.
-2. **Privacidad:** El cuerpo de la petición HTTP incluye exclusivamente ese resumen estructural del grafo y la razón de aspecto disponible (`widthPx / pageHeightPx`), nunca el resto del documento `.md`.
-3. **Timeout y resiliencia:** `AbortSignal.timeout(4000)`. Ante cualquier fallo de red, cuota, HTTP $\neq 200$ o JSON inválido, registra un `Diagnostic` con `severity: "warning"` (no aborta la conversión ni devuelve código `2`) y delega de inmediato al analizador `smart` del Corte 1.
+### 7.1 Pruebas
 
-### 5.2 Esquema JSON (`AiLayoutPlan`) y saneamiento frente al AST
+| Archivo de prueba                                                    | Qué verifica                                                                                                                                                                                                                                                                                | Navegador |
+| :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------: |
+| `tests/options.test.ts`, `tests/cli.test.ts`, `tests/doctor.test.ts` | `--mermaid-layout <classic\|smart>`: validación, prioridad de capas, rechazo de valores desconocidos con código 1, sugerencia ante errores de tipeo, línea en `doctor`.                                                                                                                     |    No     |
+| `tests/mermaid-analyze.test.ts` _(nuevo)_                            | Ciclos, espina dorsal, `sidecar` (incluida la exclusión de vértices de articulación), polaridad, los cinco arquetipos y las pistas `%% @…`.                                                                                                                                                 |    No     |
+| `tests/mermaid-engines.test.ts` _(nuevo)_                            | Sin solapes de cajas ni de etiquetas en los cinco motores; anchos iguales en `bento`; alas equilibradas en `hub`; retícula de 8 px.                                                                                                                                                         |    No     |
+| `tests/mermaid-layout-contract.test.ts` _(nuevo)_                    | Contrato con Mermaid: `registerLayoutLoaders` existe; `mdr-measure` devuelve tamaños para todas las formas del corpus; `mdr-place` dibuja nodos, subgrafos, aristas y marcadores donde dice el plan. Falla si una versión nueva de Mermaid lo rompe.                                        |    Sí     |
+| `tests/mermaid-smart.test.ts` _(nuevo)_                              | Conversión a HTML y PDF con `--mermaid-layout smart` en `antigravity`, `antigravity-dark`, `academic_basic` y `tech_magazine`: texto extraíble, sin imágenes, degradados y `cluster-head` presentes, vuelta a `classic` para `sequenceDiagram`, `pie`, `stateDiagram` y los casos del §4.2. |    Sí     |
 
-```ts
-export interface AiLayoutPlan {
-  archetype: "serpentine" | "flywheel" | "hub" | "bento" | "layered";
-  preferredAxis?: "TB" | "LR";
-  spine?: string[];
-  roles?: Record<string, "entry" | "spine" | "decision" | "hub" | "sidecar" | "error" | "sink">;
-  wings?: Record<string, "west" | "east">;
-  edgeKinds?: Record<string, "primary" | "positive" | "negative" | "feedback" | "infra">;
-}
-```
+### 7.2 Criterios de aceptación
 
-Reglas de saneamiento estricto antes de pasar a los motores del Corte 1:
+1. Sin `--mermaid-layout`, `npm run check` pasa sin tocar ninguna aserción existente, con la
+   cobertura que exige `vitest.config.ts` (líneas, funciones y sentencias ≥ 80 %; ramas ≥ 70 %).
+2. Con `--mermaid-layout smart`, sobre `tests/fixtures/mermaid-autofit.md` y el nuevo
+   `tests/fixtures/mermaid-smart.md`:
+   - ningún diagrama se imprime con menor escala que en `classic` (menos la tolerancia);
+   - las cadenas lineales de 6 o más pasos se pliegan en serpentina y ocupan menos alto
+     impreso que en `classic` (el objetivo inicial, a confirmar en la prueba de concepto, es
+     un 35 % menos);
+   - los subgrafos apilados en `bento` tienen exactamente el mismo ancho en el SVG;
+   - los nodos `sidecar` (`DB`, `LOG`) quedan en su zócalo sin atravesar nodos del flujo
+     principal.
+3. Un documento con 50 diagramas en `smart` tarda como mucho el doble que en `classic`.
+4. `npm run build:exe` empaqueta `mdrender(.exe)` con `elkjs` y convierte un `.md` con
+   `--mermaid-layout smart` fuera del repositorio, en Windows y en Linux (CI).
 
-- Se descartan IDs inexistentes en `SemanticGraph`.
-- Si `archetype === "flywheel"` pero el grafo carece de ciclos, o `archetype === "hub"` sin ningún nodo de grado $\ge 3$, se conserva el arquetipo calculado por `analyze.ts`.
-- Si `roles[id] === "sidecar"` desconecta todas las rutas entre fuentes y sumideros principales, esa asignación se ignora.
-- El LLM jamás emite coordenadas en píxeles: toda posición, tamaño de caja y ruta vectorial la calculan los motores deterministas del Corte 1.
+## 8. Plan de ejecución
 
-### 5.3 Caché persistente (`cache.ts`)
+Los pasos, con su tamaño y dependencias, están en la **Fase 7** de
+[`PLAN_MAESTRO.md`](PLAN_MAESTRO.md). Resumen:
 
-- **Ubicación:** `<cacheDir>/mermaid-layout/v1/<primeros-2-hex>/<sha256>.json`, reutilizando `cacheDir(env, platform)` de `src/browser/cache.ts` (`%LOCALAPPDATA%\mdrender` en Windows, `~/.cache/mdrender` en Linux).
-- **Escritura atómica:** Archivo temporal en la misma subcarpeta + `renameSync`, seguro frente a procesos concurrentes, lotes, `--watch` y `mdrender preview`.
+| Paso | Contenido                                                                                     |
+| :--: | :-------------------------------------------------------------------------------------------- |
+| 7.1  | Prueba de concepto de los layouts de página: contrato con Mermaid y puntos abiertos del §5.2. |
+| 7.2  | Opción `--mermaid-layout`, versión fija de Mermaid y `elkjs`.                                 |
+| 7.3  | Medición, IR, pistas y dibujo (`mdr-measure`, `mdr-place`), con vuelta a `classic`.           |
+| 7.4  | Analizador.                                                                                   |
+| 7.5  | Motores `serpentine`, `flywheel`, `hub`, `bento` y pulido.                                    |
+| 7.6  | Motor `layered` con `elkjs` y rutas.                                                          |
+| 7.7  | Puntuación, elección con piso `classic`, `--verbose` y `doctor`.                              |
+| 7.8  | Corpus, pruebas de integración, banco de pruebas, documentación, ejecutable y versión.        |
+| 7.9  | Evaluación de cierre y decisiones sobre el trabajo aplazado (§10).                            |
 
----
+## 9. Riesgos y mitigaciones
 
-## 6. Pruebas y criterios de aceptación por corte
+| Riesgo                                                                                      | Impacto | Mitigación                                                                                                                                                      |
+| :------------------------------------------------------------------------------------------ | :-----: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Una versión nueva de Mermaid cambia las funciones que reciben los layouts o el `LayoutData` |  Medio  | Versión exacta en `package.json`, pruebas de contrato (`mermaid-layout-contract.test.ts`, §7.1) y vuelta automática a `classic` ante cualquier dato inesperado. |
+| Mermaid dibuja una arista o etiqueta distinta de lo que el plan supone (recortes, curvas)   |  Medio  | La prueba de concepto (paso 7.1 del plan) fija qué controla el plan y qué no; las pruebas de integración miden el SVG real.                                     |
+| Un arquetipo rinde peor que `classic` en un grafo atípico                                   |  Bajo   | Piso `classic` (§5.3): el diagrama se dibuja como hoy.                                                                                                          |
+| El tiempo de conversión crece (medición por ancho de ajuste + `classic` como piso)          |  Bajo   | La puntuación se hace en Node sin dibujar; solo se dibuja el ganador. Límite de tiempo en el criterio 3 del §7.2.                                               |
+| Etiquetas con código o palabras muy largas                                                  |  Bajo   | Las mide Mermaid en la misma página y con las mismas fuentes que el PDF; el plan usa esos tamaños tal cual.                                                     |
 
-### 6.1 Pruebas del Corte 1 (Fase 2: `smart`)
+## 10. Trabajo aplazado
 
-| Archivo de prueba                                                    | Qué verifica                                                                                                                                                                                                                                                                                                                           | Navegador |
-| :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------: |
-| `tests/options.test.ts`, `tests/cli.test.ts`, `tests/doctor.test.ts` | Validación de `--mermaid-layout <classic\|smart>`, prioridad de capas, rechazo de valores desconocidos con `ExitCode.Usage`, sugerencia de typos y reporte en `doctor`.                                                                                                                                                                |    No     |
-| `tests/mermaid-analyze.test.ts` _(nuevo)_                            | Ciclos (Tarjan), espina dorsal, detección de `sidecar` (incluyendo exclusión de vértices de articulación), polaridad `Sí`/`No` y selección de los 5 arquetipos + directivas `%% @archetype:`.                                                                                                                                          |    No     |
-| `tests/mermaid-engines.test.ts` _(nuevo)_                            | Cero solapamiento de cajas y etiquetas en `serpentine`, `flywheel`, `hub`, `bento` y `elk-composed`; igualación exacta de anchos en `bento`; simetría bilateral en `hub`; _snap_ a `8px`.                                                                                                                                              |    No     |
-| `tests/mermaid-smart.test.ts` _(nuevo)_                              | Conversión real a HTML y PDF con `--mermaid-layout smart` en `antigravity`, `antigravity-dark`, `academic_basic` y `tech_magazine`: extracción de texto con `pdfjs-dist`, `/Subtype /Image` = `0`, degradados y `cluster-head` presentes, respeto de `--caption-room` y delegación intacta a `classic` para `sequenceDiagram` y `pie`. |    Sí     |
+Se registra para decidirlo al cerrar la Fase 7 (paso 7.9):
 
-**Criterios de aceptación para cerrar y publicar el Corte 1:**
+1. **Modo `ai` (antigua Fase 3).** La especificación recibida proponía un planificador con un
+   modelo de texto ligero que devolviera roles y arquetipo en JSON, cacheado por SHA-256 en la
+   carpeta de caché de mdrender, con vuelta a `smart` ante cualquier fallo. **Al terminar el
+   modo `smart` se analizará si basta con la interpretación determinista o si conviene alguna
+   opción con IA.** Preguntas abiertas para ese momento:
+   - proveedor y modelo (la propuesta usaba Gemini con un modelo cuya vigencia hay que
+     comprobar, y una `MDRENDER_AI_BASE_URL` «compatible» sin definir con qué API);
+   - autorización de red: la propuesta también la habilitaba con `--allow-remote`, que hoy solo
+     permite al navegador descargar imágenes y estilos remotos. Enviar las etiquetas de los
+     diagramas (contenido del documento) a un tercero es otro permiso y debería pedirse aparte;
+   - privacidad: qué se envía y cómo se informa al usuario.
+2. **Diagramas de estados** (`stateDiagram-v2`), con su propio corpus.
+3. **Aristas a subgrafos anidados** y anidamiento profundo (§4.2).
+4. **Puentes en los cruces** e **igualar el tamaño de nodos hermanos** (§5.2).
+5. **Marco de los temas con tarjeta.** En `tech_magazine` el diagrama se dibuja al ancho de la
+   columna, pero se imprime dentro de una tarjeta con relleno (`padding: 1.4em`), así que se
+   reduce un poco. Pasa ya en `classic`. Corregirlo cambia la salida de `classic`, así que se
+   hará aparte, para los dos modos a la vez.
+6. **Enfoque 1 de la ideación** (Skill que genera Mermaid ya compuesto): está fuera de mdrender.
+   Si se hace, que deje sus pistas en comentarios `%% @…` y no en `config:`.
 
-1. Sin `--mermaid-layout` (modo `classic`), `npm run check` pasa íntegro sin alterar ninguna aserción existente y con cobertura global $\ge 80\%$.
-2. Con `--mermaid-layout smart`, sobre `tests/fixtures/mermaid-autofit.md` + nuevo fixture `tests/fixtures/mermaid-smart.md`:
-   - Cadenas lineales de $\ge 6$ pasos se pliegan en serpentina con escala $\ge 0.90$ y reducción de altura $\ge 35\%$ frente a una torre `TB`.
-   - Subgrafos apilados en `bento` tienen exactamente el mismo `width` en el SVG generado.
-   - Nodos `sidecar` (`DB`, `LOG`) se ubican en su zócalo sin atravesar nodos del flujo primario.
-   - Ningún diagrama pierde escala legible frente a su versión escrita ni introduce imágenes bitmap en el PDF.
-3. `npm run build:exe` empaqueta `mdrender(.exe)` con `elkjs` incluido, actualiza `THIRD-PARTY-NOTICES.txt` y convierte correctamente un `.md` con `--mermaid-layout smart` fuera del repositorio.
+## 11. Registro de revisión
 
-### 6.2 Pruebas del Corte 2 (Fase 3: `ai`)
+Cambios respecto de la especificación recibida (commit `de16d9e`):
 
-| Archivo de prueba                                                    | Qué verifica                                                                                                                                                                                                                                                                                                                     | Navegador |
-| :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------: |
-| `tests/options.test.ts`, `tests/cli.test.ts`, `tests/doctor.test.ts` | Ampliación de `MERMAID_LAYOUTS` con `ai`, opción `--mermaid-ai-model`, prohibición de API keys en config/front matter y check `Mermaid AI` en `doctor`.                                                                                                                                                                          |    No     |
-| `tests/mermaid-ai.test.ts` _(nuevo)_                                 | Mock de `fetch`: escritura y lectura atómica en caché `SHA-256`, verificación estricta de `allowAiNetwork` (front matter `mermaid-layout: ai` sin flag CLI **no** invoca `fetch`, usa caché si existe y emite `warning` + `smart` si no existe), saneamiento de IDs alucinados y _fallback_ a `smart` ante timeout o error HTTP. |    No     |
-
-**Criterios de aceptación para cerrar y publicar el Corte 2:**
-
-1. Todas las pruebas del Corte 1 y `mermaid-ai.test.ts` pasan en `npm run check` con cobertura $\ge 80\%$.
-2. Segunda conversión consecutiva de un mismo diagrama con `--mermaid-layout ai` realiza `0` peticiones HTTP y reporta `Mermaid ai layout (cached)` en `--verbose`.
-3. Un archivo `.md` con `mermaid-layout: ai` en su _front matter_ ejecutado sin `--mermaid-layout ai` ni `--allow-remote` en CLI realiza `0` peticiones de red (auditado por mock de `fetch`).
-4. `npm run build:exe` compila y supera las pruebas del ejecutable independiente.
-
----
-
-## 7. Plan de ejecución en dos cortes
-
-### Corte 1 — Entrega de Fase 2 (`--mermaid-layout <classic|smart>`)
-
-|  Paso   | Contenido                                                                                                                                                                                                                                  | Tamaño | Depende de |
-| :-----: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :--------: |
-| **1.1** | Dependencia directa `elkjs` en `package.json`; opción `--mermaid-layout <classic\|smart>` en `options.ts`, `cli.ts`, `convert.ts` y `doctor.ts`; pruebas de opciones y CLI.                                                                |   S    |     —      |
-| **1.2** | `types.ts`, `directives.ts`, `probe.ts` (extracción desde `mermaidAPI` en Chromium + envoltura tipográfica balanceada) y `emit-svg.ts` integrado con `mermaid-style.ts` y `FIGURE_FIT`.                                                    |   M    |    1.1     |
-| **1.3** | `analyze.ts` (Tarjan SCC, espina dorsal, detector de `sidecar`, polaridad de decisiones y selector de arquetipo) + `tests/mermaid-analyze.test.ts`.                                                                                        |   M    |    1.2     |
-| **1.4** | Motores no jerárquicos (`serpentine.ts`, `flywheel.ts`, `hub.ts`, `bento.ts`) + `polish.ts` (_grid snap_ e igualación de hermanos) + pruebas geométricas.                                                                                  |   L    |    1.3     |
-| **1.5** | Motor `elk-composed.ts` (puertos cardinales fijos + zócalo `sidecar`), `routing.ts` (curvas `Q`, _line hops_, etiquetas anticolisión) y `score.ts` (búsqueda multi-candidato).                                                             |   L    |  1.3, 1.4  |
-| **1.6** | Corpus `tests/fixtures/mermaid-smart.md`, integración `tests/mermaid-smart.test.ts`, ampliación de `bench:mermaid`, documentación del Corte 1 (`README.md`, `CHANGELOG.md`) y validación completa (`npm run check` + `npm run build:exe`). |   M    |  1.4, 1.5  |
-
-### Corte 2 — Entrega de Fase 3 (`--mermaid-layout <classic|smart|ai>`)
-
-|  Paso   | Contenido                                                                                                                                                                                | Tamaño | Depende de |
-| :-----: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: | :--------: |
-| **2.1** | Ampliar `--mermaid-layout` con `ai`, añadir `--mermaid-ai-model`, compuerta `allowAiNetwork` en `convert.ts`, check `Mermaid AI` en `doctor.ts` y módulo `cache.ts` (`SHA-256` atómico). |   S    |  Corte 1   |
-| **2.2** | Implementar `ai-planner.ts` (cliente `fetch` con timeout de 4 s, prompt estructurado, validador/reconciliador contra AST y degradación limpia a `smart`) + `tests/mermaid-ai.test.ts`.   |   M    |    2.1     |
-| **2.3** | Documentación del Corte 2 en `README.md`, `docs/ESPECIFICACION_TEMAS.md` y `CHANGELOG.md`; validación integral (`npm run check` + `npm run build:exe`).                                  |   S    |    2.2     |
-
----
-
-## 8. Riesgos y mitigaciones
-
-| Riesgo                                                                                              | Impacto | Mitigación prevista en diseño                                                                                                                                                                                                                         |
-| :-------------------------------------------------------------------------------------------------- | :-----: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cambio futuro en métodos internos de `diag.db` al actualizar `mermaid` a una versión mayor (`v13+`) |  Medio  | Aislar toda lectura de `diag.db` en un único archivo (`probe.ts` < 150 líneas) cubierto por pruebas de contrato; ante cualquier estructura inesperada, devolver `fallback-classic` para que el diagrama se siga dibujando sin romper la conversión.   |
-| Etiquetas con código o palabras larguísimas sin espacios desbordan la caja calculada                |  Medio  | La medición ocurre en el mismo Chromium y con las mismas fuentes incrustadas (`Manrope`/`Inter`/`JetBrains Mono`) que imprimen el PDF, aplicando partición por delimitadores de código y `overflow-wrap: anywhere` de seguridad en `<foreignObject>`. |
-| Desajuste de escala en temas con tarjeta (`tech_magazine`) o epígrafe (`figcaption`)                |  Medio  | Emitir `<svg viewBox="0 0 W H" width="100%" style="max-width: Wpx;">` sin `height` fijo (respetando `FIGURE_FIT` y `@media print`) y descontar `--diagram-frame` al puntuar candidatos.                                                               |
-| Un arquetipo especializado (`serpentine` o `hub`) rinde peor que `classic` en un grafo atípico      |  Bajo   | `score.ts` evalúa también la base `classic` y descarta cualquier candidato cuya escala impresa caiga por debajo del umbral de tolerancia ($S(\text{base}) - 0.05$).                                                                                   |
-| Latencia, falta de red o JSON malformado en `--mermaid-layout ai` (Corte 2)                         |  Bajo   | Caché persistente por `SHA-256` (1 sola llamada en la vida del diagrama), `AbortSignal.timeout(4000)`, validación estricta contra IDs reales del AST y degradación automática con `warning` a `smart`.                                                |
-
----
-
-## 9. Decisiones confirmadas (27 de noviembre de 2026)
-
-1. **Parámetro y valores:** Se adopta `--mermaid-layout <classic|smart|ai>` (junto con `mermaid-layout` / `mermaidLayout` en _front matter_ y `mdrender.config.json`), manteniendo `classic` como valor por defecto para conservar intacto el renderizado actual, `smart` para la Fase 2 determinista offline y `ai` para la Fase 3 híbrida cacheada.
-2. **Frontera de red en Fase 3 (`ai`):** Siguiendo el modelo de seguridad de `--allow-remote` en `MD_reder`, `mermaid-layout: ai` en _front matter_ o `mdrender.config.json` solo consume planes ya existentes en la caché local; las llamadas de red al proveedor de IA requieren autorización explícita en la línea de comandos (`--mermaid-layout ai` o `--allow-remote`) y, en ausencia de red, clave o acierto en caché, degradan con advertencia al motor `smart`.
-3. **Estrategia de entrega en dos cortes:** Se implementará y validará primero el **Corte 1 completo (`--mermaid-layout <classic|smart>`, pasos 1.1 a 1.6)** como entrega autónoma lista para uso y publicación, y a continuación se abordará el **Corte 2 (`ai`, pasos 2.1 a 2.3)** sobre esa base.
+| Tema                     | Original                                                                 | Revisado                                                                               | Motivo                                                                                                           |
+| :----------------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| Dibujo                   | SVG propio (`emit-svg.ts`) que imita la estructura de Mermaid            | Layouts propios registrados en Mermaid (`mdr-measure`, `mdr-place`); dibuja Mermaid    | Decisión del autor. Conserva formas, estilos y aspectos sin reimplementarlos; probado en Chromium con 12.1.0.    |
+| Extracción               | `getDiagramFromText` y lectura de `diag.db`                              | Datos que Mermaid entrega al layout (`LayoutData`), con tamaños ya medidos             | Es la misma estructura que usan los layouts de Mermaid y trae las medidas; `diag.db` cambia más entre versiones. |
+| Medición de texto        | Medición propia y ajuste de líneas balanceado, por forma                 | Tamaños que da `insertNode` por ancho de ajuste                                        | Mermaid ya sabe cuánto ocupa cada forma; repetirlo era duplicar su lógica.                                       |
+| `NodeShape`              | Enumeración propia de 11 formas                                          | Nombre de forma de Mermaid + funciones auxiliares                                      | Mermaid 12 tiene más de 40 formas y alias (`cylinder`/`cyl`).                                                    |
+| Alcance                  | `flowchart` y `stateDiagram`                                             | Solo `flowchart`/`graph`                                                               | Decisión del autor; no hay corpus de estados.                                                                    |
+| Modo `ai`                | Corte 2 con `--mermaid-ai-model`, caché, credenciales y `--allow-remote` | Aplazado (§10)                                                                         | Decisión del autor. Además, `--allow-remote` no debería autorizar el envío de contenido a un tercero.            |
+| `elkjs`                  | Dependencia directa                                                      | Igual, en Node para `layered`                                                          | La copia de ELK dentro de `mermaid.min.js` no está expuesta.                                                     |
+| Versión de Mermaid       | Sin mención                                                              | Versión exacta y pruebas de contrato                                                   | `^12.1.0` acepta versiones menores que podrían cambiar las funciones de dibujo.                                  |
+| Elección de candidatos   | Se dibuja cada candidato                                                 | Puntuación en Node; solo se dibuja el ganador; piso `classic` medido sobre el SVG real | Más rápido y nunca peor que hoy.                                                                                 |
+| Marco de `tech_magazine` | Descontarlo solo en `smart`                                              | Pendiente aparte, para ambos modos (§10)                                               | Descontarlo solo en `smart` haría que los dos modos midan distinto; corregir `classic` rompe el invariante 1.    |
+| Fórmulas                 | LaTeX (`$…$`) en el texto                                                | Texto plano                                                                            | Se lee en GitHub y en cualquier visor; mdrender las dibujaría, pero no hacen falta.                              |
+| Referencias a líneas     | «`mermaid-style.ts` línea 306»                                           | Nombres de funciones                                                                   | Los números de línea cambian con cualquier edición.                                                              |
+| Criterio de tiempo       | —                                                                        | `smart` ≤ 2 × `classic` en 50 diagramas                                                | La Fase 6 del plan maestro fija un objetivo de rendimiento; el modo nuevo no debe romperlo sin medirlo.          |

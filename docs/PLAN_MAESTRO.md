@@ -288,6 +288,76 @@ Windows y Linux.
 
 **Duración estimada total**: ~5–6 semanas de trabajo de una persona.
 
+### Fase 7 — Diagramación compositiva de Mermaid (`--mermaid-layout smart`) (3–4 semanas)
+
+Especificación: [`ESPECIFICACION_MERMAID_LAYOUT.md`](ESPECIFICACION_MERMAID_LAYOUT.md) (origen:
+[`IDEACION_DIAGRAMACION_MERMAID.md`](IDEACION_DIAGRAMACION_MERMAID.md)). Un modo opcional que
+reinterpreta la topología de los diagramas de flujo (espina dorsal, ciclos, hubs, subgrafos,
+nodos transversales) y los coloca con motores propios; **Mermaid sigue dibujando**, mediante
+algoritmos de diagramación propios registrados con `mermaid.registerLayoutLoaders`. El modo
+`classic` (el actual) sigue por defecto y no cambia. Solo `flowchart`/`graph`; el modo `ai`
+queda aplazado (paso 7.9).
+
+Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
+
+- [ ] **7.1 Prueba de concepto (S).** Script desechable en `docs/prototipos/mermaid_layout/`
+      que registra `mdr-measure` y `mdr-place` sobre Mermaid 12.1.0 y confirma, con los 17
+      diagramas de flujo de `tests/fixtures/mermaid-autofit.md`:
+  - que `insertNode` da tamaños estables para todas sus formas y que `mdr-place` los dibuja
+    donde dice el plan, con `finishDiagram` intacto (bandas de subgrafo incluidas);
+  - aristas con etiqueta, flechas punteadas y gruesas, marcadores, y aristas entre subgrafos
+    de primer nivel recortadas contra su borde (`clusterDb`, caso 8);
+  - interpolación `rounded` para rutas ortogonales y si se puede elegir por arista
+    (`edge.curve`);
+  - si Mermaid respeta un tamaño de nodo dado (para igualar hermanos más adelante).
+
+  Salida: una nota en la especificación con lo confirmado y lo descartado, y los ajustes a los
+  pasos siguientes. Si el contrato no se sostiene, la fase se replantea aquí, antes de escribir
+  el resto.
+
+- [ ] **7.2 Opción y dependencias (S).** `--mermaid-layout <classic|smart>` en `options.ts`,
+      `cli.ts` (también en `preview`), `convert.ts` y `doctor.ts` (línea en `Settings`); pruebas
+      en `options.test.ts`, `cli.test.ts` y `doctor.test.ts`. `elkjs` como dependencia directa.
+      Versión exacta de `mermaid` en `package.json` (hoy `^12.1.0`). En esta etapa `smart` se
+      comporta igual que `classic`.
+- [ ] **7.3 Medición y dibujo (M).** `mermaid-compose/types.ts`, `directives.ts`,
+      `page-layouts.ts` (`mdr-measure` y `mdr-place` como texto fuente) e `index.ts` con un
+      motor provisional trivial; bifurcación en `render/mermaid.ts` con vuelta a `classic` ante
+      los casos del §4.2 de la especificación o cualquier error;
+      `tests/mermaid-layout-contract.test.ts`.
+- [ ] **7.4 Analizador (M).** `analyze.ts`: Tarjan, aristas de retorno, espina dorsal,
+      `sidecar` (con la exclusión de vértices de articulación), polaridad de decisiones,
+      elección de arquetipo y pistas `%% @…`; `tests/mermaid-analyze.test.ts` con cada
+      arquetipo y los casos del corpus.
+- [ ] **7.5 Motores no jerárquicos (L).** `engines/serpentine.ts`, `flywheel.ts`, `hub.ts`,
+      `bento.ts` y `polish.ts` (retícula de 8 px); `tests/mermaid-engines.test.ts` (sin solapes,
+      anchos iguales en `bento`, alas equilibradas en `hub`).
+- [ ] **7.6 Motor general y rutas (L).** `engines/layered.ts` con `elkjs` en Node (puertos
+      fijos, zócalo o carril para los `sidecar`) y `routing.ts` (rutas ortogonales, arcos,
+      retornos por canal lateral, etiquetas de arista sin choques).
+- [ ] **7.7 Elección del candidato (M).** `score.ts` (puntuación en Node), búsqueda por ancho de
+      ajuste y eje según `--mermaid-autofit` y `--mermaid-flip`, piso `classic` medido sobre el
+      SVG real y trazas de `--verbose` (`Mermaid smart layout: …`, `kept classic (…)`).
+- [ ] **7.8 Integración y entrega (M).** `tests/fixtures/mermaid-smart.md` (serpentina, ciclo,
+      hub, bento, transversales, casos que vuelven a `classic`);
+      `tests/mermaid-smart.test.ts` en `antigravity`, `antigravity-dark`, `academic_basic` y
+      `tech_magazine`; `bench:mermaid` con comparación `classic`/`smart` y tiempos (criterio:
+      50 diagramas en `smart` ≤ 2 × `classic`); README (opción y ejemplo), CHANGELOG, ejemplo en
+      `examples/`; `npm run check` y `npm run build:exe` en Windows y Linux (CI); versión menor
+      nueva.
+- [ ] **7.9 Evaluación de cierre (S).** Comparar `classic` y `smart` sobre el corpus (galería de
+      PDF) y decidir, dejando la decisión escrita en la especificación:
+  - si basta con la interpretación determinista o si se aborda alguna opción con IA (el antiguo
+    modo `ai`: proveedor, modelo, autorización de red separada de `--allow-remote`,
+    privacidad);
+  - si `smart` pasa a ser el modo por defecto de algún tema;
+  - el orden del resto del trabajo aplazado (§10 de la especificación): diagramas de estados,
+    aristas a subgrafos anidados, puentes en cruces, igualar nodos hermanos, y el marco de
+    `tech_magazine` en ambos modos.
+
+**Criterio de salida**: los criterios de aceptación del §7.2 de la especificación, y la
+decisión del paso 7.9 registrada.
+
 ---
 
 ## 6. Estrategia de pruebas
@@ -304,15 +374,16 @@ Windows y Linux.
 
 ## 7. Riesgos y mitigaciones
 
-| Riesgo                                        | Impacto | Mitigación                                                     |
-| --------------------------------------------- | ------- | -------------------------------------------------------------- |
-| No hay navegador Chromium en la máquina       | Alto    | Detección de Edge (siempre en Windows) + `mdrender setup`      |
-| Ejecutable demasiado grande                   | Medio   | No empaquetar Chromium; usar navegador del sistema             |
-| Diagramas Mermaid cortados entre páginas      | Medio   | `break-inside: avoid`, escalado de SVG anchos                  |
-| Ecuaciones con macros no soportadas por KaTeX | Bajo    | Mensaje claro; opción `--katex-macros`                         |
-| Diferencias de fuentes entre SO               | Medio   | Fuentes empaquetadas, nunca depender de fuentes del sistema    |
-| Cambios de API en Mermaid                     | Bajo    | Versión fijada + pruebas de regresión visual                   |
-| Markdown malicioso (HTML/JS embebido)         | Medio   | Sanitizar HTML, bloquear red y scripts del usuario por defecto |
+| Riesgo                                           | Impacto | Mitigación                                                     |
+| ------------------------------------------------ | ------- | -------------------------------------------------------------- |
+| No hay navegador Chromium en la máquina          | Alto    | Detección de Edge (siempre en Windows) + `mdrender setup`      |
+| Ejecutable demasiado grande                      | Medio   | No empaquetar Chromium; usar navegador del sistema             |
+| Diagramas Mermaid cortados entre páginas         | Medio   | `break-inside: avoid`, escalado de SVG anchos                  |
+| Ecuaciones con macros no soportadas por KaTeX    | Bajo    | Mensaje claro; opción `--katex-macros`                         |
+| Diferencias de fuentes entre SO                  | Medio   | Fuentes empaquetadas, nunca depender de fuentes del sistema    |
+| Cambios de API en Mermaid                        | Bajo    | Versión fijada + pruebas de regresión visual                   |
+| Cambios en la API de layouts de Mermaid (Fase 7) | Medio   | Versión exacta, pruebas de contrato y vuelta a `classic`       |
+| Markdown malicioso (HTML/JS embebido)            | Medio   | Sanitizar HTML, bloquear red y scripts del usuario por defecto |
 
 ---
 
