@@ -17,6 +17,8 @@ date: 2026-11-27
 >    modo `smart` se evaluará si basta con la interpretación determinista o si conviene alguna
 >    opción con IA (§10).
 >
+> **Prueba de concepto (paso 7.1): el contrato se sostiene.** Resultados y ajustes en el §12.
+>
 > La ideación que dio origen a esta especificación está en
 > [`IDEACION_DIAGRAMACION_MERMAID.md`](IDEACION_DIAGRAMACION_MERMAID.md). Los pasos de
 > implementación están en la Fase 7 de [`PLAN_MAESTRO.md`](PLAN_MAESTRO.md).
@@ -149,7 +151,8 @@ flowchart LR
    esas posiciones. El SVG resultante sigue el camino de hoy: `FILL_PROBE` y `finishDiagram`.
 
 El código de los dos layouts de página se pasa como texto fuente, igual que hoy `FILL_PROBE`,
-sin paso de compilación. Debe ser corto: medir y dibujar, nada más.
+sin paso de compilación. Debe ser corto: medir y dibujar, nada más. La prueba de concepto fijó
+las reglas que el plan debe cumplir para que Mermaid lo dibuje tal cual (§12.2).
 
 ### 3.2 Bifurcación en `renderMermaid`
 
@@ -262,9 +265,9 @@ La medición devuelve `fallback` (y el diagrama se dibuja con `classic`) si encu
 - aristas que salen de un subgrafo anidado o llegan a él. Las aristas entre subgrafos de primer
   nivel, o entre un nodo y uno de ellos (como `Entrada --> Salida` en el caso 8 de
   `mermaid-autofit.md`), sí se admiten: el motor `bento` las une por el borde de los
-  subgrafos, y `insertEdge` las recorta contra ese borde con el registro de subgrafos que
-  recibe (`clusterDb`), como hace el layout `dagre` de Mermaid. Se confirma en la prueba de
-  concepto (paso 7.1 del plan);
+  subgrafos, y `insertEdge` las recorta contra ese borde, porque `insertCluster` le da al
+  subgrafo su función de intersección (confirmado en la prueba de concepto, §12; no hace falta
+  `clusterDb`);
 - subgrafos anidados a más de dos niveles;
 - más de 60 nodos (límite inicial, ajustable con `bench:mermaid`);
 - cualquier dato que no tenga la forma esperada (señal de un cambio en Mermaid).
@@ -346,7 +349,9 @@ centros de nodo; los tamaños vienen medidos y no se cambian.
 4. **`bento`.** Primero el layout interno de cada subgrafo (con su `direction` o la global) y
    luego la retícula de subgrafos: los apilados en una columna igualan su ancho exterior al
    mayor; los que están en una misma fila igualan su alto. Cada subgrafo reserva arriba el
-   alto de su título más `SUBGRAPH_TITLE_MARGIN`, para la banda de `addClusterHeads()`.
+   alto de su título más `SUBGRAPH_TITLE_MARGIN`, para la banda de `addClusterHeads()`. Los
+   subgrafos sin aristas entre sí (caso 7 de `mermaid-autofit.md`) se reparten en una
+   retícula según la proporción disponible; ponerlos todos en una fila los encoge (§12).
 5. **`layered`.** `elkjs` en Node sobre el grafo sin los `sidecar`, con
    `elk.portConstraints: FIXED_SIDE`. En `TB`, el flujo principal entra por el norte y sale por
    el sur; las ramas `negative` salen por el este o el oeste; las aristas `feedback` salen por el
@@ -358,15 +363,15 @@ centros de nodo; los tamaños vienen medidos y no se cambian.
 
 - **Rutas.** Cada arista es una lista de puntos que Mermaid recorta contra el borde de cada
   forma y dibuja con su flecha. Rutas ortogonales con esquinas suavizadas: interpolación
-  `rounded` de Mermaid (`flowchart.curve`). Los arcos del ciclo, con varios puntos y una
-  interpolación suave. Si Mermaid permite la interpolación por arista (`edge.curve`), cada motor
-  elige la suya; si no, una para todo el diagrama (se confirma en la prueba de concepto, paso 7.1 del plan).
-- **Etiquetas de arista.** `positionEdgeLabel` las pone en el punto medio del recorrido; el
-  router elige un tramo recto libre y, si la etiqueta choca con un nodo, desplaza el tramo.
+  `rounded` de Mermaid. Los arcos del ciclo, con varios puntos y una interpolación suave. Cada
+  arista lleva su propia interpolación en `edge.curve`, que Mermaid respeta (confirmado, §12).
+- **Etiquetas de arista.** Su posición la da el plan (`edge.x`, `edge.y`): Mermaid no la
+  calcula. El router la pone en un tramo recto libre de la ruta y, si choca con un nodo,
+  desplaza el tramo.
 - **Pulido.** Centros alineados a múltiplos de 8 px y centrado del conjunto.
-- **Fuera de esta fase:** puentes en los cruces inevitables (_line hops_) e igualar el tamaño
-  de nodos hermanos. Lo primero se puede hacer después como retoque del SVG, igual que
-  `finishDiagram`; lo segundo depende de que Mermaid respete un tamaño dado, a verificar.
+- **Fuera de esta fase:** puentes en los cruces inevitables (_line hops_), que se pueden hacer
+  después como retoque del SVG, igual que `finishDiagram`. **Igualar el tamaño de nodos
+  hermanos queda descartado** por ahora: Mermaid no respeta un tamaño dado (§12.3).
 
 ### 5.3 Elección del candidato (`score.ts`)
 
@@ -467,7 +472,8 @@ Se registra para decidirlo al cerrar la Fase 7 (paso 7.9):
    - privacidad: qué se envía y cómo se informa al usuario.
 2. **Diagramas de estados** (`stateDiagram-v2`), con su propio corpus.
 3. **Aristas a subgrafos anidados** y anidamiento profundo (§4.2).
-4. **Puentes en los cruces** e **igualar el tamaño de nodos hermanos** (§5.2).
+4. **Puentes en los cruces** (§5.2). Igualar el tamaño de nodos hermanos, solo si aparece
+   otra vía: con `insertNode` no es fiable (§12.3).
 5. **Marco de los temas con tarjeta.** En `tech_magazine` el diagrama se dibuja al ancho de la
    columna, pero se imprime dentro de una tarjeta con relleno (`padding: 1.4em`), así que se
    reduce un poco. Pasa ya en `classic`. Corregirlo cambia la salida de `classic`, así que se
@@ -494,3 +500,88 @@ Cambios respecto de la especificación recibida (commit `de16d9e`):
 | Fórmulas                 | LaTeX (`$…$`) en el texto                                                | Texto plano                                                                            | Se lee en GitHub y en cualquier visor; mdrender las dibujaría, pero no hacen falta.                              |
 | Referencias a líneas     | «`mermaid-style.ts` línea 306»                                           | Nombres de funciones                                                                   | Los números de línea cambian con cualquier edición.                                                              |
 | Criterio de tiempo       | —                                                                        | `smart` ≤ 2 × `classic` en 50 diagramas                                                | La Fase 6 del plan maestro fija un objetivo de rendimiento; el modo nuevo no debe romperlo sin medirlo.          |
+
+## 12. Prueba de concepto (paso 7.1)
+
+Script: [`docs/prototipos/mermaid_layout/poc.mts`](prototipos/mermaid_layout/poc.mts).
+Resultados por caso: [`resultados.md`](prototipos/mermaid_layout/resultados.md). Galería
+`classic` frente a `smart`, tal como se imprimiría:
+[`galeria.png`](prototipos/mermaid_layout/galeria.png).
+
+Registra `mdr-measure` y `mdr-place` sobre Mermaid 12.1.0 con un motor desechable (serpentina
+para cadenas, capas para el resto). Lo compara con el `renderMermaid` real, autofit incluido, en
+los 17 diagramas de flujo de `mermaid-autofit.md` y en tres casos sintéticos: formas y estilos
+del autor; aristas de todo tipo y subgrafos; aspecto `handDrawn`.
+
+**Veredicto: el contrato se sostiene.** Se sigue con el paso 7.2.
+
+### 12.1 Confirmado
+
+- **Medición estable.** Dos pasadas de `mdr-measure` dan exactamente el mismo grafo medido en
+  los 20 casos.
+- **Mermaid dibuja lo que dice el plan.** Cada nodo queda en la posición del plan con el tamaño
+  medido, y cada subgrafo con el tamaño del plan. Probado con rectángulos, rombos, estadio,
+  paralelogramo, hexágono, subrutina, bandera, círculo, cilindro y `@{ shape: doc }`.
+- **Aristas.** Todas se dibujan, también las invisibles. Se recortan contra el borde real de
+  cada forma (también las inclinadas y redondas) y contra el borde de los subgrafos. Las que
+  tienen flecha la llevan; las `---` no. Mermaid aplica sus estilos: punteada, gruesa,
+  `linkStyle`. Respeta la interpolación por arista (`edge.curve = "rounded"`).
+- **Etiquetas de arista**, en la posición del plan (7 de 7).
+- **Acabado intacto.** `finishDiagram` aplica degradados, redondea los polígonos y pone la banda
+  a todos los subgrafos (7 de 7). También se ven `classDef` y `style`.
+- **PDF vectorial.** La galería impresa a PDF no tiene ninguna imagen rasterizada.
+- **La serpentina cumple el objetivo.** Las cadenas de 6 a 8 pasos se imprimen a la misma
+  escala (1,00) con un 47–53 % menos de alto: caso 1, 656 → 349 px; 4, 486 → 247; 5, 486 → 229;
+  6, 571 → 261. El objetivo inicial era un 35 %.
+- **Tiempo.** Medir dos veces y dibujar cuesta 50–230 ms por diagrama, frente a 1,0–2,1 s de
+  `classic` con autofit. No es una comparación exacta: `renderMermaid` abre su página y carga
+  Mermaid en cada llamada. Pero el costo de `smart` es chico frente al del piso `classic`.
+
+### 12.2 Reglas que debe cumplir el plan
+
+1. **Cada arista lleva al menos 3 puntos**, y el primero y el último son los centros de sus
+   extremos. `insertEdge` descarta esos dos puntos y los reemplaza por la intersección con la
+   forma en dirección al segundo y al penúltimo. Con dos puntos falla.
+2. **La posición de cada etiqueta va en el plan** (`edge.x`, `edge.y`); Mermaid no la calcula.
+   Además le suma a `y` la mitad del margen de título de subgrafo (`subGraphTitleMargin`, arriba
+   más abajo), así que el plan se lo resta.
+3. **Subgrafos:** `insertCluster` dibuja el rectángulo centrado en `x`, `y` con el ancho y el
+   alto dados, pero lo ensancha si el título no cabe. El plan debe darle al menos el ancho del
+   título más su relleno.
+4. **Medición:** el tamaño del título de un subgrafo se obtiene con `insertCluster` y tamaño
+   cero (`labelBBox`); el de las etiquetas de arista, con `insertEdgeLabel` (`edge.width`,
+   `edge.height`).
+5. **La configuración de Mermaid debe ser la misma en `classic` y en `smart`.** Hoy
+   `mermaidConfig` es privada en `src/render/mermaid.ts`; el paso 7.3 la exporta para no
+   duplicarla, como hizo la prueba.
+
+### 12.3 Descartado o limitado
+
+- **Igualar el tamaño de nodos:** no es fiable. Un ancho dado antes de `insertNode` se toma como
+  ancho de ajuste del texto y se le vuelve a sumar el relleno: 3 de 8 nodos salieron más
+  anchos de lo pedido. Queda fuera (§5.2).
+- **`handDrawn`:** el modo `smart` funciona, pero con tres diferencias. Son las mismas en
+  `classic`, salvo la primera:
+  - el trazo agranda unos 4 px la caja de los subgrafos;
+  - los nodos usan la clase `rough-node` en lugar de `node`, así que `FILL_PROBE` y
+    `finishDiagram` no les ponen degradados;
+  - los subgrafos se dibujan como trazos y no como `rect`, así que no reciben la banda de
+    título.
+
+  Afecta a los estilos de [`IDEAS_ESTILOS_MERMAID.md`](IDEAS_ESTILOS_MERMAID.md), no a esta
+  fase.
+
+- **El motor desechable de capas** imprimió peor que `classic` en los casos 3, 7, 9, 12 y 15, y
+  en uno de los sintéticos. Era de esperar, y confirma dos cosas: el piso `classic` (§5.3) es
+  necesario, y los motores reales (`layered` con ELK, `hub`, `bento`) son el grueso del
+  trabajo. El caso 7, tres subgrafos sin aristas puestos en una fila, motivó el ajuste de
+  `bento` en el §5.1.
+
+### 12.4 Ajustes a los pasos siguientes
+
+- **7.3:** exportar la configuración de Mermaid compartida; los layouts de página y las reglas
+  del §12.2 tal como en la prueba, con pruebas de contrato que las cubran (posiciones, tamaños,
+  recorte, flechas, etiquetas, bandas).
+- **7.5:** `bento` reparte en retícula los subgrafos sin aristas; igualar nodos hermanos queda
+  fuera.
+- **7.6:** el router calcula la posición de las etiquetas.

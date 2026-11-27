@@ -84,6 +84,10 @@ Límites del prototipo:
   fuentes que ya empaquetamos. Se pueden incrustar sin romper el funcionamiento sin conexión. Hay
   que revisar que tengan los acentos y signos del español (en la galería se ven bien: «¿Dónde
   cae?», «Señal», «iónico»).
+- **El acabado actual no alcanza a `handDrawn`** (visto en la prueba de concepto de la Fase 7):
+  los nodos usan la clase `rough-node` en lugar de `node`, y los subgrafos son trazos en lugar
+  de `rect`. `FILL_PROBE` y `finishDiagram` no les ponen degradados ni banda de título. Un
+  estilo a mano alzada necesitará su propio acabado, o ninguno.
 - **Reproducibilidad**: con `handDrawn` hay que fijar `handDrawnSeed`. Si no, cada conversión
   cambia el PDF.
 - **Tamaño de letra**: las manuscritas se ven más pequeñas a igual tamaño nominal (en la galería,

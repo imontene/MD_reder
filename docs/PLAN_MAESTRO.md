@@ -300,7 +300,7 @@ queda aplazado (paso 7.9).
 
 Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
 
-- [ ] **7.1 Prueba de concepto (S).** Script desechable en `docs/prototipos/mermaid_layout/`
+- [x] **7.1 Prueba de concepto (S).** Script desechable en `docs/prototipos/mermaid_layout/`
       que registra `mdr-measure` y `mdr-place` sobre Mermaid 12.1.0 y confirma, con los 17
       diagramas de flujo de `tests/fixtures/mermaid-autofit.md`:
   - que `insertNode` da tamaños estables para todas sus formas y que `mdr-place` los dibuja
@@ -315,14 +315,22 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
   pasos siguientes. Si el contrato no se sostiene, la fase se replantea aquí, antes de escribir
   el resto.
 
+  Resultado: **el contrato se sostiene** (§12 de la especificación;
+  [`resultados.md`](prototipos/mermaid_layout/resultados.md)). En 20 casos, Mermaid dibuja nodos,
+  subgrafos, aristas, flechas y etiquetas donde dice el plan, con el acabado intacto y sin
+  imágenes en el PDF; la serpentina reduce un 47–53 % el alto de las cadenas a la misma escala.
+  Reglas nuevas del plan: aristas de al menos 3 puntos y posición de etiquetas calculada por el
+  router. Descartado: igualar el tamaño de nodos hermanos.
+
 - [ ] **7.2 Opción y dependencias (S).** `--mermaid-layout <classic|smart>` en `options.ts`,
       `cli.ts` (también en `preview`), `convert.ts` y `doctor.ts` (línea en `Settings`); pruebas
       en `options.test.ts`, `cli.test.ts` y `doctor.test.ts`. `elkjs` como dependencia directa.
       Versión exacta de `mermaid` en `package.json` (hoy `^12.1.0`). En esta etapa `smart` se
       comporta igual que `classic`.
 - [ ] **7.3 Medición y dibujo (M).** `mermaid-compose/types.ts`, `directives.ts`,
-      `page-layouts.ts` (`mdr-measure` y `mdr-place` como texto fuente) e `index.ts` con un
-      motor provisional trivial; bifurcación en `render/mermaid.ts` con vuelta a `classic` ante
+      `page-layouts.ts` (`mdr-measure` y `mdr-place` como texto fuente, con las reglas del §12.2
+      de la especificación) e `index.ts` con un motor provisional trivial; configuración de
+      Mermaid exportada y compartida con `classic`; bifurcación en `render/mermaid.ts` con vuelta a `classic` ante
       los casos del §4.2 de la especificación o cualquier error;
       `tests/mermaid-layout-contract.test.ts`.
 - [ ] **7.4 Analizador (M).** `analyze.ts`: Tarjan, aristas de retorno, espina dorsal,
@@ -330,11 +338,12 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
       elección de arquetipo y pistas `%% @…`; `tests/mermaid-analyze.test.ts` con cada
       arquetipo y los casos del corpus.
 - [ ] **7.5 Motores no jerárquicos (L).** `engines/serpentine.ts`, `flywheel.ts`, `hub.ts`,
-      `bento.ts` y `polish.ts` (retícula de 8 px); `tests/mermaid-engines.test.ts` (sin solapes,
-      anchos iguales en `bento`, alas equilibradas en `hub`).
+      `bento.ts` (también subgrafos sin aristas entre sí, en retícula) y `polish.ts` (retícula de
+      8 px); `tests/mermaid-engines.test.ts` (sin solapes, anchos iguales en `bento`, alas
+      equilibradas en `hub`).
 - [ ] **7.6 Motor general y rutas (L).** `engines/layered.ts` con `elkjs` en Node (puertos
       fijos, zócalo o carril para los `sidecar`) y `routing.ts` (rutas ortogonales, arcos,
-      retornos por canal lateral, etiquetas de arista sin choques).
+      retornos por canal lateral, posición de las etiquetas de arista sin choques).
 - [ ] **7.7 Elección del candidato (M).** `score.ts` (puntuación en Node), búsqueda por ancho de
       ajuste y eje según `--mermaid-autofit` y `--mermaid-flip`, piso `classic` medido sobre el
       SVG real y trazas de `--verbose` (`Mermaid smart layout: …`, `kept classic (…)`).
