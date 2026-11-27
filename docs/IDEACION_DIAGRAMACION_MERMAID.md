@@ -1,10 +1,21 @@
 # Ideación Arquitectónica: Diagramación Inteligente de Mermaid más allá del Layout Lineal
 
+> **Nota de revisión (2026-11-27).** Ideación externa, revisada contra el código de mdrender
+> 2.18.0 y Mermaid 12.1.0. Las correcciones van marcadas como «_Revisión:_». Las decisiones que
+> siguieron a la revisión están en la especificación,
+> [`ESPECIFICACION_MERMAID_LAYOUT.md`](ESPECIFICACION_MERMAID_LAYOUT.md): por ahora solo se
+> implementa el modo determinista (`smart`), solo para `flowchart`/`graph`; el modo con IA
+> (Enfoque 2.5) queda aplazado.
+
 ## 1. Diagnóstico Raíz: ¿Qué hace una IA gráfica de frontera que Mermaid no hace?
 
 Cuando ya tienes resuelto el **acabado superficial** (tipografía, sombras, radios, paletas, degradados y estilo de trazos), la diferencia percibida frente a un modelo visual de frontera como _Nano Banana_ deja de ser cosmética y pasa a ser puramente **compositiva y topológica**.
 
 Los motores clásicos detrás de Mermaid (`dagre` históricamente y `elk.layered` en versiones modernas) implementan variantes del **algoritmo jerárquico de Sugiyama (1981)**: eliminan ciclos invirtiendo flechas, asignan cada nodo a una capa discreta (_rank_), minimizan cruces y calculan coordenadas en **un único eje global** (`TD` o `LR`). En cambio, una IA visual de frontera comprende la semántica del sistema y toma cinco decisiones de diseño editorial que Sugiyama ignora:
+
+> _Revisión:_ en Mermaid 12 el motor por defecto ya es ELK (`layout: "elk"`; se comprobó con
+> `mermaid.mermaidAPI.getConfig()` en 12.1.0). mdrender, por lo tanto, ya dibuja con ELK hoy. Lo
+> que este documento describe como «activar ELK» se reduce a ajustar sus opciones.
 
 1. **Control del _Aspect Ratio_ y Plegado del Flujo (Adiós al "Efecto Cinta"):** Si un proceso tiene 9 pasos secuenciales, Mermaid genera una torre vertical altísima o una tira horizontal ilegible. Un diseñador humano o una IA visual pliega la secuencia en **serpentina (curva en S / _boustrophedon_)** o en una **retícula de fases (3×3)** para encajar armónicamente en una proporción 16:9 o 4:3.
 2. **Reconocimiento del Arquetipo Visual:** Mermaid usa el mismo motor jerárquico para todo. Una IA visual detecta la naturaleza cognitiva del grafo antes de dibujar:
@@ -70,6 +81,13 @@ El Skill debe incluir una regla estricta: **ningún nodo de infraestructura tran
 El Skill debe dominar cinco mecanismos nativos de Mermaid que los LLMs casi nunca usan por defecto:
 
 - **Inyección dinámica de `ELK` en el _Frontmatter_:** En diagramas con ramificaciones complejas o múltiples aristas, el Skill antepone configuración específica de ELK, activando `mergeEdges: true` (que agrupa flechas en carriles compartidos estilo circuito impreso) y estrategias de colocación equilibradas:
+
+  > _Revisión:_ en mdrender, un diagrama con `config:` en su front matter (o con `%%{init}%%`)
+  > cuenta como «configurado por el autor» (`authorConfigured` en `src/render/mermaid-fit.ts`).
+  > Se dibuja una sola vez, sin la búsqueda de autofit, y la especificación tampoco lo
+  > reinterpreta en modo `smart`. Para el Enfoque 2 conviene usar las pistas en comentarios
+  > (`%% @archetype: …`) en lugar del front matter.
+
   ```yaml
   ---
   config:
@@ -80,13 +98,18 @@ El Skill debe dominar cinco mecanismos nativos de Mermaid que los LLMs casi nunc
       cycleBreakingStrategy: GREEDY
   ---
   ```
+
 - **Andamiaje invisible (`~~~`):** Para alinear en grilla dos columnas o subgrafos desconectados, o forzar que la leyenda/infraestructura quede debajo del flujo principal (`Subgrafo_Principal ~~~ Subgrafo_Infraestructura`).
 - **Ingeniería del orden de declaración:** Tanto `dagre` como `elk` utilizan el orden de aparición en el texto como desempate inicial para ordenar nodos dentro de una misma capa. El Skill debe emitir: (1) definiciones de nodos con etiquetas balanceadas, (2) subgrafos en orden estricto de lectura (izquierda a derecha / arriba a abajo), (3) aristas de la espina dorsal, y (4) aristas secundarias o de retorno al final.
 - **Control tipográfico de proporción de cajas:** Limitar cada línea de texto de un nodo a **18–26 caracteres** (partiendo conceptos largos en 2 líneas concisas) para evitar nodos de 400px de ancho que deforman toda su columna.
 
 ### 2.3 Ejemplo Comparativo del Efecto del Skill
 
-````carousel
+> _Revisión:_ el original usaba un bloque `carousel`, que no es Markdown estándar (mdrender
+> lo mostraría como código). Se reemplazó por dos diagramas seguidos.
+
+**Antes** (Mermaid ingenuo):
+
 ```mermaid
 flowchart TD
     U["Usuario"] --> G["API Gateway"]
@@ -101,7 +124,9 @@ flowchart TD
     P --> DB
     L --> DB
 ```
-<!-- slide -->
+
+**Después** (con el Skill):
+
 ```mermaid
 ---
 config:
@@ -133,7 +158,6 @@ flowchart TB
     end
     Flujo ---> Datos
 ```
-````
 
 > [!TIP]
 > **Estructura interna recomendada para el `SKILL.md`:** En lugar de pedirle al LLM un _Chain-of-Thought_ libre y verboso (que gasta tokens de salida), pídele que rellene primero un brevísimo bloque de planificación estructurada en comentario Mermaid (`%% @plan: nodes=8 | archetype=phased-grid | aspect=16:9 | god_nodes=DB(isolated)`). Así fuerzas el razonamiento espacial en ~25 tokens y el archivo resultante sigue siendo 100% Mermaid válido.
@@ -177,6 +201,12 @@ flowchart TB
 #### Etapa 1: Extracción del Grafo Intermedio (IR) y Medición Previa de Cajas
 
 En lugar de parsear con expresiones regulares (frágil ante subgrafos y estilos), la aplicación utiliza el parser oficial (`@mermaid-js/parser` o `mermaid.mermaidAPI.getDiagramFromText`) para extraer un JSON limpio de `nodes`, `edges` y `clusters`.
+
+> _Revisión:_ `@mermaid-js/parser` (Langium) no analiza los diagramas de flujo; cubre otros tipos
+> (torta, gitGraph, arquitectura…). La vía que sí funciona, comprobada en 12.1.0, es
+> `mermaid.mermaidAPI.getDiagramFromText(fuente)` y luego `diag.db.getData()`, que devuelve
+> `nodes`, `edges` y `config`. Es la misma estructura que Mermaid entrega a sus algoritmos de
+> diagramación.
 
 - **Auto-balanceo tipográfico previo al layout:** Antes de calcular posiciones `(x, y)`, la aplicación mide el texto real de cada etiqueta con la fuente exacta de tu tema y aplica un algoritmo de salto de línea balanceado (equivalente a `text-wrap: balance`, buscando una proporción de caja cercana a `2.2 : 1`). Solo con esto desaparecen las cajas desproporcionadas que arruinan los layouts automáticos.
 
@@ -241,6 +271,9 @@ _(Como `elkjs` o tus motores propios tardan 2–8 ms por pasada, tu app puede pr
 
 ¿Qué ocurre con el ~15% de diagramas donde la semántica humana no se deduce solo de la topología (por ejemplo, 8 nodos medianamente conectados donde saber qué concepto es "Negocio" vs. "Infraestructura" cambia toda la composición)?
 
+> _Revisión:_ esta variante quedó **aplazada** (ver la especificación). Los costos y tiempos de
+> esta sección son estimaciones de la ideación externa y no se verificaron.
+
 En lugar de llamar a una IA gráfica de frontera (que genera una imagen rasterizada costosa de `~\$0.04–\$0.15` por gráfico y tarda 8–20 segundos), tu aplicación de renderizado puede incorporar un modo opcional con un **modelo de texto ultraligero (_Flash-Lite_)**:
 
 - Recibe el texto Mermaid crudo (~150–400 tokens).
@@ -263,6 +296,10 @@ En lugar de llamar a una IA gráfica de frontera (que genera una imagen rasteriz
 
 > [!NOTE]
 > **La sinergia natural si controlas ambos extremos:** Los Enfoques 1 y 2 no son excluyentes; son **multiplicativos**. Si implementas el Enfoque 1, el Mermaid guardado en tus archivos `.md` ya nace limpio, bien agrupado en subgrafos lógicos y legible incluso en visores Markdown estándar (GitHub, VS Code, Obsidian). Y además, el Skill puede dejar pistas semánticas invisibles en comentarios válidos de Mermaid (ej. `%% @archetype: flywheel` o `%% @sidecar: DB, Logs`) para que tu aplicación del Enfoque 2 las aproveche al 100% sin adivinar, manteniendo su analizador topológico automático para cualquier Mermaid crudo que llegue sin metadatos.
+>
+> _Revisión:_ para que esta sinergia funcione en mdrender, el Skill debe dejar sus pistas en
+> comentarios `%% @…` y no en `config:` del front matter: un diagrama con `config:` se dibuja en
+> modo clásico (ver la revisión de §2.2.C).
 
 ---
 
@@ -270,7 +307,8 @@ En lugar de llamar a una IA gráfica de frontera (que genera una imagen rasteriz
 
 Para maximizar retorno sin bloquear tu producto en una reescritura monolítica, el camino más pragmático se divide en tres etapas evolutivas:
 
-1. **Fase 1 — Impacto Inmediato (Días 1–3): Creación del Skill (Enfoque 1) + Activación de ELK**
+1. **Fase 1 — Impacto Inmediato (Días 1–3): Creación del Skill (Enfoque 1) + Ajuste de opciones de ELK**
+   - _Revisión:_ ELK ya es el motor por defecto de Mermaid 12; no hay que activarlo. El Skill queda fuera del alcance de la especificación de mdrender.
    - Construir el Skill de generación con clasificación en los 5 arquetipos, aislamiento de nodos transversales, balanceo de longitud de etiquetas, subgrafos con direcciones cruzadas (`LR` + `TB`) y directivas `ELK` (`mergeEdges: true`).
    - Te servirá además como **banco de pruebas real** para identificar exactamente qué diagramas de tu dominio siguen viéndose rígidos pese a tener el mejor código Mermaid posible.
 2. **Fase 2 — Salto Estructural en el Renderizador (Semanas 1–3): Motor Reintérprete Determinista (Enfoque 2 Core)**
@@ -289,13 +327,15 @@ Tras inspeccionar el repositorio `imontene/MD_reder` (`@imontene/mdrender` v2.18
 1. **Arquitectura actual del renderizador (`src/render/mermaid.ts`, `mermaid-fit.ts`, `mermaid-style.ts`):**
    - `mdrender` ejecuta `mermaid@12.1.0` dentro de una página aislada de Chromium con las fuentes del documento (`Manrope` o `Inter`) pre-cargadas y `securityLevel: "strict"`.
    - Ya cuenta con un **evaluador multi-candidato puro (`mermaid-fit.ts`)** que prueba anchos de envoltura (`WRAPPING_WIDTHS`) y giro de eje (`LR ↔ TB`) maximizando `printScale` frente al ancho de columna (`widthPx`) y alto útil de página (`pageHeightPx`, respetando `keep-with-heading` y `--diagram-frame`).
-   - El acabado visual (`mermaid-style.ts` + `antigravity.ts`) está limpiamente separado en post-procesamiento vectorial: sonda `FILL_PROBE` en el DOM para capturar colores computados (incluidos `classDef` y `style` del autor), redondeo cuadrático de polígonos (`roundNodePolygons`), degradados verticales con opacidad `0.72` dentro de los `<stop>` (`addFillGradients`, evitando que Chrome imprima bitmaps o pierda transparencia en PDF) y cabeceras de subgrafo (`addClusterHeads`).
+   - El acabado visual (`mermaid-style.ts` + `antigravity.ts`) está limpiamente separado en post-procesamiento vectorial: sonda `FILL_PROBE` en el DOM para capturar colores computados (incluidos `classDef` y `style` del autor), redondeo cuadrático de polígonos (`roundNodePolygons`), degradados verticales con opacidad `0.72` dentro de los `<stop>` (`addFillGradients`; la opacidad va en los `<stop>` porque Chrome descarta `fill-opacity` en los rellenos con degradado al imprimir a PDF) y cabeceras de subgrafo (`addClusterHeads`).
    - Además, `package-lock.json` **ya incluye `elkjs@0.9.3` y `@mermaid-js/parser@2.0.1`** como dependencias transitivas de `mermaid@12.1.0`, compatibles con el empaquetado de `scripts/build-sea.mjs`.
+   - _Revisión:_ Mermaid 12 permite registrar algoritmos de diagramación propios (`mermaid.registerLayoutLoaders`). Un algoritmo así recibe los nodos y aristas ya analizados, y funciones para dibujarlos (`insertNode`, `insertEdge`, `insertCluster`…). Se probó en 12.1.0: una cadena de 8 pasos plegada en serpentina, dibujada por Mermaid y con el acabado de `finishDiagram` intacto.
 2. **Tipos de diagramas predominantes (`tests/fixtures/mermaid-autofit.md`, `examples/`):**
-   - Aunque `mdrender` admite los 8 tipos estándar de Mermaid, el foco central de diagramación compleja y de los 20 casos del banco de pruebas son **`flowchart` / `graph`** (cadenas largas de entrenamiento/inferencia, bucles de decisión tipo MCTS/Gumbel, arquitecturas con orquestador + trabajadores + registros/buffers y subgrafos paralelos), seguidos secundariamente por `stateDiagram-v2`. Los diagramas con geometría fija de dominio (`sequenceDiagram`, `pie`, `gantt`) deben seguir delegándose al renderizador clásico.
+   - Aunque `mdrender` admite los 8 tipos estándar de Mermaid, el foco central de diagramación compleja y de los 20 casos del banco de pruebas son **`flowchart` / `graph`** (cadenas largas de entrenamiento/inferencia, bucles de decisión tipo MCTS/Gumbel, arquitecturas con orquestador + trabajadores + registros/buffers y subgrafos paralelos). _Revisión:_ el banco de pruebas no tiene diagramas de estados: tiene 17 diagramas de flujo, una torta, una secuencia y un diagrama de flujo configurado por el autor. Solo `tests/fixtures/mermaid.md` incluye un `stateDiagram`. Los diagramas con geometría fija de dominio (`sequenceDiagram`, `pie`, `gantt`) deben seguir delegándose al renderizador clásico.
 3. **Origen de los `.md` y restricciones no funcionales (`src/convert.ts`, `PLAN_MAESTRO.md`):**
    - Al ser un CLI universal y ejecutable autónomo (`mdrender`), recibe cualquier `.md` arbitrario y **opera 100% sin conexión por defecto** (en `convert.ts`, un documento nunca puede otorgarse acceso de red a sí mismo desde su _front matter_). Esto confirma que la **Fase 2 debe ser 100% determinista y local**, y que la **Fase 3 (IA ligera)** debe activarse solo bajo autorización explícita de CLI con caché persistente local y degradación limpia a Fase 2.
 4. **Decisión de alcance y compatibilidad:**
-   - Se conserva intacto el renderizado actual como comportamiento por defecto y se habilita el nuevo pipeline de las **Fases 2 y 3** mediante una nueva opción (`--mermaid-layout <classic|smart|ai>`), documentada formalmente en [especificacion_mermaid_layout_fases_2_3.md](file:///C:/Users/ivan_/.gemini/antigravity/brain/1c8d3f20-f64f-47b5-93fe-b20b510efd75/especificacion_mermaid_layout_fases_2_3.md).
+   - Se conserva intacto el renderizado actual como comportamiento por defecto y se habilita el nuevo pipeline de las **Fases 2 y 3** mediante una nueva opción (`--mermaid-layout <classic|smart|ai>`), documentada formalmente en [`ESPECIFICACION_MERMAID_LAYOUT.md`](ESPECIFICACION_MERMAID_LAYOUT.md).
+   - _Revisión:_ tras la revisión se acotó el alcance: `--mermaid-layout <classic|smart>`, solo para diagramas de flujo. El modo `ai` (Fase 3) queda aplazado; al terminar el modo `smart` se evaluará si basta la interpretación determinista o si conviene alguna opción con IA.
 
-**Estado del documento:** Cerrado — pasa a etapa de Especificación Técnica (Fases 2 y 3).
+**Estado del documento:** Cerrado — pasa a etapa de Especificación Técnica (Fase 2; la Fase 3 queda aplazada).
