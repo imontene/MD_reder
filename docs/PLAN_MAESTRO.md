@@ -345,10 +345,14 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
 - [ ] **7.5 Motores no jerárquicos (L).** `engines/serpentine.ts`, `flywheel.ts`, `hub.ts`,
       `bento.ts` (también subgrafos sin aristas entre sí, en retícula) y `polish.ts` (retícula de
       8 px); `tests/mermaid-engines.test.ts` (sin solapes, anchos iguales en `bento`, alas
-      equilibradas en `hub`).
+      equilibradas en `hub`). De la calibración (§5.4): decidir antes el alcance de la serpentina
+      (solo cadenas largas, o filas que siempre se lean de izquierda a derecha); el anillo queda
+      confirmado para ciclos.
 - [ ] **7.6 Motor general y rutas (L).** `engines/layered.ts` con `elkjs` en Node (puertos
       fijos, zócalo o carril para los `sidecar`) y `routing.ts` (rutas ortogonales, arcos,
-      retornos por canal lateral, posición de las etiquetas de arista sin choques).
+      retornos por canal lateral, posición de las etiquetas de arista sin choques). De la
+      calibración (§5.4): las flechas deben tocar los rombos y demás formas no rectangulares, y
+      cada padre debe quedar centrado sobre sus hijos, con la raíz centrada en el dibujo.
 - [ ] **7.7 Criterio de elección (M).** El mejor entre `classic` y `smart` (§5.3 y §5.4 de la
       especificación): `score.ts` con las medidas sobre el SVG final, condiciones obligatorias,
       candidatos (`classic`, `classic` transpuesto, motores `smart` por ancho de ajuste y eje
@@ -357,7 +361,10 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
       reservados) y trazas de `--verbose` (`Mermaid smart layout: …`, `kept classic (…)`).
   - [x] Galería ciega para recoger votos desde ya, regenerable a medida que cambian los motores
         (`docs/prototipos/galeria_ciega/`): primera versión publicada con 49 pares (§5.4).
-  - [ ] Votos del autor (meta: 40 pares o más) y calibración.
+  - [x] Primera calibración con 49 votos (§5.4): regla escalonada (condiciones obligatorias,
+        luego el más compacto, luego el mejor centrado), 71 % de coincidencia dejando cada par
+        fuera; `MIN_SCALE` baja a 0,5.
+  - [ ] Recalibrar con una galería nueva cuando estén los motores de 7.5 y 7.6 (meta: 75 %).
 - [ ] **7.8 Integración y entrega (M).** `tests/fixtures/mermaid-smart.md` (serpentina, ciclo,
       hub, bento, transversales, casos que vuelven a `classic`);
       `tests/mermaid-smart.test.ts` en `antigravity`, `antigravity-dark`, `academic_basic` y

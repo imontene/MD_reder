@@ -16,9 +16,10 @@ date: 2026-11-27
 > 3. **El modo `ai` (antigua Fase 3) queda aplazado.** No se crea en esta fase. Al terminar el
 >    modo `smart` se evaluará si basta con la interpretación determinista o si conviene alguna
 >    opción con IA (§10).
-> 4. **Se elige el mejor entre `classic` y `smart`** con un criterio medible (§5.3), cuyos pesos
->    se calibran con los juicios del autor en una galería ciega (§5.4). El autor puede decidir
->    en cada diagrama con `%% @layout:` (§4.3).
+> 4. **Se elige el mejor entre `classic` y `smart`** con un criterio medible (§5.3), calibrado
+>    con los juicios del autor en una galería ciega (§5.4). Tras la primera calibración es una
+>    regla escalonada: condiciones obligatorias, luego el más compacto, luego el mejor centrado.
+>    El autor puede decidir en cada diagrama con `%% @layout:` (§4.3).
 >
 > **Prueba de concepto (paso 7.1): el contrato se sostiene.** Resultados y ajustes en el §12.
 >
@@ -399,9 +400,12 @@ coincidir con el juicio del autor; sus pesos se calibran con la galería ciega d
 
 **Condiciones obligatorias.** Un candidato que no las cumple queda fuera:
 
-1. letra impresa no menor que `MIN_SCALE` (valor inicial 0,7, unos 7,5 pt con letra de 10,5 pt);
+1. letra impresa no menor que `MIN_SCALE` = 0,5 (calibrado: en la galería el autor eligió
+   dibujos de hasta 0,54 por compactos; el valor inicial de 0,7 los habría descartado);
 2. sin solapes entre cajas, etiquetas de arista y cajas de subgrafo;
-3. ninguna arista atraviesa una caja que no sea su origen o su destino.
+3. ninguna arista atraviesa una caja que no sea su origen o su destino;
+4. cada arista toca la forma de su origen y de su destino (una flecha que se queda corta de un
+   rombo fue el defecto que el autor más señaló en la galería).
 
 Si ningún candidato las cumple, se usa el de mayor escala impresa, como hoy, con el aviso de
 diagrama pequeño que ya existe.
@@ -421,13 +425,21 @@ Cada una se normaliza para que 0 sea lo ideal y los valores negativos, peores:
 
 Q(c) = Σ wᵢ·mᵢ(c).
 
-**Decisión.** Se usa el mejor candidato `smart` solo si Q(smart) ≥ Q(`classic`) + `MARGEN`. En
-caso de duda gana `classic`, que es lo conocido. El mejor `classic` (escrito o transpuesto) se
-elige entre sí con el mismo Q.
+**Decisión: regla escalonada (adoptada tras la primera calibración, §5.4).** Entre los
+candidatos que cumplen las condiciones obligatorias:
 
-**Valores iniciales y calibración.** Mientras no haya calibración, los pesos son iguales y el
-`MARGEN` es 0,1. El paso 7.7 los ajusta con los votos de la galería ciega. Si una medida no
-mejora la coincidencia con el autor, se quita.
+1. gana el más compacto si su alto impreso es menor por más de `UMBRAL_ECONOMIA` = 0,05 del alto
+   útil de la página (unos 47 px en A4);
+2. si no, gana el mejor centrado si su equilibrio es mejor por más de `UMBRAL_EQUILIBRIO` = 0,2;
+3. si no, empatan, y en el empate gana `classic`, que es lo conocido.
+
+Con más de dos candidatos se aplica por pares hasta quedar uno. El mejor `classic` (escrito o
+transpuesto) también sale de esta regla.
+
+**Medidas y pesos.** Las demás medidas de la tabla se siguen calculando y se informan en
+`--verbose`, pero no deciden: con los votos actuales, sumarlas con pesos coincide menos con el
+autor que la regla escalonada (§5.4). La suma ponderada Q(c) = Σ wᵢ·mᵢ(c) queda como
+alternativa para recalibrar cuando haya más votos.
 
 ### 5.4 Calibración con una galería ciega
 
@@ -467,6 +479,60 @@ npx tsx docs/prototipos/galeria_ciega/generar.mts
 
 Una galería regenerada cambia los pares; antes de republicarla hay que guardar los votos y la
 clave de la anterior.
+
+**Primera calibración (28-nov-2026).** 49 votos: 43 con preferencia y 6 «iguales». Copia de los
+votos en [`votos/`](prototipos/galeria_ciega/votos/), medidas de cada dibujo tal como se votó en
+`medidas.json` (`medidas.mts`), ajuste en `calibrar.mts`, resultados en
+[`calibracion.md`](prototipos/galeria_ciega/calibracion.md) y regla adoptada en
+[`criterio.json`](prototipos/galeria_ciega/criterio.json).
+
+| Tipo de par                         | Lo que eligió el autor              |
+| :---------------------------------- | :---------------------------------- |
+| `classic` frente a `smart`          | `classic` 17, `smart` 5, iguales 3  |
+| `classic` frente a `classic` girado | girado 11, `classic` 1, iguales 1   |
+| `smart` frente a su alternativa     | alternativa 6, `smart` 3, iguales 2 |
+
+Motivos marcados: espacio (24 votos), centrado (8), forma (8), legibilidad (5) y flechas (3); en
+los comentarios, «falta centrado» aparece en 8 pares y «flechas que no tocan el nodo», en 4.
+Coincidencia con el autor, dejando cada par fuera al ajustar:
+
+| Criterio                                                            | Coincidencia |
+| :------------------------------------------------------------------ | :----------: |
+| **Regla escalonada** (condiciones, luego compacto, luego centrado)  |   **71 %**   |
+| Suma ponderada, solo economía                                       |     69 %     |
+| Suma ponderada, todas las medidas                                   |     63 %     |
+| Referencia: siempre `classic` (solo pares `classic`–`smart`)        |     68 %     |
+| Referencia: gana el más bajo                                        |     57 %     |
+| Referencia: gana la letra más grande (el piso por escala que había) |     20 %     |
+
+Las condiciones obligatorias deciden 6 pares y aciertan los 6. La meta del 75 % **no se alcanza
+todavía**. Los fallos tienen causas identificables:
+
+- **Serpentina en cadenas de 6–7 pasos** (4 pares): la regla la elige por compacta y el autor
+  prefirió la torre o las dio por iguales; en las cadenas de 8 y 12 pasos sí la eligió. Comentario
+  del autor sobre la cadena RL: «la lectura de izquierda a derecha es contraintuitiva».
+- **Motor desechable de subgrafos** (2 pares): no representa al motor `bento`. Sin los 6 pares
+  de diagramas con subgrafos, la coincidencia ronda el 74 %.
+- **Centrado** (4 pares): la medida de equilibrio no capta del todo lo que el autor ve como
+  «centrado».
+- **Votos difíciles de predecir** (3 pares): por ejemplo, la misma comparación torre/tira en dos
+  cadenas casi iguales recibió «girado» en una e «iguales» en la otra.
+
+Lo que deja para los motores, más allá del criterio:
+
+1. **Contacto de las flechas** con rombos y otras formas no rectangulares en `layered` (ELK).
+   Es un defecto del motor (§12.5): las rutas de ELK terminan en el rectángulo que envuelve la
+   forma.
+2. **Centrado.** Fue la queja más repetida, también sobre `classic`: padres centrados sobre sus
+   hijos y raíz centrada en el dibujo. Afecta a la medida de equilibrio y a los motores
+   (`layered`, `hub`).
+3. **Girar al eje transversal es un candidato valioso:** ganó en 11 de 13 pares, aun con la letra
+   más pequeña. Confirma incluir `classic` girado entre los candidatos.
+4. **El anillo para ciclos** ganó en los dos pares en que apareció.
+5. **La serpentina** necesita una decisión: limitarla a cadenas largas, o probar filas que
+   siempre se lean de izquierda a derecha.
+
+Se recalibra con una galería nueva cuando los motores reales de los pasos 7.5 y 7.6 estén listos.
 
 ## 6. Contrato con el resto del pipeline
 
