@@ -56,6 +56,7 @@ const DOCUMENT_FLAGS = [
   "mermaidTheme",
   "mermaidAutofit",
   "mermaidFlip",
+  "mermaidLayout",
   "lang",
   "title",
 ] as const;
@@ -116,6 +117,11 @@ function addDocumentOptions(command: Command): Command {
     .option(
       "--mermaid-flip <mode>",
       "auto: turn a flowchart to the other axis if its text prints too small; never (default: auto)",
+    )
+    .option(
+      "--mermaid-layout <mode>",
+      "classic: Mermaid's layout; smart: compositional layout of flowcharts " +
+        "(experimental, in development: drawn as classic for now) (default: classic)",
     )
     .option("--lang <tag>", "document language, e.g. es or en (default: es)")
     .option("--title <text>", "document title (shown as a title block)")

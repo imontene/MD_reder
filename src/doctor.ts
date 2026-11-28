@@ -187,7 +187,8 @@ function settingsCheck(options: ReturnType<typeof mergeOptions>): Check {
       (options.watermark?.trim() ? `watermark "${options.watermark.trim()}", ` : "") +
       (options.watermarkField ? "watermark field, " : "") +
       `language ${options.lang}, theme ` +
-      path.basename(options.theme),
+      path.basename(options.theme) +
+      (options.mermaidLayout === "classic" ? "" : `, mermaid layout ${options.mermaidLayout}`),
   };
 }
 

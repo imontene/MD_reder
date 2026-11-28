@@ -34,6 +34,17 @@ describe("mdrender doctor", () => {
     expect(config.status).toBe("warn");
     expect(config.detail).toContain('unknown option "margn" (did you mean "margin"?)');
     expect(byName(report.checks, "Settings")!.detail).toMatch(/^A4 landscape, margins 10mm/);
+    expect(byName(report.checks, "Settings")!.detail).not.toContain("mermaid layout");
+  });
+
+  it("names the Mermaid layout in the settings when it is not classic", async () => {
+    const dir = tempDir();
+    writeFileSync(
+      path.join(dir, "mdrender.config.json"),
+      JSON.stringify({ mermaidLayout: "smart" }),
+    );
+    const report = await runDoctor({ cwd: dir, render: false, env: { PATH: "" } });
+    expect(byName(report.checks, "Settings")!.detail).toMatch(/, mermaid layout smart$/);
   });
 
   it("fails on an invalid config file", async () => {

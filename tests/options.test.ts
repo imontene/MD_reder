@@ -229,6 +229,29 @@ describe("unknownOptions", () => {
   });
 });
 
+describe("mermaidLayout", () => {
+  it("defaults to classic and accepts classic or smart in either key style and any case", () => {
+    expect(DEFAULT_OPTIONS.mermaidLayout).toBe("classic");
+    expect(normalizeOptions({ "mermaid-layout": "Smart" }, "front matter", "/")).toEqual({
+      mermaidLayout: "smart",
+    });
+    expect(normalizeOptions({ mermaidLayout: "classic" }, "front matter", "/")).toEqual({
+      mermaidLayout: "classic",
+    });
+  });
+
+  it("rejects other modes, the deferred ai mode included", () => {
+    expect(() => normalizeOptions({ mermaidLayout: "ai" }, "x", "/")).toThrow(OptionsError);
+    expect(() => normalizeOptions({ mermaidLayout: "dagre" }, "x", "/")).toThrow(OptionsError);
+  });
+
+  it("is suggested for a misspelled key", () => {
+    expect(unknownOptions({ "mermaid-layot": "smart" })).toEqual([
+      { key: "mermaid-layot", suggestion: "mermaid-layout" },
+    ]);
+  });
+});
+
 describe("headerFooterSpaceWarnings", () => {
   const margins = (top: string, bottom: string) => ({ top, bottom, left: "10mm", right: "10mm" });
 
