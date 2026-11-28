@@ -29,6 +29,7 @@ describe("main", () => {
     expect(code).toBe(ExitCode.Ok);
     expect(out).toContain("Usage: mdrender");
     expect(out).toContain("--format");
+    expect(out).toContain("--mermaid-layout <mode>");
   });
 
   it("fails with a usage error when the input is missing", async () => {
@@ -79,6 +80,33 @@ describe("main", () => {
     const { code, err } = await run([fixture("basic.md"), "--mermaid-theme", "rosa"]);
     expect(code).toBe(ExitCode.Usage);
     expect(err).toContain("--mermaid-theme");
+  });
+
+  it("rejects an unknown Mermaid layout", async () => {
+    const { code, err } = await run([fixture("basic.md"), "--mermaid-layout", "ai"]);
+    expect(code).toBe(ExitCode.Usage);
+    expect(err).toContain("--mermaid-layout");
+  });
+
+  it("draws --mermaid-layout smart exactly as classic while it is in development", async () => {
+    // Flowcharts only: Mermaid draws some class-diagram lines with a random seed.
+    const source = path.join(tempDir(), "flujo.md");
+    writeFileSync(
+      source,
+      "```mermaid\nflowchart LR\n  A[Uno] --> B{¿Dos?} -->|sí| C[Tres]\n  B -->|no| D[Cuatro]\n```\n\n" +
+        "```mermaid\nflowchart TD\n  subgraph S[Grupo]\n    E --> F\n  end\n  F --> G\n```\n",
+    );
+    const html = async (layout: string) => {
+      const dir = tempDir();
+      const args = [source, "-f", "html", "-o", dir, "--mermaid-layout", layout];
+      const { code, err } = await run(args);
+      expect(err).toBe("");
+      expect(code).toBe(ExitCode.Ok);
+      return readFileSync(path.join(dir, "flujo.html"), "utf8");
+    };
+    const classic = await html("classic");
+    expect(classic).toContain("<svg");
+    expect(await html("smart")).toBe(classic);
   });
 
   it("exits with code 2 and file:line diagnostics on render errors", async () => {

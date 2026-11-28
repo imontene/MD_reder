@@ -327,11 +327,19 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
   los rombos, no la topología. Quedan dos decisiones para antes del paso 7.5: el piso para
   arquetipos que cambian la forma (`flywheel`) y si se ofrecen rombos de decisión compactos.
 
-- [ ] **7.2 Opción y dependencias (S).** `--mermaid-layout <classic|smart>` en `options.ts`,
+- [x] **7.2 Opción y dependencias (S).** `--mermaid-layout <classic|smart>` en `options.ts`,
       `cli.ts` (también en `preview`), `convert.ts` y `doctor.ts` (línea en `Settings`); pruebas
       en `options.test.ts`, `cli.test.ts` y `doctor.test.ts`. `elkjs` como dependencia directa.
       Versión exacta de `mermaid` en `package.json` (hoy `^12.1.0`). En esta etapa `smart` se
       comporta igual que `classic`.
+
+  Hecho: la opción se acepta en la línea de comandos (también en `preview`), en el front matter
+  y en `mdrender.config.json`; rechaza otros valores, sugiere ante errores de tipeo y aparece en
+  `doctor`. Una prueba verifica que `smart` produce el mismo HTML que `classic`. Mermaid queda
+  fijo en 12.1.0 y `elkjs` (0.9.3) pasa a dependencia directa. Al probarlo apareció un problema
+  previo: los diagramas de clases no salen iguales en dos conversiones, porque Mermaid 12 dibuja
+  algunas líneas con una semilla al azar.
+
 - [ ] **7.3 Medición y dibujo (M).** `mermaid-compose/types.ts`, `directives.ts`,
       `page-layouts.ts` (`mdr-measure` y `mdr-place` como texto fuente, con las reglas del §12.2
       de la especificación) e `index.ts` con un motor provisional trivial; configuración de

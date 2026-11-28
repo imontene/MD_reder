@@ -17,6 +17,10 @@ export type MermaidTheme = (typeof MERMAID_THEMES)[number];
 export const MERMAID_FLIPS = ["auto", "never"] as const;
 export type MermaidFlip = (typeof MERMAID_FLIPS)[number];
 
+/** How flowcharts are laid out (docs/ESPECIFICACION_MERMAID_LAYOUT.md). */
+export const MERMAID_LAYOUTS = ["classic", "smart"] as const;
+export type MermaidLayout = (typeof MERMAID_LAYOUTS)[number];
+
 export const BUILTIN_THEMES = [
   "antigravity",
   "antigravity-dark",
@@ -78,6 +82,11 @@ export interface DocumentOptions {
   mermaidAutofit: boolean;
   /** Whether autofit may turn a flowchart to the other axis (LR ↔ TB) when it reads far better. */
   mermaidFlip: MermaidFlip;
+  /**
+   * "classic": Mermaid's own layout with autofit, as always. "smart": the compositional layout
+   * of docs/ESPECIFICACION_MERMAID_LAYOUT.md (Phase 7); in development, drawn as classic for now.
+   */
+  mermaidLayout: MermaidLayout;
   /** Text set diagonally across every page of the PDF, in the Anti-Gravity gradient. */
   watermark?: string;
   /** Soft fields of light (the Anti-Gravity gradient) in two corners of every PDF page. */
@@ -164,6 +173,7 @@ export const DEFAULT_OPTIONS: DocumentOptions = {
   pageNumbers: true,
   mermaidAutofit: true,
   mermaidFlip: "auto",
+  mermaidLayout: "classic",
   font: "manrope",
   justify: true,
   watermarkField: false,
@@ -399,6 +409,7 @@ const VALIDATORS: Record<keyof DocumentOptions, Validator> = {
   mermaidTheme: oneOf(MERMAID_THEMES),
   mermaidAutofit: bool,
   mermaidFlip: oneOf(MERMAID_FLIPS),
+  mermaidLayout: oneOf(MERMAID_LAYOUTS),
   font: oneOf(TEXT_FONTS),
   justify: bool,
   watermark: text,
