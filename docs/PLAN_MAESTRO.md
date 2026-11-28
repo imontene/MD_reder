@@ -345,8 +345,8 @@ Tamaños: S ≈ 1–2 días, M ≈ 3–4 días, L ≈ 1 semana.
 - [ ] **7.5 Motores no jerárquicos (L).** `engines/serpentine.ts`, `flywheel.ts`, `hub.ts`,
       `bento.ts` (también subgrafos sin aristas entre sí, en retícula) y `polish.ts` (retícula de
       8 px); `tests/mermaid-engines.test.ts` (sin solapes, anchos iguales en `bento`, alas
-      equilibradas en `hub`). De la calibración (§5.4): decidir antes el alcance de la serpentina
-      (solo cadenas largas, o filas que siempre se lean de izquierda a derecha); el anillo queda
+      equilibradas en `hub`). De la calibración (§5.4): serpentina solo para cadenas de 8 pasos o
+      más y con todas las filas de izquierda a derecha (retorno de carro); el anillo queda
       confirmado para ciclos.
 - [ ] **7.6 Motor general y rutas (L).** `engines/layered.ts` con `elkjs` en Node (puertos
       fijos, zócalo o carril para los `sidecar`) y `routing.ts` (rutas ortogonales, arcos,

@@ -46,6 +46,8 @@ const repo = join(here, "../../..");
 const FIT: Fit = { width: 642, height: Math.round(((297 - 40 - 6) * 96) / 25.4) };
 const FONT_PX = 14;
 const GRID = 8;
+/** Serpentine only for chains this long (author's decision after the blind gallery, §5.4). */
+const SERPENTINE_MIN = 8;
 
 // ---------------------------------------------------------------------------------------------
 // Cases
@@ -409,7 +411,7 @@ function compose(g: Measured): Plan | { fallback: string } {
   const centre = new Map<string, Point>();
   let archetype: string;
   const chain =
-    units.length >= 5 &&
+    units.length >= SERPENTINE_MIN &&
     back.size === 0 &&
     forward.length === units.length - 1 &&
     units.every(
@@ -419,7 +421,9 @@ function compose(g: Measured): Plan | { fallback: string } {
     );
 
   if (chain) {
-    // Serpentine: rows of `cols` units, alternate rows run backwards.
+    // Serpentine: rows of `cols` units, every row read left to right (whatever direction the
+    // chain was written in); the edge to the next row returns to its start through the gap
+    // between rows, like a carriage return (the router's elbow route does that).
     const start = units.find((u) => !forward.some((x) => x.to === u.id))!;
     const seq = [start];
     while (seq.length < units.length) {
@@ -449,9 +453,7 @@ function compose(g: Measured): Plan | { fallback: string } {
       const row = seq.slice(r * cols, r * cols + cols);
       const rowH = Math.max(...row.map((u) => u.h));
       row.forEach((u, c) => {
-        let col = r % 2 ? cols - 1 - c : c;
-        if (root === "RL") col = cols - 1 - col;
-        centre.set(u.id, { x: col * (colW + gapX) + colW / 2, y: y + rowH / 2 });
+        centre.set(u.id, { x: c * (colW + gapX) + colW / 2, y: y + rowH / 2 });
       });
       y += rowH + gapY;
     }

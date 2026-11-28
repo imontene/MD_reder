@@ -334,7 +334,7 @@ calibran con el corpus (§7) y quedan como constantes con nombre, como en `merma
    |     1     | _(Pista)_        | `%% @archetype: <nombre>` en el bloque.                                                                                                            |
    |     2     | **`bento`**      | _K_ ≥ 2 subgrafos de primer nivel que reúnen al menos el 60 % de los nodos.                                                                        |
    |     3     | **`flywheel`**   | Una sola componente cíclica de 3 a 8 nodos con al menos el 65 % de los nodos y grado medio interno ≤ 2,4 (admite una entrada previa y una salida). |
-   |     4     | **`serpentine`** | _K_ = 0, _N_ ≥ 5, espina dorsal ≥ 0,75·_N_, a lo sumo una hoja lateral por nodo y sin ciclos de más de 2 pasos.                                    |
+   |     4     | **`serpentine`** | _K_ = 0, _N_ ≥ 8 (decisión del autor, §5.4), espina dorsal ≥ 0,75·_N_, a lo sumo una hoja lateral por nodo y sin ciclos de más de 2 pasos.         |
    |     5     | **`hub`**        | _K_ = 0, _N_ ≥ 5 y un nodo con grado ≥ máx(4, ⌈0,55·(_N_ − 1)⌉) cuya eliminación deja ≥ 4 componentes de ≤ 2 nodos.                                |
    |     6     | **`layered`**    | Cualquier otro grafo (DAG general, árboles profundos, ciclos acoplados como MCTS o Gumbel).                                                        |
 
@@ -345,10 +345,14 @@ calibran con el corpus (§7) y quedan como constantes con nombre, como en `merma
 Todos son funciones puras `(grafo analizado, opciones) => LayoutPlan`. Las posiciones son
 centros de nodo; los tamaños vienen medidos y no se cambian.
 
-1. **`serpentine`.** Prueba 2 a 5 columnas por fila (menos que la longitud de la espina). Las
-   filas pares van de izquierda a derecha y las impares de derecha a izquierda. Alinea los
-   centros por columna y por fila. El cambio de fila es una arista vertical en la columna del
-   extremo. Las hojas laterales (`branch`, `error`) van debajo de su nodo padre.
+1. **`serpentine`.** Solo para cadenas de 8 pasos o más. Prueba 2 a 5 columnas por fila (menos
+   que la longitud de la espina). **Todas las filas se leen de izquierda a derecha**, aunque la
+   cadena esté escrita en otra dirección (`RL`, `BT`). El cambio de fila es un retorno de carro:
+   la arista baja desde el último nodo de la fila, vuelve hacia la izquierda por el hueco entre
+   filas y entra por arriba al primero de la fila siguiente. Alinea los centros por columna y
+   por fila. Las hojas laterales (`branch`, `error`) van debajo de su nodo padre. (Decisión del
+   autor tras la galería, §5.4: perdió en cadenas de 6–7 pasos y la lectura en zigzag le
+   resultó contraintuitiva.)
 2. **`flywheel`.** Los _k_ nodos del ciclo, en sentido horario desde las 12:
    θᵢ = −π/2 + 2πi/_k_; xᵢ = cₓ + Rₓ·cos θᵢ; yᵢ = c_y + R_y·sen θᵢ. Rₓ y R_y se calculan para
    dejar al menos 36 px entre cajas vecinas, con Rₓ/R_y entre 1,0 y 1,45. Las aristas del anillo
@@ -529,8 +533,10 @@ Lo que deja para los motores, más allá del criterio:
 3. **Girar al eje transversal es un candidato valioso:** ganó en 11 de 13 pares, aun con la letra
    más pequeña. Confirma incluir `classic` girado entre los candidatos.
 4. **El anillo para ciclos** ganó en los dos pares en que apareció.
-5. **La serpentina** necesita una decisión: limitarla a cadenas largas, o probar filas que
-   siempre se lean de izquierda a derecha.
+5. **La serpentina:** decisión del autor (28-nov-2026), las dos cosas: solo para cadenas de 8
+   pasos o más, y con todas las filas de izquierda a derecha, unidas por un retorno de carro
+   (§4.4 y §5.1). Ya está en `poc.mts`: las cadenas de 6–7 pasos quedan en `layered` y la de 8
+   pasos se imprime igual de compacta (656 → 349 px de alto, escala 1,00).
 
 Se recalibra con una galería nueva cuando los motores reales de los pasos 7.5 y 7.6 estén listos.
 
