@@ -1,0 +1,25 @@
+{
+  "fecha": "2026-11-28",
+  "votos": 49,
+  "regla": "escalonada",
+  "escala_minima": 0.5,
+  "umbral_economia": 0.05,
+  "umbral_equilibrio": 0.2,
+  "coincidencia_dejando_fuera": 0.714,
+  "modelo_de_pesos": {
+    "variante": "solo economía",
+    "lambda": 0.03,
+    "margen": 0.2,
+    "coincidencia_dejando_fuera": 0.694,
+    "pesos": {
+      "legibility": null,
+      "economy": 4.9564,
+      "proportion": null,
+      "balance": null,
+      "contact": null,
+      "exits": null,
+      "returns": null,
+      "crossings": null
+    }
+  }
+}

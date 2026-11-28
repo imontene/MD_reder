@@ -1,0 +1,884 @@
+[
+  {
+    "id": "p01",
+    "diagrama": "11. TD de comparación de arquitecturas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 378
+    },
+    "B": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK LR), wrap Mermaid",
+      "escala": 1,
+      "alto": 386
+    }
+  },
+  {
+    "id": "p02",
+    "diagrama": "2. Cadena LR de 5 pasos con etiquetas medianas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 316
+    },
+    "B": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK LR), wrap Mermaid",
+      "escala": 0.86,
+      "alto": 170
+    }
+  },
+  {
+    "id": "p03",
+    "diagrama": "R2. Cierre de RG01: E2 (R - C), E0 (C - @803), E6 (R - @803)…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classicAlt",
+      "motor": "classic girado",
+      "escala": 0.54,
+      "alto": 230
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.94,
+      "alto": 949
+    }
+  },
+  {
+    "id": "p04",
+    "diagrama": "15. Arquitectura general grande",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.96,
+      "alto": 890
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 915
+    }
+  },
+  {
+    "id": "p05",
+    "diagrama": "R3. inicio de la partida…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK TB), wrap Mermaid",
+      "escala": 1,
+      "alto": 862
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "flywheel 6 (Rx/Ry 1.5), wrap Mermaid, 9 candidatos",
+      "escala": 0.61,
+      "alto": 406
+    }
+  },
+  {
+    "id": "p06",
+    "diagrama": "7. TD con subgrafos en paralelo",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered 1 layers, wrap 200, 3 candidatos",
+      "escala": 0.35,
+      "alto": 42
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró TD→LR)",
+      "escala": 1,
+      "alto": 447
+    }
+  },
+  {
+    "id": "p07",
+    "diagrama": "13. TD corto con explicación",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK TB), wrap 300",
+      "escala": 1,
+      "alto": 251
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK LR), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 145
+    }
+  },
+  {
+    "id": "p08",
+    "diagrama": "12. TD de Gumbel con etiquetas largas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK LR), wrap Mermaid",
+      "escala": 0.62,
+      "alto": 151
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 775
+    }
+  },
+  {
+    "id": "p09",
+    "diagrama": "16. Flujo de datos con etiquetas de código",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK TB), wrap 300",
+      "escala": 0.85,
+      "alto": 949
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "serpentine 2×6, wrap 200, 3 candidatos",
+      "escala": 1,
+      "alto": 823
+    }
+  },
+  {
+    "id": "p10",
+    "diagrama": "R5. Defecto: la red no absorbe la mejora que la busqueda le ofre…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK TB), wrap Mermaid",
+      "escala": 0.56,
+      "alto": 285
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK LR), wrap Mermaid, 6 candidatos",
+      "escala": 0.81,
+      "alto": 442
+    }
+  },
+  {
+    "id": "p11",
+    "diagrama": "R4. entrada del bloque, 256 x 8 x 8…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 751
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 751
+    }
+  },
+  {
+    "id": "p12",
+    "diagrama": "4. Cadena graph LR de 6 pasos",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 486
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "serpentine 3×2, wrap Mermaid, 3 candidatos",
+      "escala": 1,
+      "alto": 247
+    }
+  },
+  {
+    "id": "p13",
+    "diagrama": "11. TD de comparación de arquitecturas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 378
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 378
+    }
+  },
+  {
+    "id": "p14",
+    "diagrama": "4. Cadena graph LR de 6 pasos",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 486
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic en su dirección escrita",
+      "escala": 0.57,
+      "alto": 59
+    }
+  },
+  {
+    "id": "p15",
+    "diagrama": "2. Cadena LR de 5 pasos con etiquetas medianas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.86,
+      "alto": 180
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic girado",
+      "escala": 1,
+      "alto": 316
+    }
+  },
+  {
+    "id": "p16",
+    "diagrama": "12. TD de Gumbel con etiquetas largas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 712
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic girado",
+      "escala": 0.62,
+      "alto": 166
+    }
+  },
+  {
+    "id": "p17",
+    "diagrama": "E2. Aristas: etiquetas, punteada, gruesa, invisible, retorno y subgrafo",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 683
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered 5 layers, wrap Mermaid, 3 candidatos",
+      "escala": 0.55,
+      "alto": 223
+    }
+  },
+  {
+    "id": "p18",
+    "diagrama": "3. Cadena LR con decisión",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 588
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 590
+    }
+  },
+  {
+    "id": "p19",
+    "diagrama": "6. Cadena LR de 7 pasos con etiquetas cortas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 571
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "serpentine 3×3, wrap Mermaid, 3 candidatos",
+      "escala": 1,
+      "alto": 261
+    }
+  },
+  {
+    "id": "p20",
+    "diagrama": "E3. Caso 8 con look handDrawn",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered 2 layers, wrap 200, 3 candidatos",
+      "escala": 0.68,
+      "alto": 214
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.74,
+      "alto": 261
+    }
+  },
+  {
+    "id": "p21",
+    "diagrama": "9. TD ancho de varias ramas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró TD→LR)",
+      "escala": 1,
+      "alto": 486
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK LR), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 426
+    }
+  },
+  {
+    "id": "p22",
+    "diagrama": "10. TD con etiquetas largas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 505
+    },
+    "B": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK LR), wrap Mermaid",
+      "escala": 0.86,
+      "alto": 216
+    }
+  },
+  {
+    "id": "p23",
+    "diagrama": "E2. Aristas: etiquetas, punteada, gruesa, invisible, retorno y subgrafo",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 683
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic en su dirección escrita",
+      "escala": 0.61,
+      "alto": 276
+    }
+  },
+  {
+    "id": "p24",
+    "diagrama": "R2. Cierre de RG01: E2 (R - C), E0 (C - @803), E6 (R - @803)…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.94,
+      "alto": 949
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap Mermaid, 6 candidatos",
+      "escala": 0.94,
+      "alto": 949
+    }
+  },
+  {
+    "id": "p25",
+    "diagrama": "E1. Formas, classDef y style",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "serpentine 2×4, wrap Mermaid, 3 candidatos",
+      "escala": 1,
+      "alto": 593
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 884
+    }
+  },
+  {
+    "id": "p26",
+    "diagrama": "12. TD de Gumbel con etiquetas largas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 712
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 775
+    }
+  },
+  {
+    "id": "p27",
+    "diagrama": "R1. Bloque 0: copia con continuidad y restauracion, poda, panel …",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap Mermaid, 6 candidatos",
+      "escala": 0.75,
+      "alto": 949
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.86,
+      "alto": 949
+    }
+  },
+  {
+    "id": "p28",
+    "diagrama": "17. Representación del tablero",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.59,
+      "alto": 128
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered 2 layers, wrap Mermaid, 3 candidatos",
+      "escala": 0.56,
+      "alto": 124
+    }
+  },
+  {
+    "id": "p29",
+    "diagrama": "5. Cadena RL de 6 pasos",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classicAlt",
+      "motor": "classic en su dirección escrita",
+      "escala": 0.57,
+      "alto": 59
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró RL→TB)",
+      "escala": 1,
+      "alto": 486
+    }
+  },
+  {
+    "id": "p30",
+    "diagrama": "10. TD con etiquetas largas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classicAlt",
+      "motor": "classic girado",
+      "escala": 0.86,
+      "alto": 216
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 442
+    }
+  },
+  {
+    "id": "p31",
+    "diagrama": "8. TB con subgrafos horizontales",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.86,
+      "alto": 286
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered 2 layers, wrap 200, 3 candidatos",
+      "escala": 0.79,
+      "alto": 224
+    }
+  },
+  {
+    "id": "p32",
+    "diagrama": "14. TD de cabezas de red",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 377
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic girado",
+      "escala": 1,
+      "alto": 399
+    }
+  },
+  {
+    "id": "p33",
+    "diagrama": "13. TD corto con explicación",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 209
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK LR), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 145
+    }
+  },
+  {
+    "id": "p34",
+    "diagrama": "9. TD ancho de varias ramas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classicAlt",
+      "motor": "classic en su dirección escrita",
+      "escala": 0.57,
+      "alto": 118
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró TD→LR)",
+      "escala": 1,
+      "alto": 486
+    }
+  },
+  {
+    "id": "p35",
+    "diagrama": "5. Cadena RL de 6 pasos",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró RL→TB)",
+      "escala": 1,
+      "alto": 486
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "serpentine 3×2, wrap Mermaid, 3 candidatos",
+      "escala": 1,
+      "alto": 229
+    }
+  },
+  {
+    "id": "p36",
+    "diagrama": "10. TD con etiquetas largas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 505
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 442
+    }
+  },
+  {
+    "id": "p37",
+    "diagrama": "16. Flujo de datos con etiquetas de código",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "serpentine 2×6, wrap 200, 3 candidatos",
+      "escala": 1,
+      "alto": 823
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 911
+    }
+  },
+  {
+    "id": "p38",
+    "diagrama": "2. Cadena LR de 5 pasos con etiquetas medianas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 0.86,
+      "alto": 180
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 300, 6 candidatos",
+      "escala": 1,
+      "alto": 316
+    }
+  },
+  {
+    "id": "p39",
+    "diagrama": "3. Cadena LR con decisión",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK LR), wrap Mermaid",
+      "escala": 0.63,
+      "alto": 128
+    },
+    "B": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 590
+    }
+  },
+  {
+    "id": "p40",
+    "diagrama": "1. Cadena LR de 8 pasos",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "serpentine 3×3, wrap Mermaid, 3 candidatos",
+      "escala": 1,
+      "alto": 349
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 656
+    }
+  },
+  {
+    "id": "p41",
+    "diagrama": "R2. Cierre de RG01: E2 (R - C), E0 (C - @803), E6 (R - @803)…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK TB), wrap Mermaid, 6 candidatos",
+      "escala": 0.94,
+      "alto": 949
+    },
+    "B": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK LR), wrap Mermaid",
+      "escala": 0.54,
+      "alto": 216
+    }
+  },
+  {
+    "id": "p42",
+    "diagrama": "3. Cadena LR con decisión",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró LR→TB)",
+      "escala": 1,
+      "alto": 588
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic en su dirección escrita",
+      "escala": 0.63,
+      "alto": 147
+    }
+  },
+  {
+    "id": "p43",
+    "diagrama": "R3. inicio de la partida…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "flywheel 6 (Rx/Ry 1.5), wrap Mermaid, 9 candidatos",
+      "escala": 0.61,
+      "alto": 406
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 939
+    }
+  },
+  {
+    "id": "p44",
+    "diagrama": "14. TD de cabezas de red",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK LR), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 375
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 377
+    }
+  },
+  {
+    "id": "p45",
+    "diagrama": "R5. Defecto: la red no absorbe la mejora que la busqueda le ofre…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "classic-smart",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK LR), wrap Mermaid, 6 candidatos",
+      "escala": 0.81,
+      "alto": 442
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró TD→LR)",
+      "escala": 0.81,
+      "alto": 498
+    }
+  },
+  {
+    "id": "p46",
+    "diagrama": "13. TD corto con explicación",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 209
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic girado",
+      "escala": 1,
+      "alto": 145
+    }
+  },
+  {
+    "id": "p47",
+    "diagrama": "11. TD de comparación de arquitecturas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classic",
+      "motor": "classic",
+      "escala": 1,
+      "alto": 378
+    },
+    "B": {
+      "candidato": "classicAlt",
+      "motor": "classic girado",
+      "escala": 1,
+      "alto": 398
+    }
+  },
+  {
+    "id": "p48",
+    "diagrama": "R5. Defecto: la red no absorbe la mejora que la busqueda le ofre…",
+    "origen": "candidatos-casos-reales.json",
+    "tipo": "classic-girado",
+    "A": {
+      "candidato": "classicAlt",
+      "motor": "classic en su dirección escrita",
+      "escala": 0.56,
+      "alto": 281
+    },
+    "B": {
+      "candidato": "classic",
+      "motor": "classic (autofit giró TD→LR)",
+      "escala": 0.81,
+      "alto": 498
+    }
+  },
+  {
+    "id": "p49",
+    "diagrama": "9. TD ancho de varias ramas",
+    "origen": "candidatos-corpus.json",
+    "tipo": "smart-alternativa",
+    "A": {
+      "candidato": "smart",
+      "motor": "layered (ELK LR), wrap 200, 6 candidatos",
+      "escala": 1,
+      "alto": 426
+    },
+    "B": {
+      "candidato": "smartAlt",
+      "motor": "layered (ELK TB), wrap Mermaid",
+      "escala": 0.6,
+      "alto": 120
+    }
+  }
+]
